@@ -13,19 +13,20 @@ class SpaceSavingCache(Cache):
     it keeps the estimated number of occurrences and the maximum error
     for each element. For each element, the difference between these two
     numbers is a lower bound for the actual number of occurrences. For k
-    of the m elements with k<=m the algorithm guarantees to be in the top-k.
+    of the m elements with k<=m the algorithm guarantees to be the top-k.
     """
 
     @inheritdoc(Cache)
     def __init__(self, maxlen, **kwargs):
-        self._cache = LinkedSet()
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
+        self._cache = StreamSummary(self._maxlen)
+
 
     @inheritdoc(Cache)
     def __len__(self):
-        return len(self._cache)
+        return self._cache.size
 
     @property
     @inheritdoc(Cache)
@@ -34,10 +35,14 @@ class SpaceSavingCache(Cache):
 
     @inheritdoc(Cache)
     def dump(self):
-        return list(iter(self._cache))
+        # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed
+        list = []
+        for key in sorted(self._cache._bucket_map.keys(), reverse=True):
+            list.extend(self._cache._bucket_map[key].reverse())
+        return list
 
     def position(self, k):
-        """Return the current position of an item in the cache. Position *0*
+        """Return the current overall position of an item in the cache. Position *0*
         refers to the head of cache (i.e. most recently used item), while
         position *maxlen - 1* refers to the tail of the cache (i.e. the least
         recently used item).
@@ -54,21 +59,21 @@ class SpaceSavingCache(Cache):
         position : int
             The current position of the item in the cache
         """
-        if not k in self._cache:
+        if not k in self.dump():
             raise ValueError('The item %s is not in the cache' % str(k))
         return self._cache.index(k)
 
     @inheritdoc(Cache)
     def has(self, k):
-        return k in self._cache
+        return self._cache._id_to_bucket_map.has_key(k)
 
     @inheritdoc(Cache)
     def get(self, k):
         # search content over the list
         # if it has it push on top, otherwise return false
-        if k not in self._cache:
+        if not(self.has(k)):
             return False
-        self._cache.move_to_top(k)
+        self._cache.add_occurrence(k)
         return True
 
     def put(self, k):
@@ -87,27 +92,33 @@ class SpaceSavingCache(Cache):
         evicted : any hashable type
             The evicted object or *None* if no contents were evicted.
         """
-        # if content in cache, push it on top, no eviction
-        if k in self._cache:
-            self._cache.move_to_top(k)
-            return None
-        # if content not in cache append it on top
-        self._cache.append_top(k)
-        return self._cache.pop_bottom() if len(self._cache) > self._maxlen else None
+        return self._cache.add_occurrence(k)
 
     @inheritdoc(Cache)
     def remove(self, k):
-        if k not in self._cache:
+        if not(self.has(k)):
             return False
-        self._cache.remove(k)
-        return True
+        return not(self._cache.remove(k) == False)
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache.clear()
+        self._cache = StreamSummary(self._maxlen)
 
 
 class StreamSummary:
+    """The StreamSummary data structure was proposed in
+
+    Metwally, Ahmed, Divyakant Agrawal, and Amr El Abbadi.
+    "Efficient computation of frequent and top-k elements in data streams."
+    Database Theory-ICDT 2005. Springer Berlin Heidelberg, 2005. 398-412.
+
+    It essentially keeps track of the number of occurrences of a number of data objects in a stream. The number of
+    observable objects is limited, though, which is why StreamSummary keeps track of a limited number of objects and
+    both the estimated number of occurrences and the maximum error. Each object is represented as a node in the data
+    structure. The node contains the id of the object and the maximum error. The node is always inserted into a bucket
+    that has an index representing the estimated number of occurrences. All these buckets together make up the
+    StreamSummary data structure.
+    """
 
     class Node:
         """Nodes are inserted into the StreamSummary data structure. The estimated occurrence counter does not need
@@ -134,6 +145,7 @@ class StreamSummary:
 
             new_bucket = bucket + 1
             self.insert_node_into_bucket(node, new_bucket)
+            return None
 
         # new node has to be created for id
         else:
@@ -142,6 +154,7 @@ class StreamSummary:
                 min_bucket = min(self._bucket_map.keys())
                 del_id = self._bucket_map[min_bucket][0].id
                 del self._id_to_bucket_map[del_id]
+                evicted_node = self._bucket_map[min_bucket][0]
                 del self._bucket_map[min_bucket][0]
 
                 # insert new node at min_bucket+1
@@ -149,11 +162,13 @@ class StreamSummary:
                 node = Node(id=id, max_error=min_bucket)
                 self.insert_node_into_bucket(node, min_bucket+1)
 
+                return evicted_node.id
 
             # no node has to be dropped, cache not full yet
             else:
                 node = Node(id=id, max_error=0)
                 self.insert_node_into_bucket(node=node, bucket=1)
+                return None
 
     def insert_node_into_bucket(self, node, bucket):
         self._id_to_bucket_map[id] = bucket
@@ -182,6 +197,16 @@ class StreamSummary:
             if self._bucket_map[bucket][index].id == id:
                 return list[index], index
         return None, None
+
+    def remove(self, id):
+        bucket = self._id_to_bucket_map[id]
+        del self._id_to_bucket_map[id]
+        node, index = self.index(bucket, id)
+        if index == None:
+            return False
+        else:
+            del self._bucket_map[bucket][index]
+            return node
 
 
 
