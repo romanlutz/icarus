@@ -1,5 +1,11 @@
 __author__ = 'romanlutz'
 
+from icarus.models import Cache
+from icarus.registry import register_cache_policy
+from icarus.util import inheritdoc
+
+
+
 @register_cache_policy('SS')
 class SpaceSavingCache(Cache):
     """Space Saving cache eviction policy as proposed in
@@ -37,8 +43,8 @@ class SpaceSavingCache(Cache):
     def dump(self):
         # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed
         list = []
-        for key in sorted(self._cache._bucket_map.keys(), reverse=True):
-            list.extend(self._cache._bucket_map[key].reverse())
+        for key in sorted(self._cache.bucket_map.keys(), reverse=True):
+            list.extend(self._cache.bucket_map[key].reverse())
         return list
 
     def position(self, k):
@@ -65,7 +71,7 @@ class SpaceSavingCache(Cache):
 
     @inheritdoc(Cache)
     def has(self, k):
-        return self._cache._id_to_bucket_map.has_key(k)
+        return self._cache.id_to_bucket_map.has_key(k)
 
     @inheritdoc(Cache)
     def get(self, k):
@@ -131,17 +137,19 @@ class StreamSummary:
             self.max_error = max_error
 
     def __init__(self, size):
-        self._id_to_bucket_map = {}
-        self._bucket_map = {}
+        self.id_to_bucket_map = {}
+        self.bucket_map = {}
         self.max_size = size
         self.size = 0
 
     def add_occurrence(self, id):
         # node already exists
-        if self._id_to_bucket_map.has_key(id):
-            bucket = self._id_to_bucket_map[id]
-            node, index = self.index(bucket, id)
-            del self._bucket_map[bucket][index]
+        if id in self.id_to_bucket_map.keys():
+            bucket = self.id_to_bucket_map[id]
+            node, index = self.index(bucket=bucket, id=id)
+            del self.bucket_map[bucket][index]
+            if len(self.bucket_map[bucket]) == 0:
+                del self.bucket_map[bucket]
 
             new_bucket = bucket + 1
             self.insert_node_into_bucket(node, new_bucket)
@@ -151,62 +159,68 @@ class StreamSummary:
         else:
             # check if a node has to be dropped
             if self.size == self.max_size:
-                min_bucket = min(self._bucket_map.keys())
-                del_id = self._bucket_map[min_bucket][0].id
-                del self._id_to_bucket_map[del_id]
-                evicted_node = self._bucket_map[min_bucket][0]
-                del self._bucket_map[min_bucket][0]
+                min_bucket = min(self.bucket_map.keys())
+                del_id = self.bucket_map[min_bucket][0].id
+
+                del self.id_to_bucket_map[del_id]
+                evicted_node = self.bucket_map[min_bucket][0]
+                del self.bucket_map[min_bucket][0]
+                if len(self.bucket_map[min_bucket]) == 0:
+                    del self.bucket_map[min_bucket]
 
                 # insert new node at min_bucket+1
                 # with error of min_bucket
-                node = Node(id=id, max_error=min_bucket)
+                node = self.Node(id=id, max_error=min_bucket)
                 self.insert_node_into_bucket(node, min_bucket+1)
 
                 return evicted_node.id
 
             # no node has to be dropped, cache not full yet
             else:
-                node = Node(id=id, max_error=0)
+                self.size += 1
+                node = self.Node(id=id, max_error=0)
                 self.insert_node_into_bucket(node=node, bucket=1)
                 return None
 
     def insert_node_into_bucket(self, node, bucket):
-        self._id_to_bucket_map[id] = bucket
+        self.id_to_bucket_map[node.id] = bucket
         # if bucket exists, insert node at corresponding index
-        if self._bucket_map.has_key(bucket):
-            self.insertAtCorrectIndex(node)
+        if bucket in self.bucket_map.keys():
+            self.insert_at_correct_index(bucket, node)
         # if bucket doesn't exist, create bucket
         else:
-            self._bucket_map[bucket] = [node]
+            self.bucket_map[bucket] = [node]
 
-    def insertAtCorrectIndex(self, bucket, node):
+    def insert_at_correct_index(self, bucket, node):
         index = -1
-        list = self._bucket_map[bucket]
+        list = self.bucket_map[bucket]
         for i in range(len(list)):
-            if node.max_error < list[i].max_error:
+            if node.max_error > list[i].max_error:
                 index = i
                 break
         if index == -1:
-            self._bucket_map[bucket].append(node)
+            self.bucket_map[bucket].append(node)
         else:
-            self._bucket_map[bucket].insert(index, node)
+            self.bucket_map[bucket].insert(index, node)
 
 
     def index(self, bucket, id):
-        for index in range(len(self._bucket_map[bucket])):
-            if self._bucket_map[bucket][index].id == id:
-                return list[index], index
+        for index in range(len(self.bucket_map[bucket])):
+            if self.bucket_map[bucket][index].id == id:
+                return self.bucket_map[bucket][index], index
         return None, None
 
     def remove(self, id):
-        bucket = self._id_to_bucket_map[id]
-        del self._id_to_bucket_map[id]
+        bucket = self.id_to_bucket_map[id]
+        del self.id_to_bucket_map[id]
         node, index = self.index(bucket, id)
         if index == None:
             return False
         else:
-            del self._bucket_map[bucket][index]
+            del self.bucket_map[bucket][index]
             return node
+
+
 
 
 
