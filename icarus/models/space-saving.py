@@ -5,7 +5,6 @@ from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc
 
 
-
 @register_cache_policy('SS')
 class SpaceSavingCache(Cache):
     """Space Saving cache eviction policy as proposed in
@@ -23,12 +22,16 @@ class SpaceSavingCache(Cache):
     """
 
     @inheritdoc(Cache)
-    def __init__(self, maxlen, **kwargs):
+    def __init__(self, maxlen, monitored=-1, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
-        self._cache = StreamSummary(self._maxlen)
-
+        self._monitored = monitored
+        if self._monitored == -1:
+            self._monitored = 2 * self._maxlen
+        if self._monitored < self._maxlen:
+            raise ValueError('Number of monitored elements has to be greater or equal the cache size')
+        self._cache = StreamSummary(self._maxlen, self._monitored)
 
     @inheritdoc(Cache)
     def __len__(self):
@@ -43,8 +46,12 @@ class SpaceSavingCache(Cache):
     def dump(self):
         # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed
         list = []
-        for key in sorted(self._cache.bucket_map.keys(), reverse=True):
-            list.extend(self._cache.bucket_map[key].reverse())
+        buckets = self._cache.bucket_map.keys()
+        buckets.sort(reverse=True)
+        for key in buckets:
+            bucket_list = self._cache.bucket_map[key]
+            bucket_list.reverse()
+            list.extend(bucket_list)
         return list
 
     def position(self, k):
@@ -71,13 +78,13 @@ class SpaceSavingCache(Cache):
 
     @inheritdoc(Cache)
     def has(self, k):
-        return self._cache.id_to_bucket_map.has_key(k)
+        return k in self.dump()[:self._maxlen]
 
     @inheritdoc(Cache)
     def get(self, k):
         # search content over the list
         # if it has it push on top, otherwise return false
-        if not(self.has(k)):
+        if not (self.has(k)):
             return False
         self._cache.add_occurrence(k)
         return True
@@ -102,13 +109,13 @@ class SpaceSavingCache(Cache):
 
     @inheritdoc(Cache)
     def remove(self, k):
-        if not(self.has(k)):
+        if not (self.has(k)):
             return False
-        return not(self._cache.remove(k) == False)
+        return not (self._cache.remove(k) == False)
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache = StreamSummary(self._maxlen)
+        self._cache = StreamSummary(self._maxlen, self._monitored)
 
 
 class StreamSummary:
@@ -132,15 +139,19 @@ class StreamSummary:
         counter. Instead, the node contains an upper bound on the maximum error that is included in the estimated
         occurrence counter and the ID representing the cached content itself.
         """
+
         def __init__(self, id, max_error):
             self.id = id
             self.max_error = max_error
 
-    def __init__(self, size):
+    def __init__(self, size, monitored_items = -1):
         self.id_to_bucket_map = {}
         self.bucket_map = {}
-        self.max_size = size
-        self.size = 0
+        self.max_size = size  # max cache size
+        self.size = 0  # number of currently monitored items
+        self.monitored_items = monitored_items
+        self.last_cached_bucket = 1  # bucket of last cached item
+        self.last_cached_index = 0  # index of last cached item in bucket's list
 
     def add_occurrence(self, id):
         # node already exists
@@ -153,6 +164,20 @@ class StreamSummary:
 
             new_bucket = bucket + 1
             self.insert_node_into_bucket(node, new_bucket)
+
+            if self.size > self.max_size:
+                # potentially changes to last_cached pointers
+                if new_bucket == self.last_cached_bucket:
+                    # two cases:
+                    # 1. insertion before last cached item -> shift index by 1
+                    # 2. insertion after last cached item -> shift index by 1
+                    self.last_cached_index += 1
+                elif new_bucket == self.last_cached_bucket + 1:
+                    if len(self.bucket_map[self.last_cached_bucket]) == self.last_cached_index + 1:
+                        # move last_cached pointers to new_bucket
+                        self.last_cached_bucket = new_bucket
+                        self.last_cached_index = 0
+
             return None
 
         # new node has to be created for id
@@ -171,7 +196,7 @@ class StreamSummary:
                 # insert new node at min_bucket+1
                 # with error of min_bucket
                 node = self.Node(id=id, max_error=min_bucket)
-                self.insert_node_into_bucket(node, min_bucket+1)
+                self.insert_node_into_bucket(node, min_bucket + 1)
 
                 return evicted_node.id
 
@@ -203,7 +228,6 @@ class StreamSummary:
         else:
             self.bucket_map[bucket].insert(index, node)
 
-
     def index(self, bucket, id):
         for index in range(len(self.bucket_map[bucket])):
             if self.bucket_map[bucket][index].id == id:
@@ -211,6 +235,8 @@ class StreamSummary:
         return None, None
 
     def remove(self, id):
+        if not (id in self.id_to_bucket_map.keys()):
+            return False
         bucket = self.id_to_bucket_map[id]
         del self.id_to_bucket_map[id]
         node, index = self.index(bucket, id)
@@ -218,10 +244,70 @@ class StreamSummary:
             return False
         else:
             del self.bucket_map[bucket][index]
+
+            # the last_cached pointers need to be adjusted
+            if self.last_cached_bucket < bucket:
+                # one more element can be cached
+                if self.last_cached_index > 0:
+                    self.last_cached_index -= 1
+                else:
+                    buckets = self.bucket_map.keys()
+                    buckets.sort()
+                    bucket_index = buckets.index(bucket)
+                    if bucket_index > 0:
+                        self.last_cached_bucket = buckets[bucket_index - 1]
+                        self.last_cached_index = len(self.bucket_map[self.last_cached_bucket]) - 1
+                    else:
+                        # there is no bucket below, all objects are removed
+                        self.last_cached_bucket = 1
+
+            elif self.last_cached_bucket == bucket:
+                if self.last_cached_index == 0:
+                    buckets = self.bucket_map.keys()
+                    buckets.sort()
+                    bucket_index = buckets.index(bucket)
+                    if bucket_index > 0:
+                        self.last_cached_bucket = buckets[bucket_index - 1]
+                        self.last_cached_index = len(self.bucket_map[self.last_cached_bucket]) - 1
+                    else:
+                        # there is no bucket below, all objects are removed
+                        self.last_cached_bucket = 1
+                else:
+                    self.last_cached_index -= 1
+
             return node
 
+    def guaranteed_top_k(self):
+        buckets = self.bucket_map.keys()
+        buckets.sort()
+        curr_bucket_index = len(buckets) - 1
+        top_bucket_length = len(self.bucket_map[buckets[curr_bucket_index]])
+        next_bucket_index = curr_bucket_index if top_bucket_length > 1 else curr_bucket_index - 1
+        curr_list_index = top_bucket_length - 1
+        curr_guaranteed_occurrences = self.__guaranteed_occurrences(buckets, curr_bucket_index, curr_list_index)
+        next_list_index = curr_list_index - 1 if top_bucket_length > 1 else len(
+            self.bucket_map[buckets[next_bucket_index]]) - 1
+        guaranteed_counter = 0
 
+        for _ in range(self.size - 1):
+            next_max_occurrences = buckets[next_bucket_index]
+            if curr_guaranteed_occurrences < next_max_occurrences:
+                break
+            else:
+                guaranteed_counter += 1
 
+            curr_bucket_index = next_bucket_index
+            curr_list_index = next_list_index
+            curr_guaranteed_occurrences = self.__guaranteed_occurrences(buckets, curr_bucket_index, curr_list_index)
+            if curr_list_index == 0:
+                # switch to next bucket
+                next_bucket_index = curr_bucket_index - 1
+                next_list_index = len(self.bucket_map[buckets[next_bucket_index]]) - 1
+            else:
+                # move to next element within same bucket
+                next_list_index = curr_list_index - 1
 
+        return guaranteed_counter
 
-
+    def __guaranteed_occurrences(self, buckets, bucket_index, list_index):
+        return buckets[bucket_index] - self.bucket_map[buckets[bucket_index]][list_index].max_error
