@@ -22,6 +22,7 @@ ___license___ = 'GNU GPLv2'
 __modules_to_register = [
      'icarus.models.cache',
      'icarus.models.space_saving', # added by romanlutz
+     'icarus.models.data_stream_caching_algorithm', # added by romanlutz
      'icarus.models.strategy',
      'icarus.execution.collectors', 
      'icarus.results.readwrite',
