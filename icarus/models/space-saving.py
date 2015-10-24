@@ -3,6 +3,7 @@ __author__ = 'romanlutz'
 from icarus.models import Cache
 from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc
+from copy import deepcopy
 
 __all__ = ['SpaceSavingCache',
            'StreamSummary']
@@ -47,7 +48,7 @@ class SpaceSavingCache(Cache):
 
     @inheritdoc(Cache)
     def dump(self):
-        self.dump()[:self._maxlen]
+        return self._dump_all()[:self._maxlen]
 
     def _dump_all(self):
         """
@@ -60,10 +61,18 @@ class SpaceSavingCache(Cache):
         buckets = self._cache.bucket_map.keys()
         buckets.sort(reverse=True)
         for key in buckets:
-            bucket_list = self._cache.bucket_map[key]
+            bucket_list = deepcopy(self._cache.bucket_map[key])
             bucket_list.reverse()
-            list.extend(bucket_list)
+            list.extend([node.id for node in bucket_list])
         return list
+
+    def print_buckets(self):
+        buckets = self._cache.bucket_map.keys()
+        buckets.sort(reverse=True)
+        for key in buckets:
+            list = deepcopy(self._cache.bucket_map[key])
+            list.reverse()
+            print key, ':', [(node.id, node.max_error) for node in list]
 
     def position(self, k):
         """Return the current overall position of an item in the cache. Position *0*
