@@ -1,6 +1,6 @@
 __author__ = 'romanlutz'
 
-from icarus.models import Cache, LruCache, SpaceSavingCache
+from icarus.models import Cache, LruCache, SpaceSavingCache, NullCache
 from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc
 
@@ -55,6 +55,12 @@ class DataStreamCachingAlgorithmCache(Cache):
     def dump(self):
         return self._guaranteed_top_k.extend(self._lru_cache.dump())
 
+    def print_caches(self):
+        print 'LRU:', self._lru_cache.dump()
+        print 'top-k:', self._guaranteed_top_k
+        print 'SS-Cache of current window:'
+        self._ss_cache.print_buckets()
+
     def position(self, k):
         """Return the current overall position of an item in the cache. For SCA, the position is not important since
         the cache actually consists of two different data structures. The position within each of the data structures
@@ -73,7 +79,7 @@ class DataStreamCachingAlgorithmCache(Cache):
             The current position of the item in the cache
         """
         dump = self.dump()
-        if not k in dump:
+        if k not in dump:
             raise ValueError('The item %s is not in the cache' % str(k))
         return dump.index(k)
 
@@ -84,14 +90,17 @@ class DataStreamCachingAlgorithmCache(Cache):
     @inheritdoc(Cache)
     def get(self, k):
         # check in both LRU and top-k list
-        lru_hit = self._lru_cache.get(k)
         top_k_hit = k in self._guaranteed_top_k
+        lru_hit = False
+        if not top_k_hit:
+            lru_hit = self._lru_cache.get(k)
         # report occurrence to Space Saving
-        self._ss_cache.get(k)
-        self._window_counter += 1
+        if lru_hit or top_k_hit:
+            self._ss_cache.put(k)
+            self._window_counter += 1
 
         if self._window_counter >= self._window_size:
-
+            self._end_of_window_operation()
 
         return lru_hit or top_k_hit
 
@@ -112,7 +121,17 @@ class DataStreamCachingAlgorithmCache(Cache):
         evicted : any hashable type
             The evicted object or *None* if no contents were evicted.
         """
+        if not(k in self._guaranteed_top_k):
+            lru_hit = self._lru_cache.get(k)
+            if not lru_hit:
+                self._lru_cache.put(k)
         self._ss_cache.put(k)
+
+        self._window_counter += 1
+
+        if self._window_counter >= self._window_size:
+            self._end_of_window_operation()
+
         if k in self._guaranteed_top_k:
             return None
         else:
@@ -132,21 +151,31 @@ class DataStreamCachingAlgorithmCache(Cache):
         self._guaranteed_top_k = []
 
     def _end_of_window_operation(self):
-        """ At the end of every window
-
+        """ At the end of every window the top k from the space saving cache are put into the _guaranteed_top_k list.
+        The Space Saving Cache is then re-initialized with the new k which is dependent on the number of guaranteed
+        top elements. The rest of the cache is then from the LRU cache. The elements in the LRU cache carry over from
+        one period to the next.
         """
         self._window_counter = 0
         new_k = self._ss_cache.guaranteed_top_k()
+        if new_k > self._maxlen:
+            new_k = self._maxlen
         prev_k = len(self._guaranteed_top_k)
         self._guaranteed_top_k = self._ss_cache.dump()[:new_k]
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
-        if new_k < prev_k:
-            lru_cache_size = self._maxlen - new_k
+        lru_cache_size = self._maxlen - new_k
+
+        for element in self._guaranteed_top_k:
+            self._lru_cache.remove(element)
+
+        if new_k == prev_k:
+            pass  # continue with current LRU cache
+        else:
             lru_elements = self._lru_cache.dump()[:lru_cache_size]
             lru_elements.reverse()
-            self._lru_cache = LruCache(lru_cache_size)
-            for element in lru_elements:
-                self._lru_cache.put(element)
-
-
-        #TODO: include in put!!!!!!!!
+            if new_k == self._maxlen:
+                self._lru_cache = NullCache()  # empty LRU cache
+            else:
+                self._lru_cache = LruCache(lru_cache_size)
+                for element in lru_elements:
+                    self._lru_cache.put(element)
