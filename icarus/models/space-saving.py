@@ -4,6 +4,9 @@ from icarus.models import Cache
 from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc
 
+__all__ = ['SpaceSavingCache',
+           'StreamSummary']
+
 
 @register_cache_policy('SS')
 class SpaceSavingCache(Cache):
@@ -24,8 +27,8 @@ class SpaceSavingCache(Cache):
     @inheritdoc(Cache)
     def __init__(self, maxlen, monitored=-1, **kwargs):
         self._maxlen = int(maxlen)
-        if self._maxlen <= 0:
-            raise ValueError('maxlen must be positive')
+        if self._maxlen < 0:
+            raise ValueError('maxlen must be non-negative')
         self._monitored = monitored
         if self._monitored == -1:
             self._monitored = 2 * self._maxlen
@@ -44,6 +47,14 @@ class SpaceSavingCache(Cache):
 
     @inheritdoc(Cache)
     def dump(self):
+        self.dump()[:self._maxlen]
+
+    def _dump_all(self):
+        """
+        Creates a list of all monitored elements as opposed to only the cached elements.
+
+        :return: list of all monitored elements at their respective position
+        """
         # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed
         list = []
         buckets = self._cache.bucket_map.keys()
@@ -78,7 +89,7 @@ class SpaceSavingCache(Cache):
 
     @inheritdoc(Cache)
     def has(self, k):
-        return k in self.dump()[:self._maxlen]
+        return k in self.dump()
 
     @inheritdoc(Cache)
     def get(self, k):
@@ -92,8 +103,7 @@ class SpaceSavingCache(Cache):
     def put(self, k):
         """Insert an item in the cache if not already inserted.
 
-        If the element is already present in the cache, it will pushed to the
-        top of the cache.
+        If the element is already present in the cache, it's occurrence counter will be increased.
 
         Parameters
         ----------
@@ -116,6 +126,13 @@ class SpaceSavingCache(Cache):
     @inheritdoc(Cache)
     def clear(self):
         self._cache = StreamSummary(self._maxlen, self._monitored)
+
+    def guaranteed_top_k(self):
+        """
+        :return: the (maximum) number k for which the underlying StreamSummary data structure guarantees to contain
+        the top k elements
+        """
+        return self._cache.guaranteed_top_k()
 
 
 class StreamSummary:
