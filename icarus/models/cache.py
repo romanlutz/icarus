@@ -63,12 +63,12 @@ class LinkedSet(object):
             self.down = down
     
     def __init__(self, iterable=[]):
-        """Constructuor
+        """Constructor
         
         Parameters
         ----------
-        itaerable : iterable type    
-            An iterable type to inizialize the data structure.
+        iterable : iterable type
+            An iterable type to initialize the data structure.
             It must contain only one instance of each element
         """
         self._top = None

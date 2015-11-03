@@ -79,6 +79,12 @@ class TestStreamSummary(unittest.TestCase):
         self.assertEquals(ss.bucket_map[3][0].max_error, 2)
         self.assertEquals([node.max_error for node in ss.bucket_map[2]], [1, 1, 0])
 
+        self.assertEquals(ss.guaranteed_top_k(), 1) # only 10 is guaranteed
+
+        ss.add_occurrence(5)
+        ss.add_occurrence(5)
+        self.assertEquals(ss.id_to_bucket_map[5], 5)
+        self.assertEquals(ss.guaranteed_top_k(), 3) # 10, 5 and 2 are guaranteed
 
 
 

@@ -37,7 +37,7 @@ class DataStreamCachingAlgorithmCache(Cache):
         # to keep track of the windows, there is a counter and the (fixed) size of each window
         self._window_size = window_size
         if self._window_size == -1:
-            self._window_size = 100
+            self._window_size = 1000
         if self._window_size <= 0:
             raise ValueError('window_size must be positive')
         self._window_counter = 0

@@ -29,7 +29,8 @@ __all__ = [
         'StationaryWorkload',
         'GlobetraffWorkload',
         'TraceDrivenWorkload',
-        'YCSBWorkload'
+        'YCSBWorkload',
+        'DeterministicTraceDriveWorkload'
            ]
 
 
@@ -357,4 +358,91 @@ class YCSBWorkload(object):
             yield event
             req_counter += 1
         raise StopIteration()
-    
+
+@register_workload('DETERMINISTIC_TRACE_DRIVEN')
+class DeterministicTraceDrivenWorkload(object):
+    """This function takes a real trace and extracts the events.
+
+    The trace needs to consist of rows (time, receiver, content)
+
+    Parameters
+    ----------
+    topology : fnss.Topology
+        The topology to which the workload refers
+    n_warmup : int, optional
+        The number of warmup requests (i.e. requests executed to fill cache but
+        not logged)
+    n_measured : int, optional
+        The number of logged requests after the warmup
+    reqs_file : str
+        The path to the requests file
+
+    Returns
+    -------
+    events : iterator
+        Iterator of events. Each event is a 2-tuple where the first element is
+        the timestamp at which the event occurs and the second element is a
+        dictionary of event attributes.
+    """
+    def __init__(self, topology, reqs_file, n_warmup=10**5, n_measured=4*10**5, n_contents=0, **kwargs):
+        self.receivers = [v for v in topology.nodes_iter()
+                     if topology.node[v]['stack'][0] == 'receiver']
+        self.n_warmup = n_warmup
+        self.n_measured = n_measured
+        self.reqs_file = reqs_file
+        self.buffering = 64*1024*1024
+        self.n_contents = 0
+        contents = {}
+        content_id = 0
+        with open(self.reqs_file, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                self.n_contents += 1
+                content = row[2]
+                if content not in contents.keys():
+                    contents[content] = content_id
+                    content_id += 1
+        self.contents = contents.values()
+        #import logging
+        #logger = logging.getLogger('workload')
+        #logger.info(str(self.n_contents))
+        #logger.info(str(content_id))
+
+    def __iter__(self):
+        req_counter = 0
+        with open(self.reqs_file, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+
+            receivers = {}
+            receiver_id = 0
+            contents = {}
+            content_id = 0
+
+            for row in csv_reader:
+                t_event = float(row[0])
+
+                # map receiver string to number
+                #receiver = row[1]
+                #if receiver in receivers.keys():
+                #    receiver = receivers[receiver]
+                #else:
+                #    receivers[receiver] = receiver_id
+                #    receiver_id += 1
+                receiver = 0
+
+                # map content string to number
+                content = row[2]
+                if content in contents.keys():
+                    content = contents[content]
+                else:
+                    contents[content] = content_id
+                    content = content_id
+                    content_id += 1
+
+                log = (req_counter >= self.n_warmup)
+                event = {'receiver': receiver, 'content': content, 'log': log}
+                yield (t_event, event)
+                req_counter += 1
+                if(req_counter >= self.n_warmup + self.n_measured):
+                    raise StopIteration()
+            raise ValueError("Trace did not contain enough requests")

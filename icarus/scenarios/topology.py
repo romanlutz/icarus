@@ -309,7 +309,7 @@ def topology_tiscali(**kwargs):
 
 @register_topology_factory('WIDE')
 def topology_wide(**kwargs):
-    """Return a scenario based on GARR topology
+    """Return a scenario based on WIDE topology
     
     Parameters
     ----------

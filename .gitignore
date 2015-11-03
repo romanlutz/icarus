@@ -17,3 +17,6 @@ doc/source/apidoc
 
 # Ignore plot files
 *.pdf
+
+# Ignore traces
+*.resources/Live_VoD_P2P_IPTV_elkhatib/*
