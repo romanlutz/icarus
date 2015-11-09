@@ -1,3 +1,5 @@
+Currently only for one-cache scenarios! Changes are coming...
+
 # Icarus ICN caching simulator
 Icarus is a Python-based discrete-event simulator for evaluating caching
 performance in Information Centric Networks (ICN).
