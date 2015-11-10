@@ -150,13 +150,16 @@ class AdaptiveReplacementCache(Cache):
             # there are two subcases:
             # A) recency cache has _maxlen elements, i.e. it is full
             # B) recency cache is not full yet
+            # only in some cases an eviction takes place so the default value is set to None
             evicted = None
 
             # A) recency cache full
             if self._recency_cache_top.__len__() + self._recency_cache_bottom.__len__() == self._maxlen:
                 if self._recency_cache_top < self._maxlen:
-                    # TODO: find out why two evicted???
-                    evicted = [self._recency_cache_bottom.pop_bottom(), self._replace(k, self._p)]
+                    # the actual eviction is from the top of the recency or frequency cache
+                    # dropping from the bottom is not an eviction, it is merely the end of observation
+                    self._recency_cache_bottom.pop_bottom()
+                    evicted = self._replace(k, self._p)
                 else:  # bottom of recency cache is empty
                     evicted = self._recency_cache_top.pop_bottom()
 
@@ -166,9 +169,11 @@ class AdaptiveReplacementCache(Cache):
                                  self._recency_cache_top.__len__() + self._recency_cache_bottom.__len__()
                 if total_observed >= self._maxlen:
                     if total_observed == 2 * self._maxlen:
-                        # TODO: find out why no evictions in some cases???
-                        evicted = self._frequency_cache_bottom.pop_bottom()
-                    self._replace(k, self._p)
+                        self._frequency_cache_bottom.pop_bottom()
+                    evicted = self._replace(k, self._p)
+                else:
+                    # if the number of observed elements is less than the actual cache size, no removals are necessary
+                    pass
 
             self._recency_cache_top.append_top(k)
             return evicted
@@ -190,13 +195,13 @@ class AdaptiveReplacementCache(Cache):
         if k in self._frequency_cache_top:
             self._frequency_cache_top.remove(k)
             return True
-        if k in self._frequency_cache_bottom:
+        elif k in self._frequency_cache_bottom:
             self._frequency_cache_bottom.remove(k)
             return True
-        if k in self._recency_cache_top:
+        elif k in self._recency_cache_top:
             self._recency_cache_top.remove(k)
             return True
-        if k in self._recency_cache_bottom:
+        elif k in self._recency_cache_bottom:
             self._recency_cache_bottom.remove(k)
             return True
         else:
