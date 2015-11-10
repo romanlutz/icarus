@@ -23,6 +23,7 @@ __modules_to_register = [
      'icarus.models.cache',
      'icarus.models.space_saving',
      'icarus.models.data_stream_caching_algorithm',
+     'icarus.models.adaptive_replacement_cache',
      'icarus.models.strategy',
      'icarus.execution.collectors', 
      'icarus.results.readwrite',
