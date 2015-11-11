@@ -49,8 +49,8 @@ class AdaptiveReplacementCache(Cache):
 
     @inheritdoc(Cache)
     def dump(self):
-        top_parts = deepcopy(self._frequency_cache_top)
-        top_parts.extend(self._recency_cache_top)
+        top_parts = deepcopy(list(self._frequency_cache_top))
+        top_parts.extend(list(self._recency_cache_top))
         return top_parts
 
     def position(self, k):
@@ -155,7 +155,7 @@ class AdaptiveReplacementCache(Cache):
 
             # A) recency cache full
             if self._recency_cache_top.__len__() + self._recency_cache_bottom.__len__() == self._maxlen:
-                if self._recency_cache_top < self._maxlen:
+                if self._recency_cache_top.__len__() < self._maxlen:
                     # the actual eviction is from the top of the recency or frequency cache
                     # dropping from the bottom is not an eviction, it is merely the end of observation
                     self._recency_cache_bottom.pop_bottom()
@@ -214,3 +214,10 @@ class AdaptiveReplacementCache(Cache):
         self._recency_cache_bottom.clear()
         self._recency_cache_top.clear()
         self._p = 0
+
+    def get_p(self):
+        return self._p
+
+    def print_internal_dump(self):
+        print self._recency_cache_bottom, self._recency_cache_top, self._frequency_cache_bottom, self._frequency_cache_top
+
