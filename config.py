@@ -258,10 +258,10 @@ N_MEASURED_REQUESTS = 70000  # 6*10**5
 REQ_RATE = 1.0
 
 # if running a trace-driven simulation, REQ_FILE is the path to the trace file
-REQ_FILE = 'resources/Live_VoD_P2P_IPTV_elkhatib/NextSharePC_reformatted.csv'
+REQ_FILE = 'resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV_one_cache_scenario.trace'
 
 # Cache eviction policy
-CACHE_POLICY = 'SS'
+CACHE_POLICY = 'ARC'
 
 # Zipf alpha parameter, remove parameters not needed
 ALPHA = [0.8]#[0.6, 0.8, 1.0]

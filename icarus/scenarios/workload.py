@@ -403,41 +403,17 @@ class DeterministicTraceDrivenWorkload(object):
                     contents[content] = content_id
                     content_id += 1
         self.contents = contents.values()
-        #import logging
-        #logger = logging.getLogger('workload')
-        #logger.info(str(self.n_contents))
-        #logger.info(str(content_id))
+
 
     def __iter__(self):
         req_counter = 0
         with open(self.reqs_file, 'r') as csv_file:
             csv_reader = csv.reader(csv_file)
 
-            receivers = {}
-            receiver_id = 0
-            contents = {}
-            content_id = 0
-
             for row in csv_reader:
                 t_event = float(row[0])
-
-                # map receiver string to number
-                #receiver = row[1]
-                #if receiver in receivers.keys():
-                #    receiver = receivers[receiver]
-                #else:
-                #    receivers[receiver] = receiver_id
-                #    receiver_id += 1
-                receiver = 0
-
-                # map content string to number
-                content = row[2]
-                if content in contents.keys():
-                    content = contents[content]
-                else:
-                    contents[content] = content_id
-                    content = content_id
-                    content_id += 1
+                receiver = int(row[1])
+                content = int(row[2])
 
                 log = (req_counter >= self.n_warmup)
                 event = {'receiver': receiver, 'content': content, 'log': log}

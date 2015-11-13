@@ -19,4 +19,17 @@ doc/source/apidoc
 *.pdf
 
 # Ignore traces
-*.resources/Live_VoD_P2P_IPTV_elkhatib/*
+*.resources/Live_VoD_P2P_IPTV_elkhatib/NextSharePC.csv
+*.resources/Live_VoD_P2P_IPTV_elkhatib/NextSharePC.sql
+*.resources/Live_VoD_P2P_IPTV_elkhatib/NextSharePC.trace
+*.resources/Live_VoD_P2P_IPTV_elkhatib/NextSharePC_one_cache_scenario.trace
+*.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV.csv
+*.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV.sql
+*.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV.trace
+*.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV_one_cache_scenario.trace
+*.resources/IBM_traces/*
+*.resources/UMass_YouTube_traces/requests_full_youtube.trace
+*.resources/UMass_YouTube_traces/requests_full_youtube_reformatted.trace
+*.resources/UMass_YouTube_traces/requests_youtube.trace
+*.resources/UMass_YouTube_traces/requests_youtube_reformatted.trace
+*.resources/synthetic/*
