@@ -19,20 +19,11 @@ doc/source/apidoc
 *.pdf
 
 # Ignore traces
-*.resources/Live_VoD_P2P_IPTV_elkhatib/NextSharePC.csv
-*.resources/Live_VoD_P2P_IPTV_elkhatib/NextSharePC.sql
-*.resources/Live_VoD_P2P_IPTV_elkhatib/NextSharePC.trace
-*.resources/Live_VoD_P2P_IPTV_elkhatib/NextSharePC_one_cache_scenario.trace
-*.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV.csv
-*.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV.sql
-*.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV.trace
-*.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV_one_cache_scenario.trace
-*.resources/IBM_traces/requests_full_ibm.trace
-*.resources/IBM_traces/requests_ibm.trace
-*.resources/IBM_traces/requests_full_ibm_reformatted.trace
-*.resources/IBM_traces/requests_ibm_reformatted.trace
-*.resources/UMass_YouTube_traces/requests_full_youtube.trace
-*.resources/UMass_YouTube_traces/requests_full_youtube_reformatted.trace
-*.resources/UMass_YouTube_traces/requests_youtube.trace
-*.resources/UMass_YouTube_traces/requests_youtube_reformatted.trace
+*.resources/Live_VoD_P2P_IPTV_elkhatib/*
+!*.resources/Live_VoD_P2P_IPTV_elkhatib/reformat_Live_VoD_P2P_IPTV_elkhatib.py
+*.resources/IBM_traces/*
+!*.resources/IBM_traces/reformat_ibm.py
+*.resources/UMass_YouTube_traces/*
+!*.resources/UMass_YouTube_traces/reformat_youtube.py
 *.resources/synthetic/*
+!*.resources/synthetic/reformat_synthetic.py
