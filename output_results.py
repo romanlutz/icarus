@@ -34,7 +34,7 @@ def print_cache_hit_rates():
         param_values = rates[policy].keys()
         param_values.sort()
         for param_value in param_values:
-            print rates[policy][param_value], policy, param_value
+            print rates[policy][param_value]  #, policy, param_value
 
 def __main__():
     print_cache_hit_rates()
