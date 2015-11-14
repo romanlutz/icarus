@@ -245,31 +245,34 @@ DATA_COLLECTORS = [
 # Default experiment values, i.e. values shared by all experiments
 
 # Number of content objects
-N_CONTENTS = 78678  # 3*10**5
+N_CONTENTS = 60000  # 3*10**5
 
 # Number of content requests generated to pre-populate the caches
 # These requests are not logged
-N_WARMUP_REQUESTS = 8678  # 3*10**5
+N_WARMUP_REQUESTS = 15000  # 3*10**5
 
 # Number of content requests that are measured after warmup
-N_MEASURED_REQUESTS = 70000  # 6*10**5
+N_MEASURED_REQUESTS = N_CONTENTS - N_WARMUP_REQUESTS  # 6*10**5
 
 # Number of requests per second (over the whole network)
 REQ_RATE = 1.0
 
 # if running a trace-driven simulation, REQ_FILE is the path to the trace file
-REQ_FILE = 'resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV_one_cache_scenario.trace'
+REQ_FILE = 'resources/UMass_YouTube_traces/requests_full_youtube_reformatted.trace'
 
 # Cache eviction policy
-CACHE_POLICY = 'ARC'
+CACHE_POLICY =                            ['DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'ARC', 'LRU']
+CACHE_POLICY_PARAMETERS = {'window_size': [1500  , 3000  , 6000  , 9000  , 12000 , 15000 , None , None ],
+                           'monitored':   [500   , 500   , 500   , 500   , 500   , 500   , None , None ]}
 
 # Zipf alpha parameter, remove parameters not needed
 ALPHA = [0.8]#[0.6, 0.8, 1.0]
 
 # Total size of network cache as a fraction of content population
-# Remove sizes not needed
-NETWORK_CACHE = [0.002]
-
+# If the cache size is a static number (e.g. 100), set NETWORK_CACHE_FRACTION to False
+# In case the cache size is given as a natural number, set it to the cumulative total of the whole network
+NETWORK_CACHE = [100]
+NETWORK_CACHE_FRACTION = False
 
 # List of topologies tested
 # Topology implementations are located in ./icarus/scenarios/topology.py
@@ -316,23 +319,27 @@ default['workload'] = {'name':       'DETERMINISTIC_TRACE_DRIVEN', #'STATIONARY'
                        'reqs_file':  REQ_FILE}
 default['cache_placement']['name'] = 'UNIFORM'
 default['content_placement']['name'] = 'UNIFORM'
-default['cache_policy']['name'] = CACHE_POLICY
 
 # Create experiments multiplexing all desired parameters
 for alpha in ALPHA:
     for strategy in STRATEGIES:
         for topology in TOPOLOGIES:
             for network_cache in NETWORK_CACHE:
-                experiment = copy.deepcopy(default)
-                experiment['workload']['alpha'] = alpha
-                experiment['strategy']['name'] = strategy
-                experiment['topology']['name'] = topology
-                experiment['cache_placement']['network_cache'] = network_cache
-                experiment['desc'] = "Alpha: %s, strategy: %s, topology: %s, network cache: %s" \
-                                     % (str(alpha), strategy, topology, str(network_cache))
+                for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
+                    experiment = copy.deepcopy(default)
+                    experiment['workload']['alpha'] = alpha
+                    experiment['strategy']['name'] = strategy
+                    experiment['topology']['name'] = topology
+                    experiment['cache_policy']['name'] = cache_policy
+                    for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
+                        experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
+                    experiment['cache_placement']['network_cache'] = network_cache
+                    experiment['cache_placement']['network_cache_fraction'] = NETWORK_CACHE_FRACTION
+                    experiment['desc'] = "Alpha: %s, strategy: %s, topology: %s, network cache: %s" \
+                                         % (str(alpha), strategy, topology, str(network_cache))
 
-                if topology in TOPOLOGY_PARAMS.keys():
-                    for topology_param in TOPOLOGY_PARAMS[topology].keys():
-                        experiment['topology'][topology_param] = TOPOLOGY_PARAMS[topology][topology_param]
+                    if topology in TOPOLOGY_PARAMS.keys():
+                        for topology_param in TOPOLOGY_PARAMS[topology].keys():
+                            experiment['topology'][topology_param] = TOPOLOGY_PARAMS[topology][topology_param]
 
-                EXPERIMENT_QUEUE.append(experiment)
+                    EXPERIMENT_QUEUE.append(experiment)

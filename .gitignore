@@ -27,7 +27,10 @@ doc/source/apidoc
 *.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV.sql
 *.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV.trace
 *.resources/Live_VoD_P2P_IPTV_elkhatib/NextShareTV_one_cache_scenario.trace
-*.resources/IBM_traces/*
+*.resources/IBM_traces/requests_full_ibm.trace
+*.resources/IBM_traces/requests_ibm.trace
+*.resources/IBM_traces/requests_full_ibm_reformatted.trace
+*.resources/IBM_traces/requests_ibm_reformatted.trace
 *.resources/UMass_YouTube_traces/requests_full_youtube.trace
 *.resources/UMass_YouTube_traces/requests_full_youtube_reformatted.trace
 *.resources/UMass_YouTube_traces/requests_youtube.trace

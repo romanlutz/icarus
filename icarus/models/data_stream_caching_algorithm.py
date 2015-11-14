@@ -4,6 +4,7 @@ from icarus.models import Cache, LruCache, SpaceSavingCache, NullCache
 from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc
 
+
 __all__ = ['DataStreamCachingAlgorithmCache']
 
 @register_cache_policy('DSCA')
