@@ -198,7 +198,7 @@ can inspect the source code which is well organized and documented:
 """
 from multiprocessing import cpu_count
 from collections import deque
-import copy
+import copy, csv
 from icarus.util import Tree
 
 ############################## GENERAL SETTINGS ##############################
@@ -244,20 +244,21 @@ DATA_COLLECTORS = [
 
 # Default experiment values, i.e. values shared by all experiments
 
-# Number of content objects
-N_CONTENTS = 60000  # 3*10**5
-
 # Number of requests per second (over the whole network)
 REQ_RATE = 1.0
 
 # if running a trace-driven simulation, REQ_FILE is the path to the trace file
-REQ_FILE = 'resources/IBM_traces/requests_full_ibm_reformatted.trace'
+traces = []
+with open('resources/trace_overview.csv', 'r') as trace_file:
+    csv_reader = csv.reader(trace_file)
+    for line in csv_reader:
+        traces.append((line[0], int(line[1])))
 
 # Cache eviction policy
 CACHE_POLICY =                            ['DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'ARC', 'LRU']
 CACHE_POLICY_PARAMETERS = {'window_size': [1500  , 3000  , 6000  , 9000  , 12000 , 15000 , None , None ],
                            'monitored':   [500   , 500   , 500   , 500   , 500   , 500   , None , None ],
-                           'warmup':      [1500  , 3000  , 6000  , 9000  , 12000 , 15000 , 1500 , 1500 ]}
+                           'warmup':      [0     , 0     , 0     , 0     , 0     , 0     , 0    , 0    ]}
 
 # Zipf alpha parameter, remove parameters not needed
 ALPHA = [0.8]#[0.6, 0.8, 1.0]
@@ -279,7 +280,7 @@ TOPOLOGIES =  [
         #'TISCALI',
               ]
 
-TOPOLOGY_PARAMS = {'PATH': {'n': 3}}
+TOPOLOGY_PARAMS = {'PATH': {'n': 3, 'delay': 0}}
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
@@ -307,37 +308,37 @@ EXPERIMENT_QUEUE = deque()
 
 
 # Create experiments multiplexing all desired parameters
-for alpha in ALPHA:
-    for strategy in STRATEGIES:
-        for topology in TOPOLOGIES:
-            for network_cache in NETWORK_CACHE:
-                for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
-                    experiment = Tree()
-                    experiment['workload'] = {'name':    'DETERMINISTIC_TRACE_DRIVEN',
-                                           'n_contents': N_CONTENTS,
-                                           'n_warmup':   CACHE_POLICY_PARAMETERS['warmup'][cache_policy_index],
-                                           'n_measured': N_CONTENTS - CACHE_POLICY_PARAMETERS['warmup'][cache_policy_index],
-                                           'rate':       REQ_RATE,
-                                           'reqs_file':  REQ_FILE}
-                    experiment['cache_placement']['name'] = 'UNIFORM'
-                    experiment['content_placement']['name'] = 'UNIFORM'
-                    experiment['workload']['alpha'] = alpha
-                    experiment['strategy']['name'] = strategy
+for trace_name, N_CONTENTS in traces:
+    for alpha in ALPHA:
+        for strategy in STRATEGIES:
+            for topology in TOPOLOGIES:
+                for network_cache in NETWORK_CACHE:
+                    for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
+                        experiment = Tree()
+                        experiment['workload'] = {'name':    'DETERMINISTIC_TRACE_DRIVEN',
+                                               'n_contents': N_CONTENTS,
+                                               'n_warmup':   CACHE_POLICY_PARAMETERS['warmup'][cache_policy_index],
+                                               'n_measured': N_CONTENTS - CACHE_POLICY_PARAMETERS['warmup'][cache_policy_index],
+                                               'rate':       REQ_RATE,
+                                               'reqs_file':  'resources/' + trace_name
+                                              }
+                        experiment['cache_placement']['name'] = 'UNIFORM'
+                        experiment['content_placement']['name'] = 'UNIFORM'
+                        experiment['workload']['alpha'] = alpha
+                        experiment['strategy']['name'] = strategy
 
-                    experiment['topology']['name'] = topology
-                    if topology in TOPOLOGY_PARAMS.keys():
-                        for topology_param in TOPOLOGY_PARAMS[topology].keys():
-                            experiment['topology'][topology_param] = TOPOLOGY_PARAMS[topology][topology_param]
+                        experiment['topology']['name'] = topology
+                        if topology in TOPOLOGY_PARAMS.keys():
+                            for topology_param in TOPOLOGY_PARAMS[topology].keys():
+                                experiment['topology'][topology_param] = TOPOLOGY_PARAMS[topology][topology_param]
 
-                    experiment['cache_policy']['name'] = cache_policy
-                    for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
-                        if param_name != 'warmup':
-                            experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
-                    experiment['cache_placement']['network_cache'] = network_cache
-                    experiment['cache_placement']['network_cache_fraction'] = NETWORK_CACHE_FRACTION
-                    experiment['desc'] = "Alpha: %s, strategy: %s, topology: %s, network cache: %s" \
-                                         % (str(alpha), strategy, topology, str(network_cache))
+                        experiment['cache_policy']['name'] = cache_policy
+                        for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
+                            if param_name != 'warmup':
+                                experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
+                        experiment['cache_placement']['network_cache'] = network_cache
+                        experiment['cache_placement']['network_cache_fraction'] = NETWORK_CACHE_FRACTION
+                        experiment['desc'] = "Alpha: %s, strategy: %s, topology: %s, network cache: %s" \
+                                             % (str(alpha), strategy, topology, str(network_cache))
 
-
-
-                    EXPERIMENT_QUEUE.append(experiment)
+                        EXPERIMENT_QUEUE.append(experiment)

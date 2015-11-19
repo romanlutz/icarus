@@ -980,3 +980,24 @@ class TestTtlCache(unittest.TestCase):
         self.assertFalse(c.has(1))
         c.put(3)
         self.assertFalse(ttl_c.has(3))
+
+    def test_ibm(self):
+        import csv
+        c = cache.LruCache(100)
+        cache_hits = 0
+        contents = 0
+
+        with open('../../../resources/IBM_traces/requests_full_ibm.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[0])
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+        self.assertEquals([contents, cache_hits], [60000, 37764])
+
+
