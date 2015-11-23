@@ -251,16 +251,20 @@ REQ_RATE = 1.0
 traces = []
 with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
+    i = 1
     for line in csv_reader:
-        traces.append((line[0], int(line[1])))
+        if i not in range(7, 30):
+            traces.append((line[0], int(line[1])))
+        i += 1
+
 
 # Cache eviction policy
-CACHE_POLICY =                            ['DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'ARC', 'LRU']
-CACHE_POLICY_PARAMETERS = {'window_size': [1500  , 3000  , 6000  , 9000  , 12000 , 15000 , None , None ],
-                           'monitored':   [500   , 500   , 500   , 500   , 500   , 500   , None , None ],
-                           'warmup':      [0     , 0     , 0     , 0     , 0     , 0     , 0    , 0    ]}
+CACHE_POLICY =                            ['DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'ARC', 'LRU']
+CACHE_POLICY_PARAMETERS = {'window_size': [1500  , 3000  , 6000  , 9000  , 12000 , 15000 , 18000 , 20000 , None , None ],
+                           'monitored':   [500   , 500   , 500   , 500   , 500   , 500   , 500   , 500   , None , None ],
+                           'warmup':      [0     , 0     , 0     , 0     , 0     , 0     , 0     , 0     , 0    , 0    ]}
 
-# Zipf alpha parameter, remove parameters not needed
+# Zipf alpha parameter for non-trace-driven simulation
 ALPHA = [0.8]#[0.6, 0.8, 1.0]
 
 # Total size of network cache as a fraction of content population

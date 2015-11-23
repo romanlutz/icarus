@@ -1,5 +1,6 @@
 __author__ = 'romanlutz'
 from icarus.results.readwrite import read_results_pickle
+import csv
 
 def print_results_full():
     result = read_results_pickle('results.pickle')
@@ -37,16 +38,14 @@ def print_cache_hit_rates():
 
 
 
-    traces = ['IBM_traces/requests_full_ibm_reformatted.trace',
-          'IBM_traces/requests_ibm_reformatted.trace',
-          'UMass_YouTube_traces/requests_full_youtube_reformatted.trace',
-          'UMass_YouTube_traces/requests_youtube_reformatted.trace',
-          'Live_VoD_P2P_IPTV_elkhatib/NextSharePC_one_cache_scenario.trace',
-          'Live_VoD_P2P_IPTV_elkhatib/NextShareTV_one_cache_scenario.trace'
-         ]
-    traces.extend(['synthetic/mult_zip_run%i_reformatted.trace' % x for x in range(1, 11)])
-    traces.append('synthetic/zip0.8_300k_requests_reformatted.trace')
-    traces.append('synthetic/zip0.8_reformatted.trace')
+    traces = []
+    with open('resources/trace_overview.csv', 'r') as trace_file:
+        csv_reader = csv.reader(trace_file)
+        i = 1
+        for line in csv_reader:
+            if i not in range(7, 30):
+                traces.append(line[0])
+            i += 1
 
     print ", ".join(traces)
 

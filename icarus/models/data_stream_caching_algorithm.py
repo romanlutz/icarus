@@ -9,10 +9,10 @@ __all__ = ['DataStreamCachingAlgorithmCache']
 
 @register_cache_policy('DSCA')
 class DataStreamCachingAlgorithmCache(Cache):
-    """Stream Caching Algorithm (SCA) eviction policy as proposed in
+    """Data Stream Caching Algorithm (DSCA) eviction policy as proposed in
 
     Antonio A. Rocha, Mostafa Dehghan, Theodoros Salonidis, Ting He and Don Towsley
-    "SCA: A Data Stream Caching Algorithm"
+    "DSCA: A Data Stream Caching Algorithm"
     CoNEXT workshop CCDWN'15
 
     SCA is a mix between LRU and Space Saving. It uses Space Saving's property of guaranteeing a certain number k

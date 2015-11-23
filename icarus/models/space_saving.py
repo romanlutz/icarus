@@ -319,8 +319,8 @@ class StreamSummary:
             next_max_occurrences = buckets[next_bucket_index]
             if curr_guaranteed_occurrences < next_max_occurrences:
                 break
-            else:
-                guaranteed_counter += 1
+
+            guaranteed_counter += 1
 
             curr_bucket_index = next_bucket_index
             curr_list_index = next_list_index

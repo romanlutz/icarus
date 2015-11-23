@@ -981,7 +981,7 @@ class TestTtlCache(unittest.TestCase):
         c.put(3)
         self.assertFalse(ttl_c.has(3))
 
-    def test_ibm(self):
+    def test_lru_ibm(self):
         import csv
         c = cache.LruCache(100)
         cache_hits = 0
@@ -999,5 +999,6 @@ class TestTtlCache(unittest.TestCase):
                     c.put(content)
 
         self.assertEquals([contents, cache_hits], [60000, 37764])
+
 
 
