@@ -159,11 +159,13 @@ class DataStreamCachingAlgorithmCache(Cache):
         one period to the next.
         """
         self._window_counter = 0
-        new_k = self._ss_cache.guaranteed_top_k()
+        new_guaranteed_indices = self._ss_cache.guaranteed_top_k(self._maxlen)
+        new_k = new_guaranteed_indices.__len__()
         if new_k > self._maxlen:
             new_k = self._maxlen
         prev_k = len(self._guaranteed_top_k)
-        self._guaranteed_top_k = self._ss_cache.dump()[:new_k]
+        whole_dump = self._ss_cache.dump()
+        self._guaranteed_top_k = [whole_dump[i] for i in new_guaranteed_indices]
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
         lru_cache_size = self._maxlen - new_k
 

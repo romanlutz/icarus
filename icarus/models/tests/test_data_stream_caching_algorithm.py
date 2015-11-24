@@ -69,7 +69,7 @@ class TestStreamSummary(unittest.TestCase):
                     print 'number of requests so far: ', contents, 'next:', content
                     c.print_caches()
                     print ''
-                    print c._ss_cache.guaranteed_top_k()
+                    print c._ss_cache.guaranteed_top_k(100)
 
                 if c.get(content):
                     cache_hits += 1
@@ -81,4 +81,4 @@ class TestStreamSummary(unittest.TestCase):
                     c.print_caches()
                     print ''
 
-        self.assertEquals([contents, cache_hits], [60000, 38780])
+        self.assertEquals([contents, cache_hits], [60000, 38808])

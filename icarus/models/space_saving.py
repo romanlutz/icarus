@@ -136,12 +136,12 @@ class SpaceSavingCache(Cache):
     def clear(self):
         self._cache = StreamSummary(self._maxlen, self._monitored)
 
-    def guaranteed_top_k(self):
+    def guaranteed_top_k(self, k):
         """
         :return: the (maximum) number k for which the underlying StreamSummary data structure guarantees to contain
         the top k elements
         """
-        return self._cache.guaranteed_top_k()
+        return self._cache.guaranteed_top_k(k)
 
 
 class StreamSummary:
@@ -303,28 +303,37 @@ class StreamSummary:
 
             return node
 
-    def guaranteed_top_k(self):
+    def guaranteed_top_k(self, k):
+        """
+        Checks for the elements whose guaranteed frequency is at least as high as the maximum frequency of the k+1th
+        element in the data structure.
+
+        Parameters
+        ----------
+        k - the number of considered elements
+
+        Returns
+        -------
+        list of indices where the minimum guaranteed number of occurrences is greater or equal than the maximum
+        number of occurrences of the k+1th element.
+
+        """
         buckets = self.bucket_map.keys()
         buckets.sort()
         curr_bucket_index = len(buckets) - 1
         top_bucket_length = len(self.bucket_map[buckets[curr_bucket_index]])
         next_bucket_index = curr_bucket_index if top_bucket_length > 1 else curr_bucket_index - 1
         curr_list_index = top_bucket_length - 1
-        curr_guaranteed_occurrences = self.__guaranteed_occurrences(buckets, curr_bucket_index, curr_list_index)
-        next_list_index = curr_list_index - 1 if top_bucket_length > 1 else len(
-            self.bucket_map[buckets[next_bucket_index]]) - 1
-        guaranteed_counter = 0
+        next_list_index = curr_list_index - 1 if top_bucket_length > 1 \
+                                              else len(self.bucket_map[buckets[next_bucket_index]]) - 1
 
-        for _ in range(self.size - 1):
-            next_max_occurrences = buckets[next_bucket_index]
-            if curr_guaranteed_occurrences < next_max_occurrences:
-                break
+        min_guaranteed_frequency = []
 
-            guaranteed_counter += 1
+        for i in range(k):
+            min_guaranteed_frequency.append(self.__guaranteed_occurrences(buckets, curr_bucket_index, curr_list_index))
 
             curr_bucket_index = next_bucket_index
             curr_list_index = next_list_index
-            curr_guaranteed_occurrences = self.__guaranteed_occurrences(buckets, curr_bucket_index, curr_list_index)
             if curr_list_index == 0:
                 # switch to next bucket
                 next_bucket_index = curr_bucket_index - 1
@@ -333,7 +342,14 @@ class StreamSummary:
                 # move to next element within same bucket
                 next_list_index = curr_list_index - 1
 
-        return guaranteed_counter
+        max_frequency = buckets[next_bucket_index]
+        guaranteed_indices = []
+
+        for i in range(k):
+            if min_guaranteed_frequency[i] >= max_frequency:
+                guaranteed_indices.append(i)
+
+        return guaranteed_indices
 
     def __guaranteed_occurrences(self, buckets, bucket_index, list_index):
         return buckets[bucket_index] - self.bucket_map[buckets[bucket_index]][list_index].max_error
