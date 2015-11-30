@@ -997,6 +997,13 @@ class SegmentedLruCache(Cache):
         for s in self._segment:
             s.clear()
 
+    def get_segment_by_element(self, k):
+        seg = self._cache[k]
+        return seg, list(iter(self._segment[seg]))
+
+    def get_segment_by_id(self, id):
+        return list(iter(self._segment[id]))
+
 
 @register_cache_policy('IN_CACHE_LFU')
 class InCacheLfuCache(Cache):
