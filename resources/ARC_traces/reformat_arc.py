@@ -3,24 +3,20 @@ __author__ = 'romanlutz'
 import csv
 
 def reformat(filename):
-    requests = []
-    with open(filename, 'r') as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=' ')
-
-        for row in csv_reader:
-            content = row[3]
-
-            event = {'receiver': 0, 'content': content}
-            requests.append(event)
-
     extension = '_reformatted'
-
     with open(filename[:-8] + extension + '.trace', 'wb') as file:
         writer = csv.writer(file, quoting = csv.QUOTE_NONE)
-        time = 0
+        with open(filename, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=' ')
+            time = 0
 
-        for event in requests:
-            writer.writerow((time, event['receiver'], event['content']))
+            for row in csv_reader:
+                content = int(row[0])
+                until = int(row[1])
+
+                for j in range(0, until):
+                    writer.writerow((time, 0, content+j))
+
             time += 1
 
 for i in range(1, 15):

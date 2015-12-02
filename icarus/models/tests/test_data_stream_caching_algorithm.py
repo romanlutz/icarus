@@ -82,3 +82,27 @@ class TestStreamSummary(unittest.TestCase):
                     print ''
 
         self.assertEquals([contents, cache_hits], [60000, 38808])
+
+
+    # currently wrong results
+    def test_dsca_arc_p1(self):
+        import csv
+        c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
+        cache_hits = 0
+        contents = 0
+
+        with open('../../../resources/ARC_traces/P1_reformatted.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[2])
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+                if contents % 100000 == 0:
+                    print contents, float(contents)/float(1814969)
+
+        self.assertEquals([contents, cache_hits], [0, 0])
