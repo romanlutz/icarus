@@ -28,6 +28,7 @@ for trace_path in traces:
                 objects.append(object)
 
         data[trace_path] = {'requests': requests, 'objects': len(objects)}
+        print data[trace_path]
 
 print traces
 for trace in traces:
