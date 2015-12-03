@@ -181,7 +181,7 @@ class StreamSummary:
 
     def add_occurrence(self, id):
         # node already exists
-        if id in self.id_to_bucket_map.keys():
+        if id in self.id_to_bucket_map:
             bucket = self.id_to_bucket_map[id]
             node, index = self.index(bucket=bucket, id=id)
             del self.bucket_map[bucket][index]
@@ -236,7 +236,7 @@ class StreamSummary:
     def insert_node_into_bucket(self, node, bucket):
         self.id_to_bucket_map[node.id] = bucket
         # if bucket exists, insert node at corresponding index
-        if bucket in self.bucket_map.keys():
+        if bucket in self.bucket_map:
             self.insert_at_correct_index(bucket, node)
         # if bucket doesn't exist, create bucket
         else:
@@ -261,7 +261,7 @@ class StreamSummary:
         return None, None
 
     def remove(self, id):
-        if not (id in self.id_to_bucket_map.keys()):
+        if not (id in self.id_to_bucket_map):
             return False
         bucket = self.id_to_bucket_map[id]
         del self.id_to_bucket_map[id]

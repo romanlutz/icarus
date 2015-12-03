@@ -17,13 +17,13 @@ def reformat(filename):
                 content = row[1]
                 i+=1
 
-                if content not in contents.keys():
+                if content not in contents:
                     content_id += 1
                     contents[content] = content_id
                 writer.writerow((time, 0, contents[content]))
 
                 if i % 10000 == 0:
-                    print float(i)/float(14885146)
+                    print float(i)/float(14885146), len(contents)
 
 
 reformat('requests.txt')
