@@ -10,11 +10,8 @@ For example: 10.3, 0, 15 means that after 10.3 time units object 15 was requeste
 traces = []
 with open('trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
-    i = 1
     for line in csv_reader:
-        if i not in range(8, 30):
-            traces.append(line[0])
-        i += 1
+        traces.append(line[0])
 
 data = {}
 for trace_path in traces:
@@ -30,7 +27,7 @@ for trace_path in traces:
             if object not in objects:
                 objects[object] = True
 
-            if requests % 10000 == 0:
+            if requests % 100000 == 0:
                 print trace_path, requests
 
         data[trace_path] = {'requests': requests, 'objects': len(objects)}

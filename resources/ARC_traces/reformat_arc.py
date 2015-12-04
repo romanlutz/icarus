@@ -17,7 +17,10 @@ def reformat(filename):
                 for j in range(0, until):
                     writer.writerow((time, 0, content+j))
 
-            time += 1
+                time += 1
+
+                if time % 100000 == 0:
+                    print filename, time
 
 for i in range(1, 15):
     reformat('P%i.lis.txt' % i)
