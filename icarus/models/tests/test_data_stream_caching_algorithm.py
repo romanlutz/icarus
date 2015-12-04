@@ -15,6 +15,7 @@ else:
 del sys
 
 from icarus.models.data_stream_caching_algorithm import DataStreamCachingAlgorithmCache
+from icarus.models.space_saving import SpaceSavingCache
 
 class TestStreamSummary(unittest.TestCase):
 
@@ -106,3 +107,24 @@ class TestStreamSummary(unittest.TestCase):
                     print contents, float(contents)/float(1814969)
 
         self.assertEquals([contents, cache_hits], [0, 0])
+
+    def test_small_sliding_window(self):
+        c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
+        cache_hits = 0
+        contents = 0
+        input_stream = [1,2,3,4,2,3,2,4,2,3,3,2,4,4,4,3,3,3,4,5,7,6,6,1,7,6,5,4,4,3,3,4,5,6,6,6,5,7,6,4,42,2,4,5,4,3,3,4,5,6,6,66,43,3,5,6,6,0]
+        window_cache = SpaceSavingCache(5, monitored=5)
+        cumulative_cache = SpaceSavingCache(5, monitored=5)
+        window_size = 20
+
+        for i, input_element in enumerate(input_stream, start=1):
+            cumulative_cache.put(input_element)
+            window_cache.put(input_element)
+
+            if i % window_size == 0:
+                print 'window cache:'
+                window_cache.print_buckets()
+                window_cache.clear()
+                print 'cumulative cache:'
+                cumulative_cache.print_buckets()
+                print ''
