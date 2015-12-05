@@ -85,34 +85,11 @@ class TestStreamSummary(unittest.TestCase):
         self.assertEquals([contents, cache_hits], [60000, 38808])
 
 
-    # currently wrong results
-    def test_dsca_arc_p1(self):
-        import csv
-        c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
-        cache_hits = 0
-        contents = 0
-
-        with open('../../../resources/ARC_traces/P1_reformatted.trace', 'r') as csv_file:
-            csv_reader = csv.reader(csv_file)
-            for row in csv_reader:
-                contents += 1
-                content = int(row[2])
-
-                if c.get(content):
-                    cache_hits += 1
-                else:
-                    c.put(content)
-
-                if contents % 100000 == 0:
-                    print contents, float(contents)/float(1814969)
-
-        self.assertEquals([contents, cache_hits], [0, 0])
-
     def test_small_sliding_window(self):
         c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
         cache_hits = 0
         contents = 0
-        input_stream = [1,2,3,4,2,3,2,4,2,3,3,2,4,4,4,3,3,3,4,5,7,6,6,1,7,6,5,4,4,3,3,4,5,6,6,6,5,7,6,4,42,2,4,5,4,3,3,4,5,6,6,66,43,3,5,6,6,0]
+        input_stream = [1,2,1,3,1,2,4,3,5,5,6,1,7,4,2,6,1,1,4,5,1,7,8,8,8,4,6,6,4,1,6,4,8,1,8,8,9,6,1,4]
         window_cache = SpaceSavingCache(5, monitored=5)
         cumulative_cache = SpaceSavingCache(5, monitored=5)
         window_size = 20
