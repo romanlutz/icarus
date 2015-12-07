@@ -71,21 +71,29 @@ class AdaptiveReplacementCache(Cache):
         position : int
             The current position of the item in the cache
         """
-        cache = self.dump()
-        if k not in cache:
+        if k in self._frequency_cache_top:
+            return self._frequency_cache_top.index(k)
+        elif k in self._recency_cache_top:
+            return self._recency_cache_top.index(k)
+        else:
             raise ValueError('The item %s is not in the cache' % str(k))
-        return cache.index(k)
+
 
     @inheritdoc(Cache)
     def has(self, k):
-        return k in self.dump()
+        if k in self._frequency_cache_top:
+            return True
+        elif k in self._recency_cache_top:
+            return True
+        else:
+            return False
 
     @inheritdoc(Cache)
     def get(self, k):
         # two basic cases:
         # 1. cache hit
         # 2. cache miss
-        if k not in self.dump():
+        if not self.has(k):
             # cache miss - do not change state of cache (subsequent put() operation can do that)
             return False
         else:

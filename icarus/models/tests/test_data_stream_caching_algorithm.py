@@ -105,7 +105,7 @@ class TestStreamSummary(unittest.TestCase):
                 if contents % 100000 == 0:
                     print contents, 14885146, float(contents)/float(14885146)
 
-        self.assertEquals([contents, cache_hits], [14885146, 1640707])
+        self.assertEquals([contents, cache_hits], [14885146, 2205377])
 
 
     def test_small_sliding_window(self):

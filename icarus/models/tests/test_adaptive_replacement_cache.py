@@ -84,3 +84,26 @@ class TestAdaptiveReplacementCache(unittest.TestCase):
         self.assertEquals(c.put(4), 2)
         self.assertEquals(c.dump(), [4, 5, 7, 6])
         self.assertEquals(c.get_p(), 3)
+
+
+    def test_arc_fastly(self):
+        import csv
+        c = AdaptiveReplacementCache(100)
+        cache_hits = 0
+        contents = 0
+
+        with open('../../../resources/Fastly_traces/requests_reformatted.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[2])
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+                if contents % 100000 == 0:
+                    print contents, 14885146, float(contents)/float(14885146)
+
+        self.assertEquals([contents, cache_hits], [14885146, 2205377])
