@@ -85,6 +85,29 @@ class TestStreamSummary(unittest.TestCase):
         self.assertEquals([contents, cache_hits], [60000, 38808])
 
 
+    def test_dsca_fastly(self):
+        import csv
+        c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
+        cache_hits = 0
+        contents = 0
+
+        with open('../../../resources/Fastly_traces/requests_reformatted.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[2])
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+                if contents % 100000 == 0:
+                    print contents, 14885146, float(contents)/float(14885146)
+
+        self.assertEquals([contents, cache_hits], [14885146, 1640707])
+
+
     def test_small_sliding_window(self):
         c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
         cache_hits = 0
@@ -105,3 +128,5 @@ class TestStreamSummary(unittest.TestCase):
                 print 'cumulative cache:'
                 cumulative_cache.print_buckets()
                 print ''
+
+
