@@ -56,8 +56,7 @@ class AdaptiveReplacementCache(Cache):
     def position(self, k):
         """Return the current position of an item in the cache. Position *0*
         refers to the head of the frequency cache (i.e. most recently used item
-        that was used at least twice), while position *maxlen - 1* refers to the
-        tail of the cache (i.e. the least recently used item of the cached items).
+        that was used at least twice) if there is an element in the frequency cache.
 
         This method does not change the internal state of the cache.
 
@@ -74,7 +73,7 @@ class AdaptiveReplacementCache(Cache):
         if k in self._frequency_cache_top:
             return self._frequency_cache_top.index(k)
         elif k in self._recency_cache_top:
-            return self._recency_cache_top.index(k)
+            return self._recency_cache_top.index(k) + self._frequency_cache_top.__len__()
         else:
             raise ValueError('The item %s is not in the cache' % str(k))
 

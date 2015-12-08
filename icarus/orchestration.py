@@ -188,7 +188,12 @@ def run_scenario(settings, params, curr_exp, n_exp):
         
         # Copy parameters so that they can be manipulated
         tree = copy.deepcopy(params)
-        
+
+        # Text description of the scenario run to print on screen
+        scenario = tree['desc'] if 'desc' in tree else "Description N/A"
+
+        logger.info('Experiment %d/%d | Preparing scenario: %s', curr_exp, n_exp, scenario)
+
         # Set topology
         topology_spec = tree['topology']
         topology_name = topology_spec.pop('name')
@@ -197,6 +202,7 @@ def run_scenario(settings, params, curr_exp, n_exp):
                          % topology_name)
             return None
         topology = TOPOLOGY_FACTORY[topology_name](**topology_spec)
+        logger.info('Experiment %d/%d | Preparing scenario: topology created, %s', curr_exp, n_exp, scenario)
 
         workload_spec = tree['workload']
         workload_name = workload_spec.pop('name')
@@ -205,6 +211,8 @@ def run_scenario(settings, params, curr_exp, n_exp):
                          % workload_name)
             return None
         workload = WORKLOAD[workload_name](topology, **workload_spec)
+        logger.info('Experiment %d/%d | Preparing scenario: workload created, %s', curr_exp, n_exp, scenario)
+
         
         # Assign caches to nodes
         if 'cache_placement' in tree:
@@ -223,6 +231,8 @@ def run_scenario(settings, params, curr_exp, n_exp):
             else:
                 cachepl_spec['cache_budget'] = network_cache
             CACHE_PLACEMENT[cachepl_name](topology, **cachepl_spec)
+        logger.info('Experiment %d/%d | Preparing scenario: cache placement finished, %s', curr_exp, n_exp, scenario)
+
 
         # Assign contents to sources
         # If there are many contents, after doing this, performing operations
@@ -235,6 +245,8 @@ def run_scenario(settings, params, curr_exp, n_exp):
                          % contpl_name)
             return None
         CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
+        logger.info('Experiment %d/%d | Preparing scenario: content placement finished, %s', curr_exp, n_exp, scenario)
+
 
         # caching and routing strategy definition
         strategy = tree['strategy']
@@ -251,23 +263,18 @@ def run_scenario(settings, params, curr_exp, n_exp):
         # Configuration parameters of network model
         netconf = tree['netconf']
         
-        # Text description of the scenario run to print on screen
-        scenario = tree['desc'] if 'desc' in tree else "Description N/A"
-
-        logger.info('Experiment %d/%d | Preparing scenario: %s', curr_exp, n_exp, scenario)
-        
         if any(m not in DATA_COLLECTOR for m in metrics):
             logger.error('There are no implementations for at least one data collector specified')
             return None
     
         collectors = {m: {} for m in metrics}
 
-        logger.info('Experiment %d/%d | Start simulation', curr_exp, n_exp)
-        results = exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors)
+        logger.info('Experiment %d/%d | Start simulation, %s', curr_exp, n_exp, scenario)
+        results = exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors, scenario)
 
         duration = time.time() - start_time
-        logger.info('Experiment %d/%d | End simulation | Duration %s.', 
-                    curr_exp, n_exp, timestr(duration, True))
+        logger.info('Experiment %d/%d | End simulation %s | Duration %s.',
+                    curr_exp, n_exp, scenario, timestr(duration, True))
         return (params, results, duration)
     except KeyboardInterrupt:
         logger.error('Received keyboard interrupt. Terminating')

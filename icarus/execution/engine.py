@@ -7,12 +7,17 @@ and providing them to a strategy instance.
 """
 from icarus.execution import NetworkModel, NetworkView, NetworkController, CollectorProxy
 from icarus.registry import DATA_COLLECTOR, STRATEGY
+import logging
+
 
 
 __all__ = ['exec_experiment']
 
+logger = logging.getLogger('execution')
 
-def exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors):
+
+
+def exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors, desc):
     """Execute the simulation of a specific scenario.
     
     Parameters
@@ -55,7 +60,14 @@ def exec_experiment(topology, workload, netconf, strategy, cache_policy, collect
     strategy_name = strategy['name']
     strategy_args = {k: v for k, v in strategy.items() if k != 'name'}
     strategy_inst = STRATEGY[strategy_name](view, controller, **strategy_args)
-    
+
+    processed_events = 0
+
     for time, event in workload:
         strategy_inst.process_event(time, **event)
+        processed_events += 1
+
+        if processed_events % 1000000 == 0:
+            logger.info('Progress: %s, %f' % (desc, float(processed_events) / float(workload.n_contents)))
+
     return collector.results()

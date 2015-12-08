@@ -33,3 +33,28 @@ class TestKLRU(unittest.TestCase):
                     c.put(content)
 
         self.assertEquals([contents, cache_hits], [60000, 39136])
+
+    def test_klru_fastly(self):
+        import csv
+        c = [KLruCache(100, segments=2, cached_segments=1),
+             KLruCache(100, segments=3, cached_segments=1),
+             KLruCache(100, segments=3, cached_segments=2)]
+        cache_hits = [0]*3
+        contents = 0
+
+        with open('../../../resources/Fastly_traces/requests_reformatted.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[2])
+
+                for i, cache in enumerate(c):
+                    if cache.get(content):
+                        cache_hits[i] += 1
+                    else:
+                        cache.put(content)
+
+                if contents % 100000 == 0:
+                    print contents, 14885146, float(contents)/float(14885146)
+
+        self.assertEquals(cache_hits, [2677248, 2660332, 2588451])

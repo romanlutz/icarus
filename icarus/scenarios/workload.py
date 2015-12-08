@@ -392,14 +392,15 @@ class DeterministicTraceDrivenWorkload(object):
         self.reqs_file = reqs_file
         self.buffering = 64*1024*1024
         self.n_contents = 0
-        self.contents = []
+        self.contents = {}
         with open(self.reqs_file, 'r') as csv_file:
             csv_reader = csv.reader(csv_file)
             for row in csv_reader:
                 self.n_contents += 1
                 content = int(row[2])
                 if content not in self.contents:
-                    self.contents.append(content)
+                    self.contents[content] = True
+        self.contents = self.contents.keys()
 
 
     def __iter__(self):

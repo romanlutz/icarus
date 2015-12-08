@@ -1,6 +1,5 @@
 from __future__ import division
 import sys
-from icarus.models.cache import insert_after_k_hits_cache
 if sys.version_info[:2] >= (2, 7):
     import unittest
 else:
@@ -1021,6 +1020,9 @@ class TestTtlCache(unittest.TestCase):
                     print contents, 14885146, float(contents)/float(14885146)
 
         self.assertEquals([contents, cache_hits], [14885146, 1640707])
+
+
+
 
 
 

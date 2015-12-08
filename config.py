@@ -253,13 +253,15 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        #if i not in range(7, 31):
+        if i not in [8,21,25,30]:
             traces.append((line[0], int(line[1])))
-        #i += 1
+        i += 1
 
 
+#CACHE_POLICY = ['LRU']
+#CACHE_POLICY_PARAMETERS = {'warmup': [0]}
 
-
+'''
 # Cache eviction policy
 CACHE_POLICY =                                  ['DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'ARC', 'LRU', 'KLRU', 'KLRU', 'KLRU']
 CACHE_POLICY_PARAMETERS = {'window_size':       [1500  , 3000  , 6000  , 9000  , 12000 , 15000 , 18000 , 21000 , None , None , None  , None  , None  ],
@@ -267,6 +269,7 @@ CACHE_POLICY_PARAMETERS = {'window_size':       [1500  , 3000  , 6000  , 9000  ,
                            'warmup':            [0     , 0     , 0     , 0     , 0     , 0     , 0     , 0     , 0    , 0    , 0     , 0     , 0     ],
                            'segments':          [None  , None  , None  , None  , None  , None  , None  , None  , None , None , 2     , 3     , 3     ],
                            'cached_segments':   [None  , None  , None  , None  , None  , None  , None  , None  , None , None , 1     , 1     , 2     ]}
+'''
 
 # Zipf alpha parameter for non-trace-driven simulation
 ALPHA = [0.8]#[0.6, 0.8, 1.0]
@@ -346,7 +349,7 @@ for trace_name, N_CONTENTS in traces:
                                 experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
                         experiment['cache_placement']['network_cache'] = network_cache
                         experiment['cache_placement']['network_cache_fraction'] = NETWORK_CACHE_FRACTION
-                        experiment['desc'] = "Alpha: %s, strategy: %s, topology: %s, network cache: %s" \
-                                             % (str(alpha), strategy, topology, str(network_cache))
+                        experiment['desc'] = "strategy: %s, topology: %s, network cache: %s, cache policy: %s, trace: %s" \
+                                             % (strategy, topology, str(network_cache), cache_policy, trace_name)
 
                         EXPERIMENT_QUEUE.append(experiment)

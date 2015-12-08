@@ -87,8 +87,10 @@ class TestStreamSummary(unittest.TestCase):
 
     def test_dsca_fastly(self):
         import csv
-        c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
-        cache_hits = 0
+        c = []
+        for window_size in [1500, 3000, 6000, 9000, 12000, 15000, 21000]:
+            c.append(DataStreamCachingAlgorithmCache(100, monitored=500, window_size=window_size))
+        cache_hits = [0]*7
         contents = 0
 
         with open('../../../resources/Fastly_traces/requests_reformatted.trace', 'r') as csv_file:
@@ -97,15 +99,16 @@ class TestStreamSummary(unittest.TestCase):
                 contents += 1
                 content = int(row[2])
 
-                if c.get(content):
-                    cache_hits += 1
-                else:
-                    c.put(content)
+                for i, cache in enumerate(c):
+                    if cache.get(content):
+                        cache_hits[i] += 1
+                    else:
+                        cache.put(content)
 
                 if contents % 100000 == 0:
                     print contents, 14885146, float(contents)/float(14885146)
 
-        self.assertEquals([contents, cache_hits], [14885146, 2205377])
+        self.assertEquals(cache_hits, [2205377, 2148139, 2101392, 2054625, 2021313, 1990615, 1933566])
 
 
     def test_small_sliding_window(self):
