@@ -261,7 +261,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
 #CACHE_POLICY = ['LRU']
 #CACHE_POLICY_PARAMETERS = {'warmup': [0]}
 
-'''
+
 # Cache eviction policy
 CACHE_POLICY =                                  ['DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'ARC', 'LRU', 'KLRU', 'KLRU', 'KLRU']
 CACHE_POLICY_PARAMETERS = {'window_size':       [1500  , 3000  , 6000  , 9000  , 12000 , 15000 , 18000 , 21000 , None , None , None  , None  , None  ],
@@ -269,7 +269,7 @@ CACHE_POLICY_PARAMETERS = {'window_size':       [1500  , 3000  , 6000  , 9000  ,
                            'warmup':            [0     , 0     , 0     , 0     , 0     , 0     , 0     , 0     , 0    , 0    , 0     , 0     , 0     ],
                            'segments':          [None  , None  , None  , None  , None  , None  , None  , None  , None , None , 2     , 3     , 3     ],
                            'cached_segments':   [None  , None  , None  , None  , None  , None  , None  , None  , None , None , 1     , 1     , 2     ]}
-'''
+
 
 # Zipf alpha parameter for non-trace-driven simulation
 ALPHA = [0.8]#[0.6, 0.8, 1.0]
