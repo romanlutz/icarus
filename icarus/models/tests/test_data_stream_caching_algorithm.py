@@ -70,19 +70,13 @@ class TestStreamSummary(unittest.TestCase):
                     print 'number of requests so far: ', contents, 'next:', content
                     c.print_caches()
                     print ''
-                    print c._ss_cache.guaranteed_top_k(100)
 
                 if c.get(content):
                     cache_hits += 1
                 else:
                     c.put(content)
 
-                if contents % 1500 == 0:
-                    print 'cache after 1500*k transformation'
-                    c.print_caches()
-                    print ''
-
-        self.assertEquals([contents, cache_hits], [60000, 38808])
+        self.assertEquals([contents, cache_hits], [60000, 38995])
 
 
     def test_dsca_fastly(self):

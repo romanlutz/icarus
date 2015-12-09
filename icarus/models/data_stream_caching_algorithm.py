@@ -104,6 +104,8 @@ class DataStreamCachingAlgorithmCache(Cache):
         if lru_hit or top_k_hit:
             self._ss_cache.put(k)
 
+        self._window_counter += 1
+
         if self._window_counter >= self._window_size:
             self._end_of_window_operation()
 
@@ -189,14 +191,14 @@ class DataStreamCachingAlgorithmCache(Cache):
 
 
 @register_cache_policy('DSCASW')
-class DataStreamCachingAlgorithmWithSlidingWindowCache(Cache):
+class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorithmCache):
     """Based on DSCA, DSCASW considers multiple subwindows that make up the whole window. Whenever a subwindow is full,
     the oldest subwindow expires and is removed. This process eliminates the purely jumping window from DSCA in favor
     of a sliding (or partially jumping) window.
     """
 
-    @inheritdoc(Cache)
-    def __init__(self, maxlen, monitored=-1, subwindow_size=-1, subwindows=2, **kwargs):
+    @inheritdoc(DataStreamCachingAlgorithmCache)
+    def __init__(self, maxlen, monitored=-1, subwindow_size=1500, subwindows=2, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
@@ -210,29 +212,31 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(Cache):
         self._lru_cache = LruCache(self._maxlen)
 
         # subwindows and subwindow caches
-        self.subwindows = subwindows
-        if self.subwindows < 1:
+        self._subwindows = subwindows
+        if self._subwindows < 1:
             raise ValueError('Number of subwindows is less than one, but it has to be at least 1.')
 
+        # the cache at 0 is the cache for the current subwindow, the cache at len-1 is the one that will expire next
         self._window_caches = []
-        for _ in range(subwindows):
-            self._window_caches = [SpaceSavingCache(self._monitored, self._monitored)]
-        self._cumulative_cache = SpaceSavingCache(self._monitored, self._monitored)
-        self._guaranteed_top_k = [] # from previous window
+        self._ss_cache = SpaceSavingCache(self._monitored, monitored=self._monitored)
+        self._guaranteed_top_k = []  # from previous window
+
         # to keep track of the windows, there is a counter and the (fixed) size of each window
-
         self._window_counter = 0
+        self._subwindow_size = subwindow_size
+        if self._subwindow_size < 0:
+            raise ValueError('Size of subwindows needs to be positive.')
 
-    @inheritdoc(Cache)
+    @inheritdoc(DataStreamCachingAlgorithmCache)
     def __len__(self):
         return len(self._lru_cache) + len(self._guaranteed_top_k)
 
     @property
-    @inheritdoc(Cache)
+    @inheritdoc(DataStreamCachingAlgorithmCache)
     def maxlen(self):
         return self._maxlen
 
-    @inheritdoc(Cache)
+    @inheritdoc(DataStreamCachingAlgorithmCache)
     def dump(self):
         whole_cache = deepcopy(self._guaranteed_top_k)
         whole_cache.extend(self._lru_cache.dump())
@@ -246,33 +250,18 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(Cache):
         print 'Cumulative SS-Cache:'
         self._cumulative_cache.print_buckets()
 
+    @inheritdoc(DataStreamCachingAlgorithmCache)
     def position(self, k):
-        """Return the current overall position of an item in the cache. For DSCASW, the position is not important since
-        the cache actually consists of two different data structures. The position within each of the data structures
-        is important, but this is not returned.
-
-        This method does not change the internal state of the cache.
-
-        Parameters
-        ----------
-        k : any hashable type
-            The item looked up in the cache
-
-        Returns
-        -------
-        position : int
-            The current position of the item in the cache
-        """
         dump = self.dump()
         if k not in dump:
             raise ValueError('The item %s is not in the cache' % str(k))
         return dump.index(k)
 
-    @inheritdoc(Cache)
+    @inheritdoc(DataStreamCachingAlgorithmCache)
     def has(self, k):
         return k in self.dump()
 
-    @inheritdoc(Cache)
+    @inheritdoc(DataStreamCachingAlgorithmCache)
     def get(self, k):
         # check in both LRU and top-k list
         top_k_hit = k in self._guaranteed_top_k
@@ -283,7 +272,9 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(Cache):
         if lru_hit or top_k_hit:
             self._ss_cache.put(k)
 
-        if self._window_counter >= self._window_size:
+        self._window_counter += 1
+
+        if self._window_counter >= self._subwindow_size:
             self._end_of_window_operation()
 
         return lru_hit or top_k_hit

@@ -143,6 +143,9 @@ class SpaceSavingCache(Cache):
         """
         return self._cache.guaranteed_top_k(k)
 
+    def get_stream_summary(self):
+        return deepcopy(self._cache)
+
 
 class StreamSummary:
     """The StreamSummary data structure was proposed in
