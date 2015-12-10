@@ -356,3 +356,15 @@ class StreamSummary:
 
     def __guaranteed_occurrences(self, buckets, bucket_index, list_index):
         return buckets[bucket_index] - self.bucket_map[buckets[bucket_index]][list_index].max_error
+
+    def convert_to_dictionary(self):
+        # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed
+        dict = {}
+        buckets = self._cache.bucket_map.keys()
+        buckets.sort(reverse=True)
+        for key in buckets:
+            bucket_list = deepcopy(self._cache.bucket_map[key])
+            bucket_list.reverse()
+            for node in bucket_list:
+                dict[node.id] = {'max_error': node.max_error, 'frequency': key}
+        return dict

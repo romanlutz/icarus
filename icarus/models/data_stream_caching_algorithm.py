@@ -1,6 +1,6 @@
 __author__ = 'romanlutz'
 
-from icarus.models import Cache, LruCache, SpaceSavingCache, NullCache
+from icarus.models import Cache, LruCache, SpaceSavingCache, NullCache, StreamSummary
 from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc
 from copy import deepcopy
@@ -159,17 +159,18 @@ class DataStreamCachingAlgorithmCache(Cache):
 
     def _end_of_window_operation(self):
         """ At the end of every window the top k from the space saving cache are put into the _guaranteed_top_k list.
-        The Space Saving Cache is then re-initialized with the new k which is dependent on the number of guaranteed
-        top elements. The rest of the cache is then from the LRU cache. The elements in the LRU cache carry over from
-        one period to the next.
+        The Space Saving Cache is then re-initialized. The rest of the cache is then from the LRU cache.
+        The elements in the LRU cache carry over from one period to the next.
         """
         self._window_counter = 0
-        new_guaranteed_indices = self._ss_cache.guaranteed_top_k(self._maxlen)
+        whole_dump = self._ss_cache.dump()
+
+        new_guaranteed_indices = self._ss_cache.guaranteed_top_k(min(self._maxlen, len(whole_dump) - 1))
         new_k = new_guaranteed_indices.__len__()
         if new_k > self._maxlen:
             new_k = self._maxlen
         prev_k = len(self._guaranteed_top_k)
-        whole_dump = self._ss_cache.dump()
+        print len(whole_dump), new_guaranteed_indices
         self._guaranteed_top_k = [whole_dump[i] for i in new_guaranteed_indices]
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
         lru_cache_size = self._maxlen - new_k
@@ -216,7 +217,7 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         if self._subwindows < 1:
             raise ValueError('Number of subwindows is less than one, but it has to be at least 1.')
 
-        # the cache at 0 is the cache for the current subwindow, the cache at len-1 is the one that will expire next
+        # the cache at 0 is the cache for the previous subwindow, the cache at len-1 is the one that will expire next
         self._window_caches = []
         self._ss_cache = SpaceSavingCache(self._monitored, monitored=self._monitored)
         self._guaranteed_top_k = []  # from previous window
@@ -279,23 +280,8 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
 
         return lru_hit or top_k_hit
 
+    @inheritdoc(DataStreamCachingAlgorithmCache)
     def put(self, k):
-        """Insert an item in the cache if not already inserted.
-
-        If the element is already present in the cache, it's occurrence counter will be increased. Also, it will be
-        included in the LRU cache if it is not already among the top-k objects.
-
-
-        Parameters
-        ----------
-        k : any hashable type
-            The item to be inserted
-
-        Returns
-        -------
-        evicted : any hashable type
-            The evicted object or *None* if no contents were evicted.
-        """
         if not(k in self._guaranteed_top_k):
             lru_hit = self._lru_cache.get(k)
             if not lru_hit:
@@ -326,18 +312,21 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         self._guaranteed_top_k = []
 
     def _end_of_window_operation(self):
-        """ At the end of every window the top k from the space saving cache are put into the _guaranteed_top_k list.
-        The Space Saving Cache is then re-initialized with the new k which is dependent on the number of guaranteed
-        top elements. The rest of the cache is then from the LRU cache. The elements in the LRU cache carry over from
+        """ At the end of every subwindow the top k from the space saving cache are put into the _guaranteed_top_k list.
+        The Space Saving Cache is not re-initialized but instead the expired window will be subtracted.
+        The rest of the actual cache is then from the LRU cache. The elements in the LRU cache carry over from
         one period to the next.
         """
         self._window_counter = 0
-        new_guaranteed_indices = self._ss_cache.guaranteed_top_k(self._maxlen)
+
+        self._remove_last_window()
+        whole_dump = self._ss_cache.dump()
+
+        new_guaranteed_indices = self._ss_cache.guaranteed_top_k(min(self._maxlen, len(whole_dump) - 1))
         new_k = new_guaranteed_indices.__len__()
         if new_k > self._maxlen:
             new_k = self._maxlen
         prev_k = len(self._guaranteed_top_k)
-        whole_dump = self._ss_cache.dump()
         self._guaranteed_top_k = [whole_dump[i] for i in new_guaranteed_indices]
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
         lru_cache_size = self._maxlen - new_k
@@ -356,3 +345,49 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
                 self._lru_cache = LruCache(lru_cache_size)
                 for element in lru_elements:
                     self._lru_cache.put(element)
+
+    def _remove_last_window(self):
+        """ Given the current cumulative Space Saving cache and the Stream Summary data structures from the previous
+        subwindows that have not yet expired the last window records are removed and all the subwindow records have to
+        be updated by subtracting the information from their cumulative data. This will also reset the current Space
+        Saving cache.
+        """
+        expired_window_table = self._window_caches[-1]
+        self._window_caches = self._window_caches[:-1]
+
+        # extract Stream Summary table from the current Space Saving cache.
+        self._window_caches.insert(0, self._ss_cache.get_stream_summary().convert_to_dictionary())
+        self._ss_cache.clear()
+
+        for i, _ in enumerate(self._window_caches):
+            self._expire_window(i, expired_window_table)
+
+        # put updated Stream Summary data structure into current SS cache
+        new_stream_summary = StreamSummary(self._monitored, monitored_items=self._monitored)
+
+        for (id, frequency, max_error) in self._window_caches[0]:
+            new_stream_summary.insert_node_into_bucket(StreamSummary.Node(id, max_error), frequency)
+
+        self._ss_cache._cache = new_stream_summary
+
+    def _expire_window(self, window_index, expired_window_table):
+        new_window_elements = set(self._window_caches[window_index].keys())
+        old_window_elements = set(expired_window_table.keys())
+
+        # for every element that is still in the table the frequency and error need to be adjusted directly
+        for element in list(new_window_elements & old_window_elements):
+            self._window_caches[window_index][element]['frequency'] -= expired_window_table[element]['frequency']
+            self._window_caches[window_index][element]['max_error'] -= expired_window_table[element]['max_error']
+
+        # find the minimum frequency of all elements that are not in the window table any more
+        frequency_values = []
+        for element in list(old_window_elements - new_window_elements):
+            frequency_values.append(expired_window_table[element]['frequency'])
+        min_frequency = min(frequency_values)
+
+        # subtract the minimum frequency of the expired elements from all frequencies and max errors in the newer window
+        for element in list(new_window_elements - old_window_elements):
+            self._window_caches[window_index][element]['frequency'] -= min_frequency
+            self._window_caches[window_index][element]['max_error'] -= min_frequency
+
+

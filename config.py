@@ -253,13 +253,14 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i not in [8,21,25,30]:
+        if i==20 or i==24:
+        #if i not in [8,21,25,30]:
             traces.append((line[0], int(line[1])))
         i += 1
 
 
-#CACHE_POLICY = ['LRU']
-#CACHE_POLICY_PARAMETERS = {'warmup': [0]}
+#CACHE_POLICY = ['DSCA']
+#CACHE_POLICY_PARAMETERS = {'warmup': [0], 'window_size': [1500], 'monitored': [500]}
 
 
 # Cache eviction policy

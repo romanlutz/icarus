@@ -62,7 +62,7 @@ def print_cache_hit_rates():
         csv_reader = csv.reader(trace_file)
         i = 1
         for line in csv_reader:
-            if i not in range(7, 31):
+            if i not in [8, 21, 25, 30]:
                 traces.append(line[0])
             i += 1
 
@@ -92,7 +92,10 @@ def print_cache_hit_rates():
     for result_dict in dict_list:
         print result_dict[0], '\t',
         for trace in traces:
-            print result_dict[1]['resources/' + trace], '\t',
+            try:
+                print result_dict[1]['resources/' + trace], '\t',
+            except:
+                print "fail \t",
         print ''
 
 
