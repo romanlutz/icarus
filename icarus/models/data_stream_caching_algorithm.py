@@ -170,7 +170,6 @@ class DataStreamCachingAlgorithmCache(Cache):
         if new_k > self._maxlen:
             new_k = self._maxlen
         prev_k = len(self._guaranteed_top_k)
-        print len(whole_dump), new_guaranteed_indices
         self._guaranteed_top_k = [whole_dump[i] for i in new_guaranteed_indices]
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
         lru_cache_size = self._maxlen - new_k
