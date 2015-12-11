@@ -245,10 +245,9 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
     def print_caches(self):
         print 'LRU:', self._lru_cache.dump()
         print 'top-k:', self._guaranteed_top_k
-        print 'SS-Cache of current window:'
-        self._window_caches[0].print_buckets()
+
         print 'Cumulative SS-Cache:'
-        self._cumulative_cache.print_buckets()
+        self._ss_cache.print_buckets()
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
     def position(self, k):
@@ -289,7 +288,7 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
 
         self._window_counter += 1
 
-        if self._window_counter >= self._window_size:
+        if self._window_counter >= self._subwindow_size:
             self._end_of_window_operation()
 
         if k in self._guaranteed_top_k:
@@ -318,7 +317,8 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         """
         self._window_counter = 0
 
-        self._remove_last_window()
+        if len(self._window_caches) >= self._subwindows:
+            self._remove_last_window()
         whole_dump = self._ss_cache.dump()
 
         new_guaranteed_indices = self._ss_cache.guaranteed_top_k(min(self._maxlen, len(whole_dump) - 1))

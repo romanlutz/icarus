@@ -14,7 +14,7 @@ else:
         raise ImportError("The unittest2 package is needed to run the tests.")
 del sys
 
-from icarus.models.data_stream_caching_algorithm import DataStreamCachingAlgorithmCache
+from icarus.models.data_stream_caching_algorithm import DataStreamCachingAlgorithmCache, DataStreamCachingAlgorithmWithSlidingWindowCache
 from icarus.models.space_saving import SpaceSavingCache
 
 class TestStreamSummary(unittest.TestCase):
@@ -106,7 +106,6 @@ class TestStreamSummary(unittest.TestCase):
 
 
     def test_small_sliding_window(self):
-        c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
         cache_hits = 0
         contents = 0
         input_stream = [1,2,1,3,1,2,4,3,5,5,6,1,7,4,2,6,1,1,4,5,1,7,8,8,8,4,6,6,4,1,6,4,8,1,8,8,9,6,1,4]
@@ -125,5 +124,65 @@ class TestStreamSummary(unittest.TestCase):
                 print 'cumulative cache:'
                 cumulative_cache.print_buckets()
                 print ''
+
+        c = DataStreamCachingAlgorithmWithSlidingWindowCache(5, monitored=5, subwindows=2, subwindow_size=20)
+        for i, input_element in enumerate(input_stream, start=1):
+            c.print_caches()
+            print ''
+            print 'put', input_element
+            print ''
+            c.put(input_element)
+
+
+
+
+
+    def test_dscasw_ibm(self):
+        import csv
+        c = DataStreamCachingAlgorithmWithSlidingWindowCache(100, monitored=500, subwindow_size=1500, subwindows=1)
+        cache_hits = 0
+        contents = 0
+
+        with open('../../../resources/IBM_traces/requests_full_ibm.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[0])
+
+                if contents % 1499 == 0 or contents % 1500 == 0:
+                    print 'number of requests so far: ', contents, 'next:', content
+                    c.print_caches()
+                    print ''
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+        self.assertEquals([contents, cache_hits], [60000, 38716])
+
+
+    def test_dscasw_fastly(self):
+        import csv
+        c = DataStreamCachingAlgorithmWithSlidingWindowCache(100, monitored=500, subwindow_size=1500, subwindows=10)
+        cache_hits = 0
+        contents = 0
+
+        with open('../../../resources/Fastly_traces/requests_reformatted.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[2])
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+                if contents % 100000 == 0:
+                    print contents, 14885146, float(contents)/float(14885146)
+
+        self.assertEquals([contents, cache_hits], [14885146, 2178699])
+
 
 
