@@ -15,7 +15,7 @@ def print_cache_hit_rates():
     rates = {}
 
     for tree in result:
-        window_size, segments, cached_segments = None, None, None
+        window_size, segments, cached_segments, subwindows, subwindow_size = None, None, None, None, None
         for k in tree[0]:
             if k[0] == ('workload', 'reqs_file'):
                 trace = k[1]
@@ -35,16 +35,26 @@ def print_cache_hit_rates():
                 if k[1] is not None:
                     cached_segments = int(k[1])
 
+            elif k[0] == ('cache_policy', 'subwindows'):
+                if k[1] is not None:
+                    subwindows = int(k[1])
+
+            elif k[0] == ('cache_policy', 'subwindow_size'):
+                if k[1] is not None:
+                    subwindow_size = int(k[1])
+
 
         for k in tree[1]:
             if k[0] == ('CACHE_HIT_RATIO', 'PER_NODE_CACHE_HIT_RATIO', 1):
                 if policy not in rates.keys():
                     rates[policy] = {}
-                for param in [window_size, segments]:
+                for param in [window_size, segments, subwindow_size]:
                     if param is not None and param not in rates[policy].keys():
                         rates[policy][param] = {}
                 if cached_segments is not None and cached_segments not in rates[policy][segments].keys():
                     rates[policy][segments][cached_segments] = {}
+                if subwindows is not None and subwindows not in rates[policy][subwindow_size].keys():
+                    rates[policy][subwindow_size][subwindows] = {}
 
                 if policy == 'LRU':
                     rates[policy][trace] = k[1]
@@ -54,6 +64,8 @@ def print_cache_hit_rates():
                     rates[policy][trace] = k[1]
                 elif policy == 'DSCA':
                     rates[policy][window_size][trace] = k[1]
+                elif policy == 'DSCASW':
+                    rates[policy][subwindow_size][subwindows][trace] = k[1]
                 else:
                     print 'error: policy', policy, 'unknown'
 
@@ -68,7 +80,7 @@ def print_cache_hit_rates():
 
     print ", ".join(traces)
 
-    policies = ['ARC', 'DSCA', 'LRU', 'KLRU']
+    policies = ['ARC', 'DSCA', 'DSCASW', 'LRU', 'KLRU']
     dict_list = []
 
     for policy in policies:
@@ -79,6 +91,15 @@ def print_cache_hit_rates():
             window_sizes.sort()
             for window_size in window_sizes:
                 dict_list.append(('DSCA %d' % window_size, rates[policy][window_size]))
+        elif policy == 'DSCASW':
+            subwindow_sizes = rates[policy].keys()
+            subwindow_sizes.sort()
+            for subwindow_size in subwindow_sizes:
+                subwindows_values = rates[policy][subwindow_size].keys()
+                subwindows_values.sort()
+                for subwindows in subwindows_values:
+                    dict_list.append(('DSCASW (%d %d)' % (subwindow_size, subwindows),
+                                      rates[policy][subwindow_size][subwindows]))
         elif policy == 'KLRU':
             segment_values = rates[policy].keys()
             segment_values.sort()

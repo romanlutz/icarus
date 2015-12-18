@@ -173,11 +173,13 @@ class StreamSummary:
             self.id = id
             self.max_error = max_error
 
-    def __init__(self, size, monitored_items = -1):
+    def __init__(self, size, monitored_items=-1):
         self.id_to_bucket_map = {}
         self.bucket_map = {}
         self.max_size = size  # max cache size
         self.size = 0  # number of currently monitored items
+        if monitored_items <= 0:
+            raise ValueError('monitored items needs to be a positive number.')
         self.monitored_items = monitored_items
         self.last_cached_bucket = 1  # bucket of last cached item
         self.last_cached_index = 0  # index of last cached item in bucket's list
@@ -192,7 +194,7 @@ class StreamSummary:
                 del self.bucket_map[bucket]
 
             new_bucket = bucket + 1
-            self.insert_node_into_bucket(node, new_bucket)
+            self._insert_node_into_bucket(node, new_bucket)
 
             if self.size > self.max_size:
                 # potentially changes to last_cached pointers
@@ -225,7 +227,7 @@ class StreamSummary:
                 # insert new node at min_bucket+1
                 # with error of min_bucket
                 node = self.Node(id=id, max_error=min_bucket)
-                self.insert_node_into_bucket(node, min_bucket + 1)
+                self._insert_node_into_bucket(node, min_bucket + 1)
 
                 return evicted_node.id
 
@@ -233,19 +235,54 @@ class StreamSummary:
             else:
                 self.size += 1
                 node = self.Node(id=id, max_error=0)
-                self.insert_node_into_bucket(node=node, bucket=1)
+                self._insert_node_into_bucket(node=node, bucket=1)
                 return None
 
-    def insert_node_into_bucket(self, node, bucket):
+    def _insert_node_into_bucket(self, node, bucket):
         self.id_to_bucket_map[node.id] = bucket
         # if bucket exists, insert node at corresponding index
         if bucket in self.bucket_map:
-            self.insert_at_correct_index(bucket, node)
+            self._insert_at_correct_index(bucket, node)
         # if bucket doesn't exist, create bucket
         else:
             self.bucket_map[bucket] = [node]
 
-    def insert_at_correct_index(self, bucket, node):
+    def safe_insert_node(self, node, bucket):
+        """ This method is used to fill a new StreamSummary data structure with existing Node objects. It is necessary
+        to update the internal pointers and counters in order to maintain a functionally correct data structure.
+        Currently, this method can only insert until the StreamSummary is full. If insertion was successful, it returns
+        True, otherwise False.
+        """
+        if self.size >= self.monitored_items:
+            # data structure already full - replacement not implemented so far
+            return False
+
+        self.size += 1
+
+        self._insert_node_into_bucket(node, bucket)
+        # id_to_bucket_map and bucket_map are already up-to-date
+
+        # last_cached_bucket and last_cached_index has to be updated
+        if self.size == 1:
+            # insertion was first one
+            self.last_cached_bucket = bucket
+            self.last_cached_index = 0
+        elif self.last_cached_bucket < bucket:
+            # potentially changes to last_cached pointers
+            if len(self.bucket_map[self.last_cached_bucket]) == self.last_cached_index + 1:
+                # move last_cached pointers to next bucket
+                self.last_cached_bucket += 1
+                while self.last_cached_bucket not in self.bucket_map.keys():
+                    self.last_cached_bucket += 1
+                self.last_cached_index = 0
+            else:
+                self.last_cached_index += 1
+        elif self.last_cached_bucket == bucket:
+            self.last_cached_index += 1
+
+        return True
+
+    def _insert_at_correct_index(self, bucket, node):
         index = -1
         list = self.bucket_map[bucket]
         for i in range(len(list)):
@@ -360,11 +397,9 @@ class StreamSummary:
     def convert_to_dictionary(self):
         # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed
         dict = {}
-        buckets = self._cache.bucket_map.keys()
-        buckets.sort(reverse=True)
+        buckets = self.bucket_map.keys()
         for key in buckets:
-            bucket_list = deepcopy(self._cache.bucket_map[key])
-            bucket_list.reverse()
+            bucket_list = deepcopy(self.bucket_map[key])
             for node in bucket_list:
                 dict[node.id] = {'max_error': node.max_error, 'frequency': key}
         return dict

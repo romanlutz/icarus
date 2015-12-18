@@ -4,6 +4,9 @@ from icarus.models import Cache, LruCache, SpaceSavingCache, NullCache, StreamSu
 from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc
 from copy import deepcopy
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
+
 
 
 __all__ = ['DataStreamCachingAlgorithmCache',
@@ -103,11 +106,10 @@ class DataStreamCachingAlgorithmCache(Cache):
         # report occurrence to Space Saving
         if lru_hit or top_k_hit:
             self._ss_cache.put(k)
+            self._window_counter += 1
 
-        self._window_counter += 1
-
-        if self._window_counter >= self._window_size:
-            self._end_of_window_operation()
+            if self._window_counter >= self._window_size:
+                self._end_of_window_operation()
 
         return lru_hit or top_k_hit
 
@@ -128,21 +130,24 @@ class DataStreamCachingAlgorithmCache(Cache):
         evicted : any hashable type
             The evicted object or *None* if no contents were evicted.
         """
-        if not(k in self._guaranteed_top_k):
-            lru_hit = self._lru_cache.get(k)
-            if not lru_hit:
-                self._lru_cache.put(k)
         self._ss_cache.put(k)
+        if not(k in self._guaranteed_top_k):
+            if not self._lru_cache.get(k):
+                evicted = self._lru_cache.put(k)
+                # counter is only increased if there is no cache hit
+                # because put should only be called when there is a cache miss
+                self._window_counter += 1
 
-        self._window_counter += 1
+                if self._window_counter >= self._window_size:
+                    self._end_of_window_operation()
 
-        if self._window_counter >= self._window_size:
-            self._end_of_window_operation()
-
-        if k in self._guaranteed_top_k:
-            return None
+                return evicted
+            else:
+                # element is in LRU, cache hit
+                return None
         else:
-            return self._lru_cache.put(k)
+            # element is in top-k, cache hit
+            return None
 
     @inheritdoc(Cache)
     def remove(self, k):
@@ -270,31 +275,33 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         # report occurrence to Space Saving
         if lru_hit or top_k_hit:
             self._ss_cache.put(k)
+            self._window_counter += 1
 
-        self._window_counter += 1
-
-        if self._window_counter >= self._subwindow_size:
-            self._end_of_window_operation()
+            if self._window_counter >= self._subwindow_size:
+                self._end_of_window_operation()
 
         return lru_hit or top_k_hit
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
     def put(self, k):
-        if not(k in self._guaranteed_top_k):
-            lru_hit = self._lru_cache.get(k)
-            if not lru_hit:
-                self._lru_cache.put(k)
         self._ss_cache.put(k)
+        if not(k in self._guaranteed_top_k):
+            if not self._lru_cache.get(k):
+                evicted = self._lru_cache.put(k)
+                # counter is only increased if there is no cache hit
+                # because put should only be called when there is a cache miss
+                self._window_counter += 1
 
-        self._window_counter += 1
+                if self._window_counter >= self._subwindow_size:
+                    self._end_of_window_operation()
 
-        if self._window_counter >= self._subwindow_size:
-            self._end_of_window_operation()
-
-        if k in self._guaranteed_top_k:
-            return None
+                return evicted
+            else:
+                # element is in LRU, cache hit
+                return None
         else:
-            return self._lru_cache.put(k)
+            # element is in top-k, cache hit
+            return None
 
     @inheritdoc(Cache)
     def remove(self, k):
@@ -317,8 +324,10 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         """
         self._window_counter = 0
 
+        self._window_caches.insert(0, self._ss_cache.get_stream_summary().convert_to_dictionary())
         if len(self._window_caches) >= self._subwindows:
             self._remove_last_window()
+
         whole_dump = self._ss_cache.dump()
 
         new_guaranteed_indices = self._ss_cache.guaranteed_top_k(min(self._maxlen, len(whole_dump) - 1))
@@ -327,7 +336,6 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
             new_k = self._maxlen
         prev_k = len(self._guaranteed_top_k)
         self._guaranteed_top_k = [whole_dump[i] for i in new_guaranteed_indices]
-        self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
         lru_cache_size = self._maxlen - new_k
 
         for element in self._guaranteed_top_k:
@@ -351,11 +359,10 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         be updated by subtracting the information from their cumulative data. This will also reset the current Space
         Saving cache.
         """
+
         expired_window_table = self._window_caches[-1]
         self._window_caches = self._window_caches[:-1]
 
-        # extract Stream Summary table from the current Space Saving cache.
-        self._window_caches.insert(0, self._ss_cache.get_stream_summary().convert_to_dictionary())
         self._ss_cache.clear()
 
         for i, _ in enumerate(self._window_caches):
@@ -364,29 +371,45 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         # put updated Stream Summary data structure into current SS cache
         new_stream_summary = StreamSummary(self._monitored, monitored_items=self._monitored)
 
-        for (id, frequency, max_error) in self._window_caches[0]:
-            new_stream_summary.insert_node_into_bucket(StreamSummary.Node(id, max_error), frequency)
+        for id in self._window_caches[0]:
+            new_stream_summary.safe_insert_node(
+                StreamSummary.Node(id, self._window_caches[0][id]['max_error']), self._window_caches[0][id]['frequency'])
 
         self._ss_cache._cache = new_stream_summary
+
 
     def _expire_window(self, window_index, expired_window_table):
         new_window_elements = set(self._window_caches[window_index].keys())
         old_window_elements = set(expired_window_table.keys())
 
+        intersection = list(new_window_elements & old_window_elements)
+        reappearing_elements = []
         # for every element that is still in the table the frequency and error need to be adjusted directly
-        for element in list(new_window_elements & old_window_elements):
+        for element in intersection:
             self._window_caches[window_index][element]['frequency'] -= expired_window_table[element]['frequency']
-            self._window_caches[window_index][element]['max_error'] -= expired_window_table[element]['max_error']
 
-        # find the minimum frequency of all elements that are not in the window table any more
-        frequency_values = []
-        for element in list(old_window_elements - new_window_elements):
-            frequency_values.append(expired_window_table[element]['frequency'])
-        min_frequency = min(frequency_values)
+            if self._window_caches[window_index][element]['max_error'] > expired_window_table[element]['max_error']:
+                # element expired but re-appeared, so the error is at least the previous frequency
+                self._window_caches[window_index][element]['max_error'] -= expired_window_table[element]['frequency']
+                reappearing_elements.append(element)
+            else:
+                # element did not expire, so the previous error can be subtracted
+                self._window_caches[window_index][element]['max_error'] -= expired_window_table[element]['max_error']
 
-        # subtract the minimum frequency of the expired elements from all frequencies and max errors in the newer window
-        for element in list(new_window_elements - old_window_elements):
-            self._window_caches[window_index][element]['frequency'] -= min_frequency
-            self._window_caches[window_index][element]['max_error'] -= min_frequency
+        # some operations are for evicted and completely new elements only.
+        if not (len(intersection) == len(new_window_elements)):
+            # find the minimum frequency of all elements that are not in the window table any more
+            # this includes elements that are still present but with higher error
+            frequency_values = []
+            for element in list(old_window_elements - new_window_elements):
+                frequency_values.append(expired_window_table[element]['frequency'])
+            min_frequency = min(frequency_values)
+            # also consider the reappearing elements that expired but are back in the table
+            for element in reappearing_elements:
+                if expired_window_table[element]['frequency'] < min_frequency:
+                    min_frequency = expired_window_table[element]['frequency']
 
-
+            # subtract the minimum frequency of the expired elements from all frequencies and max errors in the newer window
+            for element in list(new_window_elements - old_window_elements):
+                self._window_caches[window_index][element]['frequency'] -= min_frequency
+                self._window_caches[window_index][element]['max_error'] -= min_frequency
