@@ -258,15 +258,12 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
         i += 1
 
 
-#CACHE_POLICY = ['DSCA']
-#CACHE_POLICY_PARAMETERS = {'warmup': [0], 'window_size': [1500], 'monitored': [500]}
-
-
 # Cache eviction policy
 CACHE_POLICY = []
 CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size': [], 'monitored': [], 'warmup': [],
                            'segments': [], 'cached_segments': []}
 
+'''
 # DSCA configurations - relevant parameters are window_size, monitored and warmup
 CACHE_POLICY.extend(                              ['DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA'])
 CACHE_POLICY_PARAMETERS['window_size'].extend(    [1500  , 3000  , 6000  , 9000  , 12000 , 15000 , 18000 , 21000 ])
@@ -276,6 +273,7 @@ CACHE_POLICY_PARAMETERS['monitored'].extend(      [200   , 200   , 200   , 200  
 CACHE_POLICY_PARAMETERS['warmup'].extend(         [0     , 0     , 0     , 0     , 0     , 0     , 0     , 0     ])
 CACHE_POLICY_PARAMETERS['segments'].extend(       [None  , None  , None  , None  , None  , None  , None  , None  ])
 CACHE_POLICY_PARAMETERS['cached_segments'].extend([None  , None  , None  , None  , None  , None  , None  , None  ])
+'''
 
 # DSCASW configurations - relevant parameters are subwindows, subwindow_size, monitored and warmup
 CACHE_POLICY.extend(                              ['DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW'])
@@ -286,7 +284,7 @@ CACHE_POLICY_PARAMETERS['monitored'].extend(      [200     , 200     , 200     ,
 CACHE_POLICY_PARAMETERS['warmup'].extend(         [0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       ])
 CACHE_POLICY_PARAMETERS['segments'].extend(       [None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    ])
 CACHE_POLICY_PARAMETERS['cached_segments'].extend([None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    ])
-
+'''
 # ARC configurations - the relevant parameter is warmup
 CACHE_POLICY.extend(                              ['ARC'])
 CACHE_POLICY_PARAMETERS['window_size'].extend(    [None ])
@@ -316,6 +314,7 @@ CACHE_POLICY_PARAMETERS['monitored'].extend(      [None  , None  , None  ])
 CACHE_POLICY_PARAMETERS['warmup'].extend(         [0     , 0     , 0     ])
 CACHE_POLICY_PARAMETERS['segments'].extend(       [2     , 3     , 3     ])
 CACHE_POLICY_PARAMETERS['cached_segments'].extend([1     , 1     , 2     ])
+'''
 
 # Zipf alpha parameter for non-trace-driven simulation
 ALPHA = [0.8]#[0.6, 0.8, 1.0]
