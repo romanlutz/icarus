@@ -218,8 +218,8 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
 
         # subwindows and subwindow caches
         self._subwindows = subwindows
-        if self._subwindows < 1:
-            raise ValueError('Number of subwindows is less than one, but it has to be at least 1.')
+        if self._subwindows < 2:
+            raise ValueError('Number of subwindows is less than 2, but it has to be at least 2.')
 
         # the cache at 0 is the cache for the previous subwindow, the cache at len-1 is the one that will expire next
         self._window_caches = []

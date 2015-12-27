@@ -80,7 +80,7 @@ def print_cache_hit_rates():
 
     print ", ".join(traces)
 
-    policies = ['ARC', 'DSCA', 'DSCASW', 'LRU', 'KLRU']
+    policies = ['`11                                                                                            q1`1DSCASW']#['ARC', 'DSCA', 'DSCASW', 'LRU', 'KLRU']
     dict_list = []
 
     for policy in policies:
@@ -121,7 +121,7 @@ def print_cache_hit_rates():
 
 
 def __main__():
-    print_cache_hit_rates()
-    #print_results_full()
+    #print_cache_hit_rates()
+    print_results_full()
 
 __main__()
