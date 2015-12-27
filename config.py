@@ -253,7 +253,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i == 1:#if i not in [8, 21, 25, 30]:
+        if i not in [8, 21, 25, 30]:
             traces.append((line[0], int(line[1])))
         i += 1
 
