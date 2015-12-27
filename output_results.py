@@ -15,7 +15,7 @@ def print_cache_hit_rates():
     rates = {}
 
     for tree in result:
-        window_size, segments, cached_segments, subwindows, subwindow_size = None, None, None, None, None
+        window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion = None, None, None, None, None, None
         for k in tree[0]:
             if k[0] == ('workload', 'reqs_file'):
                 trace = k[1]
@@ -43,6 +43,9 @@ def print_cache_hit_rates():
                 if k[1] is not None:
                     subwindow_size = int(k[1])
 
+            elif k[0] == ('cache_policy', 'lru_portion'):
+                if k[1] is not None:
+                    lru_portion = float(k[1])
 
         for k in tree[1]:
             if k[0] == ('CACHE_HIT_RATIO', 'PER_NODE_CACHE_HIT_RATIO', 1):
@@ -55,6 +58,8 @@ def print_cache_hit_rates():
                     rates[policy][segments][cached_segments] = {}
                 if subwindows is not None and subwindows not in rates[policy][subwindow_size].keys():
                     rates[policy][subwindow_size][subwindows] = {}
+                if lru_portion is not None and lru_portion not in rates[policy][window_size].keys():
+                    rates[policy][window_size][lru_portion] = {}
 
                 if policy == 'LRU':
                     rates[policy][trace] = k[1]
@@ -66,6 +71,8 @@ def print_cache_hit_rates():
                     rates[policy][window_size][trace] = k[1]
                 elif policy == 'DSCASW':
                     rates[policy][subwindow_size][subwindows][trace] = k[1]
+                elif policy == 'DSCAFS':
+                    rates[policy][window_size][lru_portion][trace] = k[1]
                 else:
                     print 'error: policy', policy, 'unknown'
 
@@ -80,7 +87,7 @@ def print_cache_hit_rates():
 
     print ", ".join(traces)
 
-    policies = ['`11                                                                                            q1`1DSCASW']#['ARC', 'DSCA', 'DSCASW', 'LRU', 'KLRU']
+    policies = ['DSCAFS']#['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS']
     dict_list = []
 
     for policy in policies:
@@ -100,6 +107,15 @@ def print_cache_hit_rates():
                 for subwindows in subwindows_values:
                     dict_list.append(('DSCASW (%d %d)' % (subwindow_size, subwindows),
                                       rates[policy][subwindow_size][subwindows]))
+        elif policy == 'DSCAFS':
+            window_sizes = rates[policy].keys()
+            window_sizes.sort()
+            for window_size in window_sizes:
+                lru_portions = rates[policy][window_size].keys()
+                lru_portions.sort()
+                for lru_portion in lru_portions:
+                    dict_list.append(('DSCAFS (%d %f)' % (window_size, lru_portion),
+                                      rates[policy][window_size][lru_portion]))
         elif policy == 'KLRU':
             segment_values = rates[policy].keys()
             segment_values.sort()
@@ -110,6 +126,7 @@ def print_cache_hit_rates():
                     dict_list.append(('KLRU (%d,%d)' % (segment_value, cached_segment_value),
                                       rates[policy][segment_value][cached_segment_value]))
 
+    print dict_list
     for result_dict in dict_list:
         print result_dict[0], '\t',
         for trace in traces:
@@ -121,7 +138,7 @@ def print_cache_hit_rates():
 
 
 def __main__():
-    #print_cache_hit_rates()
-    print_results_full()
+    print_cache_hit_rates()
+    #print_results_full()
 
 __main__()

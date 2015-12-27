@@ -258,74 +258,64 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
         i += 1
 
 
+def append_default(cache_policy_parameters, window_size=False, subwindows=False, subwindow_size=False, monitored=False, warmup=False,
+                   segments=False, cached_segments=False, lru_portion=False):
+    variables = ['window_size', 'subwindows', 'subwindow_size', 'monitored', 'segments', 'cached_segments', 'lru_portion']
+    for variable in variables:
+        if eval(variable):
+            cache_policy_parameters[variable].append(None)
+    cache_policy_parameters['warmup'].append(0)
+
 # Cache eviction policy
 CACHE_POLICY = []
 CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size': [], 'monitored': [], 'warmup': [],
-                           'segments': [], 'cached_segments': []}
+                           'segments': [], 'cached_segments': [], 'lru_portion': []}
 
-'''
-# DSCA configurations - relevant parameters are window_size, monitored and warmup
-CACHE_POLICY.extend(                              ['DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA', 'DSCA'])
-CACHE_POLICY_PARAMETERS['window_size'].extend(    [1500  , 3000  , 6000  , 9000  , 12000 , 15000 , 18000 , 21000 ])
-CACHE_POLICY_PARAMETERS['subwindows'].extend(     [None  , None  , None  , None  , None  , None  , None  , None  ])
-CACHE_POLICY_PARAMETERS['subwindow_size'].extend( [None  , None  , None  , None  , None  , None  , None  , None  ])
-CACHE_POLICY_PARAMETERS['monitored'].extend(      [200   , 200   , 200   , 200   , 200   , 200   , 200   , 200   ])
-CACHE_POLICY_PARAMETERS['warmup'].extend(         [0     , 0     , 0     , 0     , 0     , 0     , 0     , 0     ])
-CACHE_POLICY_PARAMETERS['segments'].extend(       [None  , None  , None  , None  , None  , None  , None  , None  ])
-CACHE_POLICY_PARAMETERS['cached_segments'].extend([None  , None  , None  , None  , None  , None  , None  , None  ])
 
-# DSCASW configurations - relevant parameters are subwindows, subwindow_size, monitored and warmup
-CACHE_POLICY.extend(                              ['DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW'])
-CACHE_POLICY_PARAMETERS['window_size'].extend(    [None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    ])
-CACHE_POLICY_PARAMETERS['subwindows'].extend(     [2       , 3       , 4       , 5       , 6       , 7       , 8       , 9       , 10      , 2       , 3       , 4       , 5       , 6       , 7       , 8       , 9       , 10      ])
-CACHE_POLICY_PARAMETERS['subwindow_size'].extend( [1500    , 1500    , 1500    , 1500    , 1500    , 1500    , 1500    , 1500    , 1500    , 3000    , 3000    , 3000    , 3000    , 3000    , 3000    , 3000    , 3000    , 3000    ])
-CACHE_POLICY_PARAMETERS['monitored'].extend(      [200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     , 200     ])
-CACHE_POLICY_PARAMETERS['warmup'].extend(         [0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       ])
-CACHE_POLICY_PARAMETERS['segments'].extend(       [None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    ])
-CACHE_POLICY_PARAMETERS['cached_segments'].extend([None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    ])
-'''
 
-# DSCASW configurations - relevant parameters are subwindows, subwindow_size, monitored and warmup
-CACHE_POLICY.extend(                              ['DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW', 'DSCASW'])
-CACHE_POLICY_PARAMETERS['window_size'].extend(    [None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    ])
-CACHE_POLICY_PARAMETERS['subwindows'].extend(     [2       , 3       , 4       , 5       , 6       , 7       , 8       , 9       , 10      , 2       , 3       , 4       , 5       , 6       , 7       , 8       , 9       , 10      ])
-CACHE_POLICY_PARAMETERS['subwindow_size'].extend( [1500    , 1500    , 1500    , 1500    , 1500    , 1500    , 1500    , 1500    , 1500    , 3000    , 3000    , 3000    , 3000    , 3000    , 3000    , 3000    , 3000    , 3000    ])
-CACHE_POLICY_PARAMETERS['monitored'].extend(      [500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     , 500     ])
-CACHE_POLICY_PARAMETERS['warmup'].extend(         [0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       , 0       ])
-CACHE_POLICY_PARAMETERS['segments'].extend(       [None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    ])
-CACHE_POLICY_PARAMETERS['cached_segments'].extend([None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    , None    ])
+MONITORED_DEFAULT = 200
 
-'''
-# ARC configurations - the relevant parameter is warmup
-CACHE_POLICY.extend(                              ['ARC'])
-CACHE_POLICY_PARAMETERS['window_size'].extend(    [None ])
-CACHE_POLICY_PARAMETERS['subwindows'].extend(     [None ])
-CACHE_POLICY_PARAMETERS['subwindow_size'].extend( [None ])
-CACHE_POLICY_PARAMETERS['monitored'].extend(      [None ])
-CACHE_POLICY_PARAMETERS['warmup'].extend(         [0,   ])
-CACHE_POLICY_PARAMETERS['segments'].extend(       [None ])
-CACHE_POLICY_PARAMETERS['cached_segments'].extend([None ])
+for window_size in [1500, 3000, 6000, 9000, 12000, 15000, 18000, 21000]:
+    CACHE_POLICY.append('DSCA')
+    CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+    CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
+    append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
+                   cached_segments=True, lru_portion=True)
 
-# LRU configurations - the relevant parameter is warmup
-CACHE_POLICY.extend(                              ['LRU'])
-CACHE_POLICY_PARAMETERS['window_size'].extend(    [None ])
-CACHE_POLICY_PARAMETERS['subwindows'].extend(     [None ])
-CACHE_POLICY_PARAMETERS['subwindow_size'].extend( [None ])
-CACHE_POLICY_PARAMETERS['monitored'].extend(      [None ])
-CACHE_POLICY_PARAMETERS['warmup'].extend(         [0,   ])
-CACHE_POLICY_PARAMETERS['segments'].extend(       [None ])
-CACHE_POLICY_PARAMETERS['cached_segments'].extend([None ])
+for subwindow_size in [1500, 3000]:
+    for subwindows in range(2, 11):
+        CACHE_POLICY.append('DSCASW')
+        CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+        CACHE_POLICY_PARAMETERS['subwindows'].append(subwindows)
+        CACHE_POLICY_PARAMETERS['subwindow_size'].append(subwindow_size)
+        append_default(CACHE_POLICY_PARAMETERS, window_size=True, warmup=True, segments=True, cached_segments=True,
+                       lru_portion=True)
 
-# KLRU configurations - the relevant parameters are warmup, segments and cached_segments
-CACHE_POLICY.extend(                              ['KLRU', 'KLRU', 'KLRU'])
-CACHE_POLICY_PARAMETERS['window_size'].extend(    [None  , None  , None  ])
-CACHE_POLICY_PARAMETERS['subwindows'].extend(     [None  , None  , None  ])
-CACHE_POLICY_PARAMETERS['subwindow_size'].extend( [None  , None  , None  ])
-CACHE_POLICY_PARAMETERS['monitored'].extend(      [None  , None  , None  ])
-CACHE_POLICY_PARAMETERS['warmup'].extend(         [0     , 0     , 0     ])
-CACHE_POLICY_PARAMETERS['segments'].extend(       [2     , 3     , 3     ])
-CACHE_POLICY_PARAMETERS['cached_segments'].extend([1     , 1     , 2     ])
-'''
+for window_size in [1500, 3500]:
+    for lru_portion in [0.1, 0.25, 0.5, 0.75, 0.9]:
+        CACHE_POLICY.append('DSCAFS')
+        CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+        CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
+        CACHE_POLICY_PARAMETERS['lru_portion'].append(lru_portion)
+        append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
+                       cached_segments=True)
+
+CACHE_POLICY.append('ARC')
+append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
+               warmup=True, segments=True, cached_segments=True, lru_portion=True)
+
+CACHE_POLICY.append('LRU')
+append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
+               warmup=True, segments=True, cached_segments=True, lru_portion=True)
+
+for segments in [2, 3]:
+    for cached_segments in range(1, segments):
+        CACHE_POLICY.append('KLRU')
+        CACHE_POLICY_PARAMETERS['cached_segments'].append(cached_segments)
+        CACHE_POLICY_PARAMETERS['segments'].append(segments)
+        append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
+                       warmup=True, lru_portion=True)
+
 
 # Zipf alpha parameter for non-trace-driven simulation
 ALPHA = [0.8]#[0.6, 0.8, 1.0]
@@ -409,3 +399,5 @@ for trace_name, N_CONTENTS in traces:
                                              % (strategy, topology, str(network_cache), cache_policy, trace_name)
 
                         EXPERIMENT_QUEUE.append(experiment)
+
+
