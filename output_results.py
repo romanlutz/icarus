@@ -87,7 +87,7 @@ def print_cache_hit_rates():
 
     print ", ".join(traces)
 
-    policies = ['DSCAFS']#['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS']
+    policies = ['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS']
     dict_list = []
 
     for policy in policies:

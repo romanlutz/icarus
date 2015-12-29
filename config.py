@@ -253,7 +253,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i not in [8, 21, 25, 30]:
+        if i == 5:#if i not in [8, 21, 25, 30]:
             traces.append((line[0], int(line[1])))
         i += 1
 
@@ -273,7 +273,7 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 
-MONITORED_DEFAULT = 200
+MONITORED_DEFAULT = 500
 
 for window_size in [1500, 3000, 6000, 9000, 12000, 15000, 18000, 21000]:
     CACHE_POLICY.append('DSCA')

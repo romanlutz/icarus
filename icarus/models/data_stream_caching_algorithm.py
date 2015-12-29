@@ -405,16 +405,20 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
             frequency_values = []
             for element in list(old_window_elements - new_window_elements):
                 frequency_values.append(expired_window_table[element]['frequency'])
-            min_frequency = min(frequency_values)
             # also consider the reappearing elements that expired but are back in the table
             for element in reappearing_elements:
-                if expired_window_table[element]['frequency'] < min_frequency:
-                    min_frequency = expired_window_table[element]['frequency']
+                frequency_values.append(expired_window_table[element]['frequency'])
 
-            # subtract the minimum frequency of the expired elements from all frequencies and max errors in the newer window
-            for element in list(new_window_elements - old_window_elements):
-                self._window_caches[window_index][element]['frequency'] -= min_frequency
-                self._window_caches[window_index][element]['max_error'] -= min_frequency
+            if len(frequency_values) == 0:
+                # don't subtract anything for the new elements since the old elements are a subset of the new elements
+                pass
+            else:
+                min_frequency = min(frequency_values)
+
+                # subtract the minimum frequency of the expired elements from all frequencies and max errors in the newer window
+                for element in list(new_window_elements - old_window_elements):
+                    self._window_caches[window_index][element]['frequency'] -= min_frequency
+                    self._window_caches[window_index][element]['max_error'] -= min_frequency
 
 
 
