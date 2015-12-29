@@ -725,33 +725,51 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
                 return None
         # cache miss in both caches and miss on observed elements
         else:
+            self._recency_cache_top.append_top(k)
             if self._top_k_cached_length + self._recency_cache_top_length < self.maxlen:
-                self._recency_cache_top.append_top(k)
                 self._recency_cache_top_length += 1
                 return None
             elif self._recency_cache_top_length + len(self._recency_cache_bottom) < self.maxlen:
-                self._recency_cache_top.append_top(k)
                 evicted = self._recency_cache_top.pop_bottom()
                 self._recency_cache_bottom.append_top(evicted)
                 return evicted
-
-
-
-
-
-
+            else:
+                self._recency_cache_bottom.pop_bottom()
+                evicted = self._recency_cache_top.pop_bottom()
+                self._recency_cache_bottom.append_bottom(evicted)
+                return evicted
 
     @inheritdoc(Cache)
     def remove(self, k):
         if k in self._top_k:
             self._top_k.remove(k)
+            if self._top_k_cached_length == self.maxlen:
+                self._top_k_cached_length -= 1
+                if len(self._recency_cache_bottom) > 0:
+                    new = self._recency_cache_bottom.pop_top()
+                    self._recency_cache_top.append_bottom(new)
+                    self._recency_cache_top_length += 1
+            return True
+        elif k in self._recency_cache_top:
+            self._recency_cache_top.remove(k)
+            if len(self._recency_cache_bottom) > 0:
+                new = self._recency_cache_bottom.pop_top()
+                self._recency_cache_top.append_bottom(new)
+            else:
+                self._recency_cache_top_length -= 1
+                if self._top_k_cached_length < len(self._top_k):
+                    self._top_k_cached_length += 1
             return True
         else:
-            return self._lru_cache.remove(k)
+            return self._recency_cache_bottom.remove(k)
+
 
     @inheritdoc(Cache)
     def clear(self):
-        self._lru_cache.clear()
+        self._recency_cache_top.clear()
+        self._recency_cache_bottom.clear()
+        self._recency_cache_top_length = 0
+        self._top_k_cached_length = 0
         self._top_k = []
 
     def _end_of_window_operation(self):
@@ -762,26 +780,17 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
         self._window_counter = 0
         whole_dump = self._ss_cache.dump()
 
-        new_guaranteed_indices = self._ss_cache.top_k(min(self._maxlen, len(whole_dump) - 1))
-        new_k = new_guaranteed_indices.__len__()
-        if new_k > self._maxlen:
-            new_k = self._maxlen
-        prev_k = len(self._top_k)
-        self._top_k = [whole_dump[i] for i in new_guaranteed_indices]
+        self._top_k = whole_dump[:self.maxlen]
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
-        lru_cache_size = self._maxlen - new_k
 
         for element in self._top_k:
-            self._lru_cache.remove(element)
+            if self._recency_cache_top.remove(element):
+                if len(self._recency_cache_bottom) > 0:
+                    new = self._recency_cache_bottom.pop_top()
+                    self._recency_cache_top.append_bottom(new)
+                else:
+                    self._recency_cache_top_length -= 1
+                    if len(self._top_k) > self._top_k_cached_length:
+                        self._top_k_cached_length += 1
 
-        if new_k == prev_k:
-            pass  # continue with current LRU cache
-        else:
-            lru_elements = self._lru_cache.dump()[:lru_cache_size]
-            lru_elements.reverse()
-            if new_k == self._maxlen:
-                self._lru_cache = NullCache()  # empty LRU cache
-            else:
-                self._lru_cache = LruCache(lru_cache_size)
-                for element in lru_elements:
-                    self._lru_cache.put(element)
+
