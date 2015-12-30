@@ -273,48 +273,61 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 
-MONITORED_DEFAULT = 500
+MONITORED_DEFAULT = 200
+use_DSCA = False
+use_DSCASW = False
+use_DSCAFS = True
+use_ADSCASTK = False
+use_ARC = False
+use_LRU = False
+use_KLRU = False
 
-for window_size in [1500, 3000, 6000, 9000, 12000, 15000, 18000, 21000]:
-    CACHE_POLICY.append('DSCA')
-    CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
-    CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
-    append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
-                   cached_segments=True, lru_portion=True)
-
-for subwindow_size in [1500, 3000]:
-    for subwindows in range(2, 11):
-        CACHE_POLICY.append('DSCASW')
-        CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
-        CACHE_POLICY_PARAMETERS['subwindows'].append(subwindows)
-        CACHE_POLICY_PARAMETERS['subwindow_size'].append(subwindow_size)
-        append_default(CACHE_POLICY_PARAMETERS, window_size=True, warmup=True, segments=True, cached_segments=True,
-                       lru_portion=True)
-
-for window_size in [1500, 3500]:
-    for lru_portion in [0.1, 0.25, 0.5, 0.75, 0.9]:
-        CACHE_POLICY.append('DSCAFS')
+if use_DSCA:
+    for window_size in [1500, 3000, 6000, 9000, 12000, 15000, 18000, 21000]:
+        CACHE_POLICY.append('DSCA')
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
-        CACHE_POLICY_PARAMETERS['lru_portion'].append(lru_portion)
         append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
-                       cached_segments=True)
+                       cached_segments=True, lru_portion=True)
 
-CACHE_POLICY.append('ARC')
-append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
-               warmup=True, segments=True, cached_segments=True, lru_portion=True)
+if use_DSCASW:
+    for subwindow_size in [1500, 3000]:
+        for subwindows in range(2, 11):
+            CACHE_POLICY.append('DSCASW')
+            CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+            CACHE_POLICY_PARAMETERS['subwindows'].append(subwindows)
+            CACHE_POLICY_PARAMETERS['subwindow_size'].append(subwindow_size)
+            append_default(CACHE_POLICY_PARAMETERS, window_size=True, warmup=True, segments=True, cached_segments=True,
+                           lru_portion=True)
 
-CACHE_POLICY.append('LRU')
-append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
-               warmup=True, segments=True, cached_segments=True, lru_portion=True)
+if use_DSCAFS:
+    for window_size in [1500, 3500]:
+        for lru_portion in [0.1, 0.25, 0.5, 0.75, 0.9]:
+            CACHE_POLICY.append('DSCAFS')
+            CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+            CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
+            CACHE_POLICY_PARAMETERS['lru_portion'].append(lru_portion)
+            append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
+                           cached_segments=True)
 
-for segments in [2, 3]:
-    for cached_segments in range(1, segments):
-        CACHE_POLICY.append('KLRU')
-        CACHE_POLICY_PARAMETERS['cached_segments'].append(cached_segments)
-        CACHE_POLICY_PARAMETERS['segments'].append(segments)
-        append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
-                       warmup=True, lru_portion=True)
+if use_ARC:
+    CACHE_POLICY.append('ARC')
+    append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
+                   warmup=True, segments=True, cached_segments=True, lru_portion=True)
+
+if use_LRU:
+    CACHE_POLICY.append('LRU')
+    append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
+                   warmup=True, segments=True, cached_segments=True, lru_portion=True)
+
+if use_KLRU:
+    for segments in [2, 3]:
+        for cached_segments in range(1, segments):
+            CACHE_POLICY.append('KLRU')
+            CACHE_POLICY_PARAMETERS['cached_segments'].append(cached_segments)
+            CACHE_POLICY_PARAMETERS['segments'].append(segments)
+            append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
+                           warmup=True, lru_portion=True)
 
 
 # Zipf alpha parameter for non-trace-driven simulation
