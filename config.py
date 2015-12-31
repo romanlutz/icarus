@@ -292,7 +292,7 @@ if use_DSCA:
 
 if use_DSCASW:
     for subwindow_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
-        for subwindows in range(2, 11, step=2):
+        for subwindows in range(2, 11):
             CACHE_POLICY.append('DSCASW')
             CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
             CACHE_POLICY_PARAMETERS['subwindows'].append(subwindows)
