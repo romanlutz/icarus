@@ -81,13 +81,12 @@ def print_cache_hit_rates():
         csv_reader = csv.reader(trace_file)
         i = 1
         for line in csv_reader:
-            if i not in [8, 21, 25, 30]:
-                traces.append(line[0])
+            traces.append(line[0])
             i += 1
 
     print ", ".join(traces)
 
-    policies = ['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS']
+    policies = ['DSCAFS']#['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS']
     dict_list = []
 
     for policy in policies:

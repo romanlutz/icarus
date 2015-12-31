@@ -253,7 +253,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i not in [8, 21, 25, 30]:
+        if i not in [8, 21, 25, 30] and i in range(8,31):
             traces.append((line[0], int(line[1])))
         i += 1
 
@@ -273,17 +273,17 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 
-MONITORED_DEFAULT = 200
-use_DSCA = False
-use_DSCASW = False
+MONITORED_DEFAULT = 65536
+use_DSCA = True
+use_DSCASW = True
 use_DSCAFS = True
-use_ADSCASTK = False
-use_ARC = False
-use_LRU = False
-use_KLRU = False
+use_ADSCASTK = True
+use_ARC = True
+use_LRU = True
+use_KLRU = True
 
 if use_DSCA:
-    for window_size in [1500, 3000, 6000, 9000, 12000, 15000, 18000, 21000]:
+    for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64, MONITORED_DEFAULT*256]:
         CACHE_POLICY.append('DSCA')
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
@@ -291,8 +291,8 @@ if use_DSCA:
                        cached_segments=True, lru_portion=True)
 
 if use_DSCASW:
-    for subwindow_size in [1500, 3000]:
-        for subwindows in range(2, 11):
+    for subwindow_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
+        for subwindows in range(2, 11, step=2):
             CACHE_POLICY.append('DSCASW')
             CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
             CACHE_POLICY_PARAMETERS['subwindows'].append(subwindows)
@@ -301,7 +301,7 @@ if use_DSCASW:
                            lru_portion=True)
 
 if use_DSCAFS:
-    for window_size in [1500, 3500]:
+    for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
         for lru_portion in [0.1, 0.25, 0.5, 0.75, 0.9]:
             CACHE_POLICY.append('DSCAFS')
             CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
@@ -336,7 +336,7 @@ ALPHA = [0.8]#[0.6, 0.8, 1.0]
 # Total size of network cache as a fraction of content population
 # If the cache size is a static number (e.g. 100), set NETWORK_CACHE_FRACTION to False
 # In case the cache size is given as a natural number, set it to the cumulative total of the whole network
-NETWORK_CACHE = [100]
+NETWORK_CACHE = [32768]
 NETWORK_CACHE_FRACTION = False
 
 # List of topologies tested
