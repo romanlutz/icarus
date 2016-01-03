@@ -247,13 +247,19 @@ DATA_COLLECTORS = [
 # Number of requests per second (over the whole network)
 REQ_RATE = 1.0
 
+# Total size of network cache as a fraction of content population
+# If the cache size is a static number (e.g. 100), set NETWORK_CACHE_FRACTION to False
+# In case the cache size is given as a natural number, set it to the cumulative total of the whole network
+NETWORK_CACHE = 500
+NETWORK_CACHE_FRACTION = False
+
 # if running a trace-driven simulation, REQ_FILE is the path to the trace file
 traces = []
 with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i not in [8, 21, 25, 30] and i in range(8,31):
+        if i not in [8, 21, 25, 30] and i in [7]:
             traces.append((line[0], int(line[1])))
         i += 1
 
@@ -273,7 +279,7 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 
-MONITORED_DEFAULT = 65536
+MONITORED_DEFAULT = NETWORK_CACHE * 2
 use_DSCA = True
 use_DSCASW = True
 use_DSCAFS = True
@@ -310,6 +316,14 @@ if use_DSCAFS:
             append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
                            cached_segments=True)
 
+if use_ADSCASTK:
+    for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
+        CACHE_POLICY.append('ADSCASTK')
+        CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+        CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
+        append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
+                       cached_segments=True, lru_portion=True)
+
 if use_ARC:
     CACHE_POLICY.append('ARC')
     append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
@@ -332,12 +346,6 @@ if use_KLRU:
 
 # Zipf alpha parameter for non-trace-driven simulation
 ALPHA = [0.8]#[0.6, 0.8, 1.0]
-
-# Total size of network cache as a fraction of content population
-# If the cache size is a static number (e.g. 100), set NETWORK_CACHE_FRACTION to False
-# In case the cache size is given as a natural number, set it to the cumulative total of the whole network
-NETWORK_CACHE = [32768]
-NETWORK_CACHE_FRACTION = False
 
 # List of topologies tested
 # Topology implementations are located in ./icarus/scenarios/topology.py
@@ -382,35 +390,34 @@ for trace_name, N_CONTENTS in traces:
     for alpha in ALPHA:
         for strategy in STRATEGIES:
             for topology in TOPOLOGIES:
-                for network_cache in NETWORK_CACHE:
-                    for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
-                        experiment = Tree()
-                        experiment['workload'] = {'name':    'DETERMINISTIC_TRACE_DRIVEN',
-                                               'n_contents': N_CONTENTS,
-                                               'n_warmup':   CACHE_POLICY_PARAMETERS['warmup'][cache_policy_index],
-                                               'n_measured': N_CONTENTS - CACHE_POLICY_PARAMETERS['warmup'][cache_policy_index],
-                                               'rate':       REQ_RATE,
-                                               'reqs_file':  'resources/' + trace_name
-                                              }
-                        experiment['cache_placement']['name'] = 'UNIFORM'
-                        experiment['content_placement']['name'] = 'UNIFORM'
-                        experiment['workload']['alpha'] = alpha
-                        experiment['strategy']['name'] = strategy
+                for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
+                    experiment = Tree()
+                    experiment['workload'] = {'name':    'DETERMINISTIC_TRACE_DRIVEN',
+                                           'n_contents': N_CONTENTS,
+                                           'n_warmup':   CACHE_POLICY_PARAMETERS['warmup'][cache_policy_index],
+                                           'n_measured': N_CONTENTS - CACHE_POLICY_PARAMETERS['warmup'][cache_policy_index],
+                                           'rate':       REQ_RATE,
+                                           'reqs_file':  'resources/' + trace_name
+                                          }
+                    experiment['cache_placement']['name'] = 'UNIFORM'
+                    experiment['content_placement']['name'] = 'UNIFORM'
+                    experiment['workload']['alpha'] = alpha
+                    experiment['strategy']['name'] = strategy
 
-                        experiment['topology']['name'] = topology
-                        if topology in TOPOLOGY_PARAMS.keys():
-                            for topology_param in TOPOLOGY_PARAMS[topology].keys():
-                                experiment['topology'][topology_param] = TOPOLOGY_PARAMS[topology][topology_param]
+                    experiment['topology']['name'] = topology
+                    if topology in TOPOLOGY_PARAMS.keys():
+                        for topology_param in TOPOLOGY_PARAMS[topology].keys():
+                            experiment['topology'][topology_param] = TOPOLOGY_PARAMS[topology][topology_param]
 
-                        experiment['cache_policy']['name'] = cache_policy
-                        for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
-                            if param_name != 'warmup':
-                                experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
-                        experiment['cache_placement']['network_cache'] = network_cache
-                        experiment['cache_placement']['network_cache_fraction'] = NETWORK_CACHE_FRACTION
-                        experiment['desc'] = "strategy: %s, topology: %s, network cache: %s, cache policy: %s, trace: %s" \
-                                             % (strategy, topology, str(network_cache), cache_policy, trace_name)
+                    experiment['cache_policy']['name'] = cache_policy
+                    for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
+                        if param_name != 'warmup':
+                            experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
+                    experiment['cache_placement']['network_cache'] = NETWORK_CACHE
+                    experiment['cache_placement']['network_cache_fraction'] = NETWORK_CACHE_FRACTION
+                    experiment['desc'] = "strategy: %s, topology: %s, network cache: %s, cache policy: %s, trace: %s" \
+                                         % (strategy, topology, str(network_cache), cache_policy, trace_name)
 
-                        EXPERIMENT_QUEUE.append(experiment)
+                    EXPERIMENT_QUEUE.append(experiment)
 
 

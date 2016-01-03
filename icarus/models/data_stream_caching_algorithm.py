@@ -777,9 +777,11 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
         self._top_k = []
 
     def _end_of_window_operation(self):
-        """ At the end of every window the top k from the space saving cache are put into the _top_k list.
-        The Space Saving Cache is then re-initialized. The rest of the cache is then from the LRU cache.
-        The elements in the LRU cache carry over from one period to the next.
+        """ At the end of every window all the elements from the space saving cache are put into the _top_k list.
+        The Space Saving Cache is then re-initialized. For every element in the LRU cache that will then be in the
+        _top_k list the portion of _top_k that is cached is increased by 1. The rest of the cache is then from the
+        LRU cache. The elements in the LRU cache carry over from one period to the next except for the ones that
+        are also in the _top_k list.
         """
         self._window_counter = 0
         whole_dump = self._ss_cache.dump()
