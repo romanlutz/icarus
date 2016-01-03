@@ -416,7 +416,7 @@ for trace_name, N_CONTENTS in traces:
                     experiment['cache_placement']['network_cache'] = NETWORK_CACHE
                     experiment['cache_placement']['network_cache_fraction'] = NETWORK_CACHE_FRACTION
                     experiment['desc'] = "strategy: %s, topology: %s, network cache: %s, cache policy: %s, trace: %s" \
-                                         % (strategy, topology, str(network_cache), cache_policy, trace_name)
+                                         % (strategy, topology, str(NETWORK_CACHE), cache_policy, trace_name)
 
                     EXPERIMENT_QUEUE.append(experiment)
 
