@@ -738,10 +738,14 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
                 self._recency_cache_bottom.append_top(evicted)
                 return evicted
             else:
-                self._recency_cache_bottom.pop_bottom()
-                evicted = self._recency_cache_top.pop_bottom()
-                self._recency_cache_bottom.append_bottom(evicted)
-                return evicted
+                # special case: if the whole LRU list is cached we do not add the bottom element to the bottom list
+                if self._recency_cache_top_length == self.maxlen:
+                    return self._recency_cache_top.pop_bottom()
+                else:
+                    self._recency_cache_bottom.pop_bottom()
+                    evicted = self._recency_cache_top.pop_bottom()
+                    self._recency_cache_bottom.append_bottom(evicted)
+                    return evicted
 
     @inheritdoc(Cache)
     def remove(self, k):
@@ -789,14 +793,23 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
         self._top_k = whole_dump[:self.maxlen]
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
 
+        # set up whole cache to be LRU cache before removing the top-k elements from the LRU cache
+        self._top_k_cached_length = 0
+        for _ in self._recency_cache_bottom:
+            self._recency_cache_top.append_bottom(self._recency_cache_bottom.pop_top())
+        self._recency_cache_top_length = self._recency_cache_top.__len__()
+
+        # remove top-k elements from LRU cache and adjust counters
         for element in self._top_k:
-            if self._recency_cache_top.remove(element):
-                if len(self._recency_cache_bottom) > 0:
-                    new = self._recency_cache_bottom.pop_top()
-                    self._recency_cache_top.append_bottom(new)
-                else:
-                    self._recency_cache_top_length -= 1
-                    if len(self._top_k) > self._top_k_cached_length:
-                        self._top_k_cached_length += 1
+            if element in self._recency_cache_top:
+                self._recency_cache_top.remove(element)
+                self._recency_cache_top_length -= 1
+                if len(self._top_k) > self._top_k_cached_length:
+                    self._top_k_cached_length += 1
+
+        # if there's still space, add top-k elements
+        if self._recency_cache_top_length < self.maxlen and self._top_k_cached_length < self._top_k.__len__():
+            self._top_k_cached_length = min(self._top_k.__len__(),
+                                            self._top_k_cached_length + self.maxlen - self._recency_cache_top_length)
 
 

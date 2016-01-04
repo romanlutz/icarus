@@ -73,6 +73,8 @@ def print_cache_hit_rates():
                     rates[policy][subwindow_size][subwindows][trace] = k[1]
                 elif policy == 'DSCAFS':
                     rates[policy][window_size][lru_portion][trace] = k[1]
+                elif policy == 'ADSCASTK':
+                    rates[policy][window_size][trace] = k[1]
                 else:
                     print 'error: policy', policy, 'unknown'
 
@@ -86,44 +88,52 @@ def print_cache_hit_rates():
 
     print ", ".join(traces)
 
-    policies = ['DSCAFS']#['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS']
+    policies = ['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS', 'ADSCASTK']
+
     dict_list = []
 
     for policy in policies:
-        if policy in ['ARC', 'LRU']:
-            dict_list.append((policy, rates[policy]))
-        elif policy == 'DSCA':
-            window_sizes = rates[policy].keys()
-            window_sizes.sort()
-            for window_size in window_sizes:
-                dict_list.append(('DSCA %d' % window_size, rates[policy][window_size]))
-        elif policy == 'DSCASW':
-            subwindow_sizes = rates[policy].keys()
-            subwindow_sizes.sort()
-            for subwindow_size in subwindow_sizes:
-                subwindows_values = rates[policy][subwindow_size].keys()
-                subwindows_values.sort()
-                for subwindows in subwindows_values:
-                    dict_list.append(('DSCASW (%d %d)' % (subwindow_size, subwindows),
-                                      rates[policy][subwindow_size][subwindows]))
-        elif policy == 'DSCAFS':
-            window_sizes = rates[policy].keys()
-            window_sizes.sort()
-            for window_size in window_sizes:
-                lru_portions = rates[policy][window_size].keys()
-                lru_portions.sort()
-                for lru_portion in lru_portions:
-                    dict_list.append(('DSCAFS (%d %f)' % (window_size, lru_portion),
-                                      rates[policy][window_size][lru_portion]))
-        elif policy == 'KLRU':
-            segment_values = rates[policy].keys()
-            segment_values.sort()
-            for segment_value in segment_values:
-                cached_segment_values = rates[policy][segment_value].keys()
-                cached_segment_values.sort()
-                for cached_segment_value in cached_segment_values:
-                    dict_list.append(('KLRU (%d,%d)' % (segment_value, cached_segment_value),
-                                      rates[policy][segment_value][cached_segment_value]))
+        if policy in rates.keys():
+            if policy in ['ARC', 'LRU']:
+                dict_list.append((policy, rates[policy]))
+            elif policy == 'KLRU':
+                segment_values = rates[policy].keys()
+                segment_values.sort()
+                for segment_value in segment_values:
+                    cached_segment_values = rates[policy][segment_value].keys()
+                    cached_segment_values.sort()
+                    for cached_segment_value in cached_segment_values:
+                        dict_list.append(('KLRU (%d,%d)' % (segment_value, cached_segment_value),
+                                          rates[policy][segment_value][cached_segment_value]))
+            elif policy == 'DSCA':
+                window_sizes = rates[policy].keys()
+                window_sizes.sort()
+                for window_size in window_sizes:
+                    dict_list.append(('DSCA %d' % window_size, rates[policy][window_size]))
+            elif policy == 'DSCASW':
+                subwindow_sizes = rates[policy].keys()
+                subwindow_sizes.sort()
+                for subwindow_size in subwindow_sizes:
+                    subwindows_values = rates[policy][subwindow_size].keys()
+                    subwindows_values.sort()
+                    for subwindows in subwindows_values:
+                        dict_list.append(('DSCASW (%d %d)' % (subwindow_size, subwindows),
+                                          rates[policy][subwindow_size][subwindows]))
+            elif policy == 'DSCAFS':
+                window_sizes = rates[policy].keys()
+                window_sizes.sort()
+                for window_size in window_sizes:
+                    lru_portions = rates[policy][window_size].keys()
+                    lru_portions.sort()
+                    for lru_portion in lru_portions:
+                        dict_list.append(('DSCAFS (%d %f)' % (window_size, lru_portion),
+                                          rates[policy][window_size][lru_portion]))
+            elif policy == 'ADSCASTK':
+                window_sizes = rates[policy].keys()
+                window_sizes.sort()
+                for window_size in window_sizes:
+                    dict_list.append(('ADSCASTK %d' % window_size, rates[policy][window_size]))
+
 
     print dict_list
     for result_dict in dict_list:
