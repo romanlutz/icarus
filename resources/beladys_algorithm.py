@@ -1,5 +1,6 @@
 import csv
 import heapq
+from copy import deepcopy
 
 
 MAX_CACHE_SIZES = [100, 500]
@@ -17,21 +18,24 @@ with open('trace_overview.csv', 'r') as trace_file:
 
 print ''
 
-occurrences = {}
+
 for trace_path in traces:
     with open(trace_path, 'r') as trace:
         csv_reader = csv.reader(trace)
 
         # pre-processing
+        original_occurrences = {}
         request_index = 0
         for line in csv_reader:
             request_index += 1
-            object = line[2]
+            object = int(line[2])
 
-            if object in occurrences:
-                occurrences[object].append(request_index)
+            if object in original_occurrences:
+                original_occurrences[object].append(request_index)
             else:
-                occurrences[object] = [request_index]
+                original_occurrences[object] = [request_index]
+
+
 
     for MAX_CACHE_SIZE in MAX_CACHE_SIZES:
         with open(trace_path, 'r') as trace:
@@ -41,12 +45,13 @@ for trace_path in traces:
             cache_hits = 0
             cache = {}
             cache_size = 0
+            occurrences = deepcopy(original_occurrences)
             # next_occurrence will be underlying data structure of a max heap
             # heapq library only supports min heaps, so every element will be negated
             next_occurrence = []
             for line in csv_reader:
                 request_index += 1
-                object = line[2]
+                object = int(line[2])
 
                 occurrences[object] = occurrences[object][1:]
 
@@ -81,7 +86,7 @@ for trace_path in traces:
                             cache[object] = True
                             heapq.heappush(next_occurrence, (-occurrences[object][0], object))
 
-            results[MAX_CACHE_SIZE].append(float(cache_hits) / float(request_index))
+            results[MAX_CACHE_SIZE].append(str(float(cache_hits) / float(request_index)))
             print 'finished', trace_path, results[MAX_CACHE_SIZE][-1]
 
 
