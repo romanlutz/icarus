@@ -81,7 +81,7 @@ for trace_path in traces:
                             cache[object] = True
                             heapq.heappush(next_occurrence, (-occurrences[object][0], object))
 
-            results[MAX_CACHE_SIZE.append(float(cache_hits) / float(request_index))
+            results[MAX_CACHE_SIZE].append(float(cache_hits) / float(request_index))
 
 
 for s in MAX_CACHE_SIZES:
