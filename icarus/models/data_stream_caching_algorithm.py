@@ -12,7 +12,8 @@ pp = pprint.PrettyPrinter(indent=4)
 __all__ = ['DataStreamCachingAlgorithmCache',
            'DataStreamCachingAlgorithmWithSlidingWindowCache',
            'DataStreamCachingAlgorithmWithFixedSplitsCache',
-           'AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache']
+           'AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache',
+           'AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache']
 
 @register_cache_policy('DSCA')
 class DataStreamCachingAlgorithmCache(Cache):
@@ -585,7 +586,7 @@ class DataStreamCachingAlgorithmWithFixedSplitsCache(Cache):
 
 @register_cache_policy('ADSCASTK')
 class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
-    """ADSCA is similar to DSCA in that it partitions the cache into a top-k part and a LRU part.
+    """ADSCASTK is similar to DSCA in that it partitions the cache into a top-k part and a LRU part.
     Unlike DSCA, ADSCA adaptively adjusts the number of elements in the partitions similar to ARC.
     """
 
@@ -744,7 +745,7 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
                 else:
                     self._recency_cache_bottom.pop_bottom()
                     evicted = self._recency_cache_top.pop_bottom()
-                    self._recency_cache_bottom.append_bottom(evicted)
+                    self._recency_cache_bottom.append_top(evicted)
                     return evicted
 
     @inheritdoc(Cache)
@@ -807,9 +808,265 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
                 if len(self._top_k) > self._top_k_cached_length:
                     self._top_k_cached_length += 1
 
-        # if there's still space, add top-k elements
-        if self._recency_cache_top_length < self.maxlen and self._top_k_cached_length < self._top_k.__len__():
-            self._top_k_cached_length = min(self._top_k.__len__(),
-                                            self._top_k_cached_length + self.maxlen - self._recency_cache_top_length)
+        # if there's still space add top-k elements
+        while self._recency_cache_top_length + self._top_k_cached_length < self.maxlen and self._top_k_cached_length < len(self._top_k):
+            self._top_k_cached_length += 1
+
+        # if there's still space add LRU elements
+        while self._recency_cache_top_length + self._top_k_cached_length < self.maxlen and len(self._recency_cache_bottom) > 0:
+            self._recency_cache_top.append_bottom(self._recency_cache_bottom.pop_top())
+            self._recency_cache_top_length += 1
+
+
+
+@register_cache_policy('ADSCAATK')
+class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
+    """ADSCAATK is similar to ADSCASTK in that it adaptively adjusts the number of elements in _top_k and the LRU list.
+    Unlike ADSCASTK, ADSCAATK actually caches the observed element when a hit on an uncached element in _top_k occurs.
+    Therefore, _top_k effectively is also a LRU list, but with fixed elements.
+    """
+
+    @inheritdoc(Cache)
+    def __init__(self, maxlen, monitored=-1, window_size=1500, **kwargs):
+        self._maxlen = int(maxlen)
+        if self._maxlen <= 0:
+            raise ValueError('maxlen must be positive')
+        self._monitored = monitored
+        if self._monitored == -1:
+            self._monitored = 2 * self._maxlen
+        if self._monitored < self._maxlen:
+            raise ValueError('Number of monitored elements has to be greater or equal the cache size')
+
+        # Initially there is only the recency cache
+        self._recency_cache_top_length = 0
+        self._recency_cache_top = LinkedSet()  # ARC paper: T_1
+        self._recency_cache_bottom = LinkedSet()  # ARC paper: B_1
+        self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
+        self._top_k_cached_length = 0
+        self._top_k_cached = LinkedSet()
+        self._top_k_uncached = LinkedSet()
+
+        # to keep track of the windows, there is a counter and the (fixed) size of each window
+        self._window_size = window_size
+        if self._window_size <= 0:
+            raise ValueError('window_size must be positive')
+        self._window_counter = 0
+
+    @inheritdoc(Cache)
+    def __len__(self):
+        return self._recency_cache_top_length + self._top_k_cached_length
+
+    @property
+    @inheritdoc(Cache)
+    def maxlen(self):
+        return self._maxlen
+
+    @inheritdoc(Cache)
+    def dump(self):
+        whole_cache = deepcopy(list(iter(self._top_k_cached)))
+        whole_cache.extend(list(iter(self._recency_cache_top)))
+        return whole_cache
+
+    def print_caches(self):
+        print 'Recency top:', list(iter(self._recency_cache_top))
+        print 'Recency bottom:', list(iter(self._recency_cache_bottom))
+        print 'top-k cached:', list(iter(self._top_k_cached))
+        print 'top-k not cached:', list(iter(self._top_k_uncached))
+        print 'SS-Cache of current window:'
+        self._ss_cache.print_buckets()
+
+    def position(self, k):
+        """Return the current overall position of an item in the cache. For ADSCA, the position is not important since
+        the cache actually consists of two different data structures. The position within each of the data structures
+        is important, but this is not returned.
+
+        This method does not change the internal state of the cache.
+
+        Parameters
+        ----------
+        k : any hashable type
+            The item looked up in the cache
+
+        Returns
+        -------
+        position : int
+            The current position of the item in the cache
+        """
+        dump = self.dump()
+        if k not in dump:
+            raise ValueError('The item %s is not in the cache' % str(k))
+        return dump.index(k)
+
+    @inheritdoc(Cache)
+    def has(self, k):
+        return k in self._top_k_cached or k in self._recency_cache_top
+
+    @inheritdoc(Cache)
+    def get(self, k):
+        # check in both LRU and top-k list
+        top_k_hit = k in self._top_k_cached
+        lru_hit = False  # possibly doesn't need to be checked
+        if top_k_hit:
+            self._top_k_cached.move_to_top(k)
+        else:
+            lru_hit = k in self._recency_cache_top
+            # update the recency cache by moving k to the MRU spot
+            if lru_hit:
+                self._recency_cache_top.move_to_top(k)
+        # report occurrence to Space Saving
+        if lru_hit or top_k_hit:
+            self._ss_cache.put(k)
+            self._window_counter += 1
+
+            if self._window_counter >= self._window_size:
+                self._end_of_window_operation()
+
+        return lru_hit or top_k_hit
+
+    def put(self, k):
+        """Insert an item in the cache if not already inserted.
+
+        If the element is already present in the cache, it's occurrence counter will be increased. Also, it will be
+        included in the LRU cache if it is not already among the top-k objects.
+
+
+        Parameters
+        ----------
+        k : any hashable type
+            The item to be inserted
+
+        Returns
+        -------
+        evicted : any hashable type
+            The evicted object or *None* if no contents were evicted.
+        """
+        self._ss_cache.put(k)
+
+        # cache hit in recency cache
+        if k in self._recency_cache_top:
+            self._recency_cache_top.move_to_top(k)
+            return None
+        # cache hit in top_k
+        elif k in self._top_k_cached:
+            self._top_k_cached.move_to_top(k)
+            return None
+        # cache miss but hit on observed element in recency cache
+        elif k in self._recency_cache_bottom:
+            evicted = self._top_k_cached.pop_bottom()
+            self._top_k_cached_length -= 1
+            self._recency_cache_bottom.remove(k)
+            self._recency_cache_top.append_top(k)
+            self._recency_cache_top_length += 1
+            return evicted
+        # cache miss but hit on observed element in top_k
+        elif k in self._top_k_uncached:
+            self._top_k_uncached.remove(k)
+            self._top_k_cached.append_top(k)
+            self._top_k_cached_length += 1
+            if self._recency_cache_top_length > 0:
+                self._recency_cache_top_length -= 1
+                evicted = self._recency_cache_top.pop_bottom()
+                self._recency_cache_bottom.append_top(evicted)
+                return evicted
+            else:
+                return None
+        # cache miss in both caches and miss on observed elements
+        else:
+            self._recency_cache_top.append_top(k)
+            if self._top_k_cached_length + self._recency_cache_top_length < self.maxlen:
+                self._recency_cache_top_length += 1
+                return None
+            elif self._recency_cache_top_length + len(self._recency_cache_bottom) < self.maxlen:
+                evicted = self._recency_cache_top.pop_bottom()
+                self._recency_cache_bottom.append_top(evicted)
+                return evicted
+            else:
+                # special case: if the whole LRU list is cached we do not add the bottom element to the bottom list
+                if self._recency_cache_top_length == self.maxlen:
+                    return self._recency_cache_top.pop_bottom()
+                else:
+                    self._recency_cache_bottom.pop_bottom()
+                    evicted = self._recency_cache_top.pop_bottom()
+                    self._recency_cache_bottom.append_top(evicted)
+                    return evicted
+
+    @inheritdoc(Cache)
+    def remove(self, k):
+        if k in self._top_k_cached:
+            self._top_k_cached.remove(k)
+            if len(self._top_k_uncached) > 0:
+                self._top_k_cached.append_bottom(self._top_k_uncached.pop_top())
+            else:
+                self._top_k_cached_length -= 1
+                if len(self._recency_cache_bottom) > 0:
+                    self._recency_cache_top.append_bottom(self._recency_cache_bottom.pop_top())
+            return True
+        elif k in self._top_k_uncached:
+            return self._top_k_uncached.remove(k)
+        elif k in self._recency_cache_top:
+            self._recency_cache_top.remove(k)
+            if len(self._recency_cache_bottom) > 0:
+                self._recency_cache_top.append_bottom(self._recency_cache_bottom.pop_top())
+            else:
+                self._recency_cache_top_length -= 1
+                if len(self._top_k_uncached) > 0:
+                    self._top_k_cached.append_bottom(self._top_k_uncached.pop_top())
+            return True
+        else:
+            return self._recency_cache_bottom.remove(k)
+
+    @inheritdoc(Cache)
+    def clear(self):
+        self._recency_cache_top.clear()
+        self._recency_cache_bottom.clear()
+        self._recency_cache_top_length = 0
+        self._top_k_cached.clear()
+        self._top_k_uncached.clear()
+        self._top_k_cached_length = 0
+
+    def _end_of_window_operation(self):
+        """ At the end of every window all the elements from the space saving cache are put into the _top_k list.
+        The Space Saving Cache is then re-initialized. For every element in the LRU cache that will then be in the
+        _top_k list the portion of _top_k that is cached is increased by 1. The rest of the cache is then from the
+        LRU cache. The elements in the LRU cache carry over from one period to the next except for the ones that
+        are also in the _top_k list.
+        """
+        self._window_counter = 0
+        whole_dump = self._ss_cache.dump()
+
+        self._top_k_cached.clear()
+        self._top_k_uncached.clear()
+        self._top_k_cached_length = 0
+
+        new_top_k = whole_dump[:self.maxlen]
+        self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
+
+        # set up whole cache to be LRU cache before removing the top-k elements from the LRU cache
+        for _ in self._recency_cache_bottom:
+            self._recency_cache_top.append_bottom(self._recency_cache_bottom.pop_top())
+        self._recency_cache_top_length = self._recency_cache_top.__len__()
+
+        # remove top-k elements from LRU cache and adjust counters
+        for element in new_top_k:
+            if element in self._recency_cache_top:
+                self._recency_cache_top.remove(element)
+                self._recency_cache_top_length -= 1
+                self._top_k_cached.append_bottom(element)
+                self._top_k_cached_length += 1
+            elif element in self._recency_cache_bottom:
+                self._recency_cache_bottom.remove(element)
+                self._top_k_uncached.append_bottom(element)
+            else:
+                self._top_k_uncached.append_bottom(element)
+
+        # if there's still space add top-k elements
+        while self._recency_cache_top_length + self._top_k_cached_length < self.maxlen and len(self._top_k_uncached) > 0:
+            self._top_k_cached.append_bottom(self._top_k_uncached.pop_top())
+            self._top_k_cached_length += 1
+
+        # if there's still space add LRU elements
+        while self._recency_cache_top_length + self._top_k_cached_length < self.maxlen and len(self._recency_cache_bottom) > 0:
+            self._recency_cache_top.append_bottom(self._recency_cache_bottom.pop_top())
+            self._recency_cache_top_length += 1
 
 

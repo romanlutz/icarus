@@ -280,13 +280,14 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 MONITORED_DEFAULT = NETWORK_CACHE * 2
-use_DSCA = True
-use_DSCASW = True
-use_DSCAFS = True
+use_DSCA = False
+use_DSCASW = False
+use_DSCAFS = False
 use_ADSCASTK = True
-use_ARC = True
-use_LRU = True
-use_KLRU = True
+use_ADSCAATK = True
+use_ARC = False
+use_LRU = False
+use_KLRU = False
 
 if use_DSCA:
     for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64, MONITORED_DEFAULT*256]:
@@ -319,6 +320,14 @@ if use_DSCAFS:
 if use_ADSCASTK:
     for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
         CACHE_POLICY.append('ADSCASTK')
+        CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+        CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
+        append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
+                       cached_segments=True, lru_portion=True)
+
+if use_ADSCAATK:
+    for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
+        CACHE_POLICY.append('ADSCAATK')
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
         append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,

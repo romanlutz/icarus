@@ -75,6 +75,8 @@ def print_cache_hit_rates():
                     rates[policy][window_size][lru_portion][trace] = k[1]
                 elif policy == 'ADSCASTK':
                     rates[policy][window_size][trace] = k[1]
+                elif policy == 'ADSCAATK':
+                    rates[policy][window_size][trace] = k[1]
                 else:
                     print 'error: policy', policy, 'unknown'
 
@@ -88,7 +90,7 @@ def print_cache_hit_rates():
 
     print ", ".join(traces)
 
-    policies = ['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS', 'ADSCASTK']
+    policies = ['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
 
     dict_list = []
 
@@ -128,11 +130,11 @@ def print_cache_hit_rates():
                     for lru_portion in lru_portions:
                         dict_list.append(('DSCAFS (%d %f)' % (window_size, lru_portion),
                                           rates[policy][window_size][lru_portion]))
-            elif policy == 'ADSCASTK':
+            elif policy in ['ADSCASTK', 'ADSCAATK']:
                 window_sizes = rates[policy].keys()
                 window_sizes.sort()
                 for window_size in window_sizes:
-                    dict_list.append(('ADSCASTK %d' % window_size, rates[policy][window_size]))
+                    dict_list.append(('%s %d' % (policy, window_size), rates[policy][window_size]))
 
 
     print dict_list
