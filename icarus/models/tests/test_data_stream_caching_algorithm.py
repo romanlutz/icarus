@@ -15,14 +15,13 @@ else:
 del sys
 
 from icarus.models.data_stream_caching_algorithm import DataStreamCachingAlgorithmCache, \
-    DataStreamCachingAlgorithmWithSlidingWindowCache
-from icarus.models.space_saving import SpaceSavingCache
+    DataStreamCachingAlgorithmWithSlidingWindowCache, AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache
 import pprint
 
 pp = pprint.PrettyPrinter(indent=4)
 
 
-class TestStreamSummary(unittest.TestCase):
+class TestDSCA(unittest.TestCase):
     def test_dsca_ibm(self):
         import csv
         c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
@@ -253,3 +252,22 @@ class TestStreamSummary(unittest.TestCase):
                     print contents, 14885146, float(contents) / float(14885146)
 
         self.assertEquals([contents, cache_hits], [14885146, 1670687])
+
+    def test_adscastk_ibm(self):
+        import csv
+        c = AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(500, monitored=1000, window_size=1000)
+        cache_hits = 0
+        contents = 0
+
+        with open('../../../resources/IBM_traces/requests_full_ibm.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[0])
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+        self.assertEquals([contents, cache_hits], [60000, 39606])
