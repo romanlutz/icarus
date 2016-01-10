@@ -76,15 +76,20 @@ for trace_path in traces:
                             heapq.heappush(next_occurrence, (-occurrences[object][0], object))
                     else:
                         # replacement policy: replace the one which is needed the furthest in the future
-                        (_, evicted_object) = heapq.heappop(next_occurrence)
-                        del cache[evicted_object]
+                        # in case the newly observed element is needed the furthest don't cache it
 
                         if occurrences[object] == []:
-                            # newly cached object will not occur in the future
-                            cache_size -= 1
+                            # newly cached object will not occur in the future, don't change cache
+                            pass
                         else:
-                            cache[object] = True
-                            heapq.heappush(next_occurrence, (-occurrences[object][0], object))
+                            (furthest_occurrence, furthest_needed_object) = heapq.heappop(next_occurrence)
+                            if -furthest_occurrence < occurrences[object][0]:
+                                # new element will occur further in the future, don't cache it
+                                heapq.heappush(next_occurrence, (furthest_occurrence, furthest_needed_object))
+                            else:
+                                del cache[furthest_needed_object]
+                                cache[object] = True
+                                heapq.heappush(next_occurrence, (-occurrences[object][0], object))
 
             results[MAX_CACHE_SIZE].append(str(float(cache_hits) / float(request_index)))
             print 'finished', trace_path, results[MAX_CACHE_SIZE][-1]
