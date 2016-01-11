@@ -259,7 +259,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i not in [8, 21, 25, 30] and i in [1,2,3,4,5,6,7]:
+        if i not in [8, 21, 25, 30] and i >= 31:#in [1,2,3,4,5,6,7]:
             traces.append((line[0], int(line[1])))
         i += 1
 
@@ -280,14 +280,14 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 MONITORED_DEFAULT = NETWORK_CACHE * 2
-use_DSCA = False
-use_DSCASW = False
-use_DSCAFS = False
+use_DSCA = True
+use_DSCASW = True
+use_DSCAFS = True
 use_ADSCASTK = True
 use_ADSCAATK = True
-use_ARC = False
-use_LRU = False
-use_KLRU = False
+use_ARC = True
+use_LRU = True
+use_KLRU = True
 
 if use_DSCA:
     for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64, MONITORED_DEFAULT*256]:

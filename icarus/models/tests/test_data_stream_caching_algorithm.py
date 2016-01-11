@@ -12,16 +12,25 @@ else:
         import unittest2 as unittest
     except ImportError:
         raise ImportError("The unittest2 package is needed to run the tests.")
-del sys
 
 from icarus.models.data_stream_caching_algorithm import DataStreamCachingAlgorithmCache, \
     DataStreamCachingAlgorithmWithSlidingWindowCache, AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache
 import pprint
 
+import os
+
 pp = pprint.PrettyPrinter(indent=4)
 
+test_dsca_ibm = False
+test_dsca_fastly = False
+test_small_sliding_window = False
+test_medium_sliding_window = False
+test_dscasw_ibm = False
+test_dscasw_fastly = False
+test_adscastk_ibm = True
 
 class TestDSCA(unittest.TestCase):
+    @unittest.skipUnless(test_dsca_ibm, 'Test DSCA on IBM trace')
     def test_dsca_ibm(self):
         import csv
         c = DataStreamCachingAlgorithmCache(100, monitored=500, window_size=1500)
@@ -45,6 +54,7 @@ class TestDSCA(unittest.TestCase):
 
         self.assertEquals([contents, cache_hits], [60000, 38808])
 
+    @unittest.skipUnless(test_dsca_fastly, 'Test DSCA on Fastly trace')
     def test_dsca_fastly(self):
         import csv
         c = []
@@ -70,6 +80,7 @@ class TestDSCA(unittest.TestCase):
 
         self.assertEquals(cache_hits, [2205377, 2148139, 2101392, 2054625, 2021313, 1990615, 1933566])
 
+    @unittest.skipUnless(test_small_sliding_window, 'Test DSCASW with a small artificial input stream')
     def test_small_sliding_window(self):
         cache_hits = 0
         contents = 0
@@ -114,6 +125,7 @@ class TestDSCA(unittest.TestCase):
 
         self.assertEquals([cache_hits, contents], [25, 40])
 
+    @unittest.skipUnless(test_medium_sliding_window, 'Test DSCASW with a medium sized artificial input stream')
     def test_medium_sliding_window(self):
         cache_hits = 0
         contents = 0
@@ -207,6 +219,7 @@ class TestDSCA(unittest.TestCase):
 
         self.assertEquals([cache_hits, contents], [32, 100])
 
+    @unittest.skipUnless(test_dscasw_ibm, 'Test DSCASW on IBM trace')
     def test_dscasw_ibm(self):
         import csv
         c = DataStreamCachingAlgorithmWithSlidingWindowCache(100, monitored=500, subwindow_size=1500, subwindows=2)
@@ -231,6 +244,7 @@ class TestDSCA(unittest.TestCase):
 
         self.assertEquals([contents, cache_hits], [60000, 38839])
 
+    @unittest.skipUnless(test_dscasw_fastly, 'Test DSCASW on Fastly trace')
     def test_dscasw_fastly(self):
         import csv
         c = DataStreamCachingAlgorithmWithSlidingWindowCache(100, monitored=500, subwindow_size=1500, subwindows=10)
@@ -253,6 +267,7 @@ class TestDSCA(unittest.TestCase):
 
         self.assertEquals([contents, cache_hits], [14885146, 1670687])
 
+    @unittest.skipUnless(test_adscastk_ibm, 'Test ADSCASTK on IBM trace')
     def test_adscastk_ibm(self):
         import csv
         c = AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(500, monitored=1000, window_size=1000)
@@ -271,3 +286,7 @@ class TestDSCA(unittest.TestCase):
                     c.put(content)
 
         self.assertEquals([contents, cache_hits], [60000, 39606])
+
+
+if __name__ == "__main__":
+    unittest.main()
