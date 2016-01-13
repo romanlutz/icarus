@@ -250,7 +250,7 @@ REQ_RATE = 1.0
 # Total size of network cache as a fraction of content population
 # If the cache size is a static number (e.g. 100), set NETWORK_CACHE_FRACTION to False
 # In case the cache size is given as a natural number, set it to the cumulative total of the whole network
-NETWORK_CACHE = 500
+NETWORK_CACHE = 1000
 NETWORK_CACHE_FRACTION = False
 
 # if running a trace-driven simulation, REQ_FILE is the path to the trace file
@@ -259,7 +259,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i not in [8, 21, 25, 30] and i >= 31:#in [1,2,3,4,5,6,7]:
+        if i not in [8, 21, 25, 30] and (i >= 31 or i in [1,2,3,4,5,6,7]):
             traces.append((line[0], int(line[1])))
         i += 1
 
@@ -290,7 +290,7 @@ use_LRU = True
 use_KLRU = True
 
 if use_DSCA:
-    for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64, MONITORED_DEFAULT*256]:
+    for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
         CACHE_POLICY.append('DSCA')
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
@@ -299,7 +299,7 @@ if use_DSCA:
 
 if use_DSCASW:
     for subwindow_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
-        for subwindows in range(2, 11):
+        for subwindows in range(2, 11, 2):
             CACHE_POLICY.append('DSCASW')
             CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
             CACHE_POLICY_PARAMETERS['subwindows'].append(subwindows)
@@ -318,7 +318,7 @@ if use_DSCAFS:
                            cached_segments=True)
 
 if use_ADSCASTK:
-    for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
+    for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
         CACHE_POLICY.append('ADSCASTK')
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
@@ -326,7 +326,7 @@ if use_ADSCASTK:
                        cached_segments=True, lru_portion=True)
 
 if use_ADSCAATK:
-    for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
+    for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
         CACHE_POLICY.append('ADSCAATK')
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
