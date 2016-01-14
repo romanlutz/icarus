@@ -3,7 +3,7 @@ import heapq
 from copy import deepcopy
 
 
-MAX_CACHE_SIZES = [100, 500]
+MAX_CACHE_SIZES = [1000]#[100, 500, 1000]
 results = {}
 for s in MAX_CACHE_SIZES:
     results[s] = []
