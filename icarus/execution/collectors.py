@@ -494,6 +494,75 @@ class PathStretchCollector(DataCollector):
         return results
        
 
+@register_data_collector('CACHE_LEVEL_PROPORTIONS')
+class CacheLevelProportionsCollector(DataCollector):
+    """Collector measuring the cache level proportions for adaptive policies that have at least two levels, one of which
+    is typically an LRU level and the other and LFU level. For some policies there is a second LRU level instead of LFU,
+    but for the sake of simplicity it is still called LFU here.
+    """
+
+    def __init__(self, view):
+        """Constructor
+        """
+        self.view = view
+        self.requests = {}
+        self.cache_level_proportion_evolution = {}
+
+    def _initialize_node_cache_level_proportions_collector(self, node):
+        self.requests[node] = 0
+        self.cache_level_proportion_evolution[node] = {}
+        if self.view.model.cache[node].__class__.__name__ in \
+                ['AdaptiveReplacementCache',
+                 'DataStreamCachingAlgorithmCache',
+                 'DataStreamCachingAlgorithmWithSlidingWindowCache',
+                 'AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache',
+                 'AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache']:
+            self.cache_level_proportion_evolution[node]['LFU'] = []
+            self.cache_level_proportion_evolution[node]['LRU'] = []
+
+    @inheritdoc(DataCollector)
+    def cache_hit(self, node):
+        self._process_activity(node)
+
+    @inheritdoc(DataCollector)
+    def cache_miss(self, node):
+        self._process_activity(node)
+
+    def _process_activity(self, node):
+        try:
+            self.requests[node] += 1
+        except KeyError:
+            # this will only result in KeyError upon the first call
+            self._initialize_node_cache_level_proportions_collector(node)
+            self.requests[node] += 1
+
+        if self.view.model.cache[node].__class__.__name__ == 'AdaptiveReplacementCache':
+            self.cache_level_proportion_evolution[node]['LRU'].append(len(self.view.model.cache[node]._recency_cache_top))
+            self.cache_level_proportion_evolution[node]['LFU'].append(len(self.view.model.cache[node]._frequency_cache_top))
+        elif self.view.model.cache[node].__class__.__name__ == 'DataStreamCachingAlgorithmCache' or \
+             self.view.model.cache[node].__class__.__name__ == 'DataStreamCachingAlgorithmWithSlidingWindowCache':
+            self.cache_level_proportion_evolution[node]['LFU'].append(len(self.view.model.cache[node]._guaranteed_top_k))
+            self.cache_level_proportion_evolution[node]['LRU'].append(len(self.view.model.cache[node]._lru_cache))
+        elif self.view.model.cache[node].__class__.__name__ == 'AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache' or \
+             self.view.model.cache[node].__class__.__name__ == 'AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache':
+            self.cache_level_proportion_evolution[node]['LRU'].append(self.view.model.cache[node]._recency_cache_top_length)
+            self.cache_level_proportion_evolution[node]['LFU'].append(self.view.model.cache[node]._top_k_cached_length)
+
+    @inheritdoc(DataCollector)
+    def results(self):
+        result_dict = {}
+        for node in self.cache_level_proportion_evolution:
+            if self.view.model.cache[node].__class__.__name__ in \
+                ['AdaptiveReplacementCache',
+                 'DataStreamCachingAlgorithmCache',
+                 'DataStreamCachingAlgorithmWithSlidingWindowCache',
+                 'AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache',
+                 'AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache']:
+                result_dict['node %d: LRU' % node] = self.cache_level_proportion_evolution[node]['LRU']
+                result_dict['node %d: LFU' % node] = self.cache_level_proportion_evolution[node]['LFU']
+        return Tree(result_dict)
+
+
 @register_data_collector('TEST')
 class TestCollector(DataCollector):
     """Collector used for test cases only.

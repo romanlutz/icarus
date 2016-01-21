@@ -505,6 +505,7 @@ class LeaveCopyEverywhere(Strategy):
                 if self.controller.get_content(v):
                     serving_node = v
                     break
+        else:
             # No cache hits, get content from source
             self.controller.get_content(v)
             serving_node = v
