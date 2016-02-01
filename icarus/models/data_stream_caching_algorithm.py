@@ -1231,8 +1231,8 @@ class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlg
             self._ss_cache.guaranteed_top_k(min(self._maxlen, len(self._ss_cache) - 1), return_frequencies=True)
 
         def func(x, epsilon, n, m):
-            return 0.5 * ((x-epsilon)**m * (1-x+epsilon)**(n-m) + (x+epsilon)**m * (1-x-epsilon)**(n-m)) \
-                   / x**m / (1-x)**(n-m)
+            return 0.5 * (((x-epsilon)/x)**m * ((1-x+epsilon)/(1-x))**(n-m) +
+                          ((x+epsilon)/x)**m * ((1-x-epsilon)/(1-x))**(n-m))
 
         top_k_frequencies_percentage = float(top_k_frequencies) / float(self._cumulative_window_counter)
         if self._hypothesis_check_A > func(top_k_frequencies_percentage, self._hypothesis_check_epsilon,

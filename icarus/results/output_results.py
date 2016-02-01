@@ -15,11 +15,12 @@ def print_cache_hit_rates():
     rates = {}
 
     for tree in result:
-        trace, policy, _, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion = \
-            determine_policy_and_parameters(tree)
+        trace, policy, _, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion, \
+        hypothesis_check_period, hypothesis_check_A, hypothesis_check_epsilon = determine_policy_and_parameters(tree)
 
         rates = assign_cache_hit_rate(tree, rates, trace, policy, window_size, segments, cached_segments,
-                                      subwindows, subwindow_size, lru_portion)
+                                      subwindows, subwindow_size, lru_portion, hypothesis_check_period,
+                                      hypothesis_check_A, hypothesis_check_epsilon)
 
     traces = []
     with open('resources/trace_overview.csv', 'r') as trace_file:
@@ -31,7 +32,7 @@ def print_cache_hit_rates():
 
     print ", ".join(traces)
 
-    policies = ['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCASW', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
+    policies = ['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCAAWS', 'DSCASW', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
 
     dict_list = []
 
@@ -53,6 +54,18 @@ def print_cache_hit_rates():
                 window_sizes.sort()
                 for window_size in window_sizes:
                     dict_list.append(('DSCA %d' % window_size, rates[policy][window_size]))
+            elif policy == 'DSCAAWS':
+                periods = rates[policy].keys()
+                periods.sort()
+                for period in periods:
+                    hypo_As = rates[policy][period].keys()
+                    hypo_As.sort()
+                    for A in hypo_As:
+                        hypo_epsilons = rates[policy][period][A].keys()
+                        hypo_epsilons.sort()
+                        for epsilon in hypo_epsilons:
+                            dict_list.append(('DSCAAWS %d %f %f' % (period, A, epsilon),
+                                             rates[policy][period][A][epsilon]))
             elif policy == 'DSCASW':
                 subwindow_sizes = rates[policy].keys()
                 subwindow_sizes.sort()
@@ -89,7 +102,8 @@ def print_cache_hit_rates():
         print ''
 
 def determine_policy_and_parameters(tree):
-    window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion = None, None, None, None, None, None
+    window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion, hypothesis_check_period, \
+        hypothesis_check_A, hypothesis_check_epsilon = None, None, None, None, None, None, None, None, None
     for k in tree[0]:
         if k[0] == ('workload', 'reqs_file'):
             trace = k[1]
@@ -121,18 +135,33 @@ def determine_policy_and_parameters(tree):
             if k[1] is not None:
                 lru_portion = float(k[1])
 
+        elif k[0] == ('cache_policy', 'hypothesis_check_period'):
+            if k[1] is not None:
+                hypothesis_check_period = int(k[1])
+
+        elif k[0] == ('cache_policy', 'hypothesis_check_A'):
+            if k[1] is not None:
+                hypothesis_check_A = int(k[1])
+
+        elif k[0] == ('cache_policy', 'hypothesis_check_epsilon'):
+            if k[1] is not None:
+                hypothesis_check_epsilon = int(k[1])
+
         elif k[0] == ('cache_placement', 'network_cache'):
             if k[1] is not None:
                 cache_size = int(k[1])
 
-    return trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion
+    return trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion, \
+           hypothesis_check_period, hypothesis_check_A, hypothesis_check_epsilon
 
-def assign_cache_hit_rate(tree, rates, trace, policy, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion):
+def assign_cache_hit_rate(tree, rates, trace, policy, window_size, segments, cached_segments, subwindows,
+                          subwindow_size, lru_portion, hypothesis_check_period, hypothesis_check_A,
+                          hypothesis_check_epsilon):
     for k in tree[1]:
         if k[0] == ('CACHE_HIT_RATIO', 'PER_NODE_CACHE_HIT_RATIO', 1):
             if policy not in rates.keys():
                 rates[policy] = {}
-            for param in [window_size, segments, subwindow_size]:
+            for param in [window_size, segments, subwindow_size, hypothesis_check_period]:
                 if param is not None and param not in rates[policy].keys():
                     rates[policy][param] = {}
             if cached_segments is not None and cached_segments not in rates[policy][segments].keys():
@@ -141,6 +170,10 @@ def assign_cache_hit_rate(tree, rates, trace, policy, window_size, segments, cac
                 rates[policy][subwindow_size][subwindows] = {}
             if lru_portion is not None and lru_portion not in rates[policy][window_size].keys():
                 rates[policy][window_size][lru_portion] = {}
+            if hypothesis_check_A is not None and hypothesis_check_A not in rates[policy][hypothesis_check_period].keys():
+                rates[policy][hypothesis_check_period][hypothesis_check_A] = {}
+            if hypothesis_check_epsilon is not None and hypothesis_check_epsilon not in rates[policy][hypothesis_check_period][hypothesis_check_A].keys():
+                rates[policy][hypothesis_check_period][hypothesis_check_A][hypothesis_check_epsilon] = {}
 
             if policy == 'LRU':
                 rates[policy][trace] = k[1]
@@ -150,6 +183,8 @@ def assign_cache_hit_rate(tree, rates, trace, policy, window_size, segments, cac
                 rates[policy][trace] = k[1]
             elif policy == 'DSCA':
                 rates[policy][window_size][trace] = k[1]
+            elif policy == 'DSCAAWS':
+                rates[policy][hypothesis_check_period][hypothesis_check_A][hypothesis_check_epsilon][trace] = k[1]
             elif policy == 'DSCASW':
                 rates[policy][subwindow_size][subwindows][trace] = k[1]
             elif policy == 'DSCAFS':
