@@ -28,6 +28,7 @@ test_medium_sliding_window = False
 test_dscasw_ibm = False
 test_dscasw_fastly = False
 test_adscastk_ibm = True
+test_adscastk_youtube = True
 
 class TestDSCA(unittest.TestCase):
     @unittest.skipUnless(test_dsca_ibm, 'Test DSCA on IBM trace')
@@ -285,7 +286,28 @@ class TestDSCA(unittest.TestCase):
                 else:
                     c.put(content)
 
-        self.assertEquals([contents, cache_hits], [60000, 39606])
+        self.assertListEqual([contents, cache_hits], [60000, 39606])
+
+    @unittest.skipUnless(test_adscastk_youtube, 'Test ADSCASTK on YouTube trace')
+    def test_adscastk_youtube(self):
+        import csv
+        c = AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(1000, monitored=2000, window_size=2000)
+        cache_hits = 0
+        contents = 0
+
+        with open('../../../resources/UMass_YouTube_traces/requests_full_youtube.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[0])
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+        print cache_hits
+        self.assertListEqual([contents, cache_hits], [60000, 6788])
 
 
 if __name__ == "__main__":

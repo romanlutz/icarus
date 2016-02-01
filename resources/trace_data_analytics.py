@@ -1,4 +1,5 @@
 import csv
+from icarus.tools import zipf_fit
 
 """
 The purpose of this program is to check standardized traces for the total number of requests, the number of unique
@@ -13,7 +14,7 @@ with open('trace_overview.csv', 'r') as trace_file:
     i = 0
     for line in csv_reader:
         i += 1
-        if i >= 31:
+        if i >= 31 or i <= 7:
             traces.append(line[0])
 
 data = {}
@@ -37,9 +38,11 @@ for trace_path in traces:
                 print trace_path, requests
 
         occurrence_distribution = {}
+        occurrence_total = [] # for later Zipfian MLE
         single_occurrences = 0
         for object in occurrences:
             total_occurrences = len(occurrences[object])
+            occurrence_total.append(total_occurrences)
             if total_occurrences > 1:
                 if total_occurrences in occurrence_distribution:
                     previous_counter = occurrence_distribution[total_occurrences]['counter']
@@ -67,12 +70,15 @@ for trace_path in traces:
 
         overall_average_distance /= consecutive_request_pairs
 
+        zipf_alpha, zipf_fit_prob = zipf_fit(occurrence_total, need_sorting=True)
+
         data[trace_path] = {'requests': requests, 'objects': len(occurrences), 'single_occurrences': single_occurrences,
-                            'average_distance': overall_average_distance}
+                            'average_distance': overall_average_distance,
+                            'zipf_alpha': zipf_alpha, 'zipf_fit_prob': zipf_fit_prob}
         print data[trace_path]
 
 
-properties = ['requests', 'objects', 'single_occurrences', 'average_distance']
+properties = ['requests', 'objects', 'single_occurrences', 'average_distance', 'zipf_alpha', 'zipf_fit_prob']
 print traces
 for property in properties:
     for trace in traces:

@@ -136,12 +136,12 @@ class SpaceSavingCache(Cache):
     def clear(self):
         self._cache = StreamSummary(self._maxlen, self._monitored)
 
-    def guaranteed_top_k(self, k):
+    def guaranteed_top_k(self, k, return_frequencies=False):
         """
         :return: the (maximum) number k for which the underlying StreamSummary data structure guarantees to contain
         the top k elements
         """
-        return self._cache.guaranteed_top_k(k)
+        return self._cache.guaranteed_top_k(k, return_frequencies)
 
     def get_stream_summary(self):
         return deepcopy(self._cache)
@@ -343,7 +343,7 @@ class StreamSummary:
 
             return node
 
-    def guaranteed_top_k(self, k):
+    def guaranteed_top_k(self, k, return_frequencies=False):
         """
         Checks for the elements whose guaranteed frequency is at least as high as the maximum frequency of the k+1th
         element in the data structure.
@@ -351,11 +351,15 @@ class StreamSummary:
         Parameters
         ----------
         k - the number of considered elements
+        return_frequencies - bool that indicates whether the aggregated frequencies of the guaranteed elements shall
+                             be returned or not
 
         Returns
         -------
-        list of indices where the minimum guaranteed number of occurrences is greater or equal than the maximum
-        number of occurrences of the k+1th element.
+        - list of indices where the minimum guaranteed number of occurrences is greater or equal than the maximum
+          number of occurrences of the k+1th element.
+        - possibly (depending on options) the aggregated frequencies of the guaranteed top k elements shall
+          be returned as well
 
         """
         buckets = self.bucket_map.keys()
@@ -368,9 +372,12 @@ class StreamSummary:
                                               else len(self.bucket_map[buckets[next_bucket_index]]) - 1
 
         min_guaranteed_frequency = []
+        top_k_frequencies = []
 
         for i in range(k):
-            min_guaranteed_frequency.append(self.__guaranteed_occurrences(buckets, curr_bucket_index, curr_list_index))
+            freq, _, guaranteed_occurrences = self.__guaranteed_occurrences(buckets, curr_bucket_index, curr_list_index)
+            min_guaranteed_frequency.append(guaranteed_occurrences)
+            top_k_frequencies.append(freq)
 
             curr_bucket_index = next_bucket_index
             curr_list_index = next_list_index
@@ -384,15 +391,23 @@ class StreamSummary:
 
         max_frequency = buckets[next_bucket_index]
         guaranteed_indices = []
+        total_top_k_frequency = 0
+        total_top_k_occurrences = 0
 
         for i in range(k):
             if min_guaranteed_frequency[i] >= max_frequency:
                 guaranteed_indices.append(i)
+                total_top_k_frequency += top_k_frequencies[i]
+                total_top_k_occurrences += min_guaranteed_frequency[i]
 
-        return guaranteed_indices
+        if return_frequencies:
+            return guaranteed_indices, total_top_k_frequency, total_top_k_occurrences
+        else:
+            return guaranteed_indices
 
     def __guaranteed_occurrences(self, buckets, bucket_index, list_index):
-        return buckets[bucket_index] - self.bucket_map[buckets[bucket_index]][list_index].max_error
+        return buckets[bucket_index], self.bucket_map[buckets[bucket_index]][list_index].max_error, \
+               buckets[bucket_index] - self.bucket_map[buckets[bucket_index]][list_index].max_error
 
     def convert_to_dictionary(self):
         # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed

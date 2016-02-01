@@ -5,6 +5,7 @@ from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc
 from copy import deepcopy
 import pprint
+import numpy as np
 pp = pprint.PrettyPrinter(indent=4)
 
 
@@ -13,7 +14,8 @@ __all__ = ['DataStreamCachingAlgorithmCache',
            'DataStreamCachingAlgorithmWithSlidingWindowCache',
            'DataStreamCachingAlgorithmWithFixedSplitsCache',
            'AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache',
-           'AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache']
+           'AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache',
+           'DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache']
 
 @register_cache_policy('DSCA')
 class DataStreamCachingAlgorithmCache(Cache):
@@ -178,9 +180,13 @@ class DataStreamCachingAlgorithmCache(Cache):
         if new_k > self._maxlen:
             new_k = self._maxlen
         prev_k = len(self._guaranteed_top_k)
+        prev_top_k = self._guaranteed_top_k
         self._guaranteed_top_k = [whole_dump[i] for i in new_guaranteed_indices]
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
         lru_cache_size = self._maxlen - new_k
+
+        for still_existing_element in set(self._guaranteed_top_k) & set(prev_top_k):
+            prev_top_k.remove(still_existing_element)
 
         for element in self._guaranteed_top_k:
             self._lru_cache.remove(element)
@@ -196,6 +202,12 @@ class DataStreamCachingAlgorithmCache(Cache):
                 self._lru_cache = LruCache(lru_cache_size)
                 for element in lru_elements:
                     self._lru_cache.put(element)
+
+        # if there's still space keep some of the otherwise evicted former top-k elements
+        if type(self._lru_cache) is not NullCache:
+            while len(self._lru_cache) < self._lru_cache._maxlen and len(prev_top_k) > 0:
+                self._lru_cache._cache.append_bottom(prev_top_k[0])
+                prev_top_k = prev_top_k[1:]
 
 
 @register_cache_policy('DSCASW')
@@ -338,8 +350,12 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         if new_k > self._maxlen:
             new_k = self._maxlen
         prev_k = len(self._guaranteed_top_k)
+        prev_top_k = self._guaranteed_top_k
         self._guaranteed_top_k = [whole_dump[i] for i in new_guaranteed_indices]
         lru_cache_size = self._maxlen - new_k
+
+        for still_existing_element in set(self._guaranteed_top_k) & set(prev_top_k):
+            prev_top_k.remove(still_existing_element)
 
         for element in self._guaranteed_top_k:
             self._lru_cache.remove(element)
@@ -355,6 +371,12 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
                 self._lru_cache = LruCache(lru_cache_size)
                 for element in lru_elements:
                     self._lru_cache.put(element)
+
+        # if there's still space keep some of the otherwise evicted former top-k elements
+        if type(self._lru_cache) is not NullCache:
+            while len(self._lru_cache) < self._lru_cache._maxlen and len(prev_top_k) > 0:
+                self._lru_cache._cache.append_bottom(prev_top_k[0])
+                prev_top_k = prev_top_k[1:]
 
     def _remove_last_window(self):
         """ Given the current cumulative Space Saving cache and the Stream Summary data structures from the previous
@@ -577,12 +599,23 @@ class DataStreamCachingAlgorithmWithFixedSplitsCache(Cache):
         """
         self._window_counter = 0
         whole_dump = self._ss_cache.dump()
-
+        prev_top_k = self._top_k
         self._top_k = whole_dump[:self._k]
+
+        for still_existing_element in set(self._top_k) & set(prev_top_k):
+            prev_top_k.remove(still_existing_element)
+
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
 
         for element in self._top_k:
             self._lru_cache.remove(element)
+
+        # append former top-k elements in case LRU cache is not full
+        lru_size = len(self._lru_cache)
+        while lru_size < self._lru_cache._maxlen and len(prev_top_k) > 0:
+            self._lru_cache._cache.append_bottom(prev_top_k[0])
+            lru_size += 1
+            prev_top_k = prev_top_k[1:]
 
 @register_cache_policy('ADSCASTK')
 class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
@@ -791,8 +824,12 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
         self._window_counter = 0
         whole_dump = self._ss_cache.dump()
 
+        prev_top_k = self._top_k
         self._top_k = whole_dump[:self.maxlen]
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
+
+        for still_existing_element in set(self._top_k) & set(prev_top_k):
+            prev_top_k.remove(still_existing_element)
 
         # set up whole cache to be LRU cache before removing the top-k elements from the LRU cache
         self._top_k_cached_length = 0
@@ -815,6 +852,12 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
         # if there's still space add LRU elements
         while self._recency_cache_top_length + self._top_k_cached_length < self.maxlen and len(self._recency_cache_bottom) > 0:
             self._recency_cache_top.append_bottom(self._recency_cache_bottom.pop_top())
+            self._recency_cache_top_length += 1
+
+        # if there's still space add elements that were "evicted" from top-k
+        while self._recency_cache_top_length + self._top_k_cached_length < self.maxlen and len(prev_top_k) > 0:
+            self._recency_cache_top.append_bottom(prev_top_k[0])
+            prev_top_k = prev_top_k[1:]
             self._recency_cache_top_length += 1
 
 
@@ -1034,11 +1077,15 @@ class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
         self._window_counter = 0
         whole_dump = self._ss_cache.dump()
 
+        prev_top_k = list(iter(self._top_k_cached))
+        prev_top_k.extend(list(iter(self._top_k_uncached)))
         self._top_k_cached.clear()
         self._top_k_uncached.clear()
         self._top_k_cached_length = 0
 
         new_top_k = whole_dump[:self.maxlen]
+        for still_existing_element in set(new_top_k) & set(prev_top_k):
+            prev_top_k.remove(still_existing_element)
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
 
         # set up whole cache to be LRU cache before removing the top-k elements from the LRU cache
@@ -1068,5 +1115,134 @@ class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
         while self._recency_cache_top_length + self._top_k_cached_length < self.maxlen and len(self._recency_cache_bottom) > 0:
             self._recency_cache_top.append_bottom(self._recency_cache_bottom.pop_top())
             self._recency_cache_top_length += 1
+
+        # if there's still space add elements that were "evicted" from top-k
+        while self._recency_cache_top_length + self._top_k_cached_length < self.maxlen and len(prev_top_k) > 0:
+            self._recency_cache_top.append_bottom(prev_top_k[0])
+            prev_top_k = prev_top_k[1:]
+            self._recency_cache_top_length += 1
+
+
+@register_cache_policy('DSCAAWS')
+class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlgorithmCache):
+    """Data Stream Caching Algorithm with Adaptive Window Size (DSCAAWS) is similar to DSCA but instead of using a
+    pre-defined window size after which the top-k are reset, DSCAAWS uses and adaptive window size. It checks repeatedly
+    whether it can accept the hypothesis and otherwise keeps sampling. The length of the period for checking the hypo-
+    thesis can be specified. To reduce computational overhead it can be set to a larger value than 1. 1 would
+    essentially mean that after every request the hypothesis is checked.
+    """
+
+    @inheritdoc(DataStreamCachingAlgorithmCache)
+    def __init__(self, maxlen, monitored=-1, hypothesis_check_period=1, hypothesis_check_A=0.33,
+                 hypothesis_check_epsilon=0.005, **kwargs):
+        self._maxlen = int(maxlen)
+        if self._maxlen <= 0:
+            raise ValueError('maxlen must be positive')
+        self._monitored = monitored
+        if self._monitored == -1:
+            self._monitored = 2 * self._maxlen
+        if self._monitored < self._maxlen:
+            raise ValueError('Number of monitored elements has to be greater or equal the cache size')
+
+        # initially only LRU
+        self._lru_cache = LruCache(self._maxlen)
+        self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
+        self._guaranteed_top_k = [] # from previous window
+
+        # to keep track of the windows, there is a counter and the (fixed) size of each window
+        self._hypothesis_check_period = hypothesis_check_period
+        if self._hypothesis_check_period < 1:
+            raise ValueError('hypothesis_check_period must be positive')
+        self._window_counter = 0
+        self._cumulative_window_counter = 0
+
+        # hypothesis check parameter A to control the false positives
+        self._hypothesis_check_A = hypothesis_check_A
+        if self._hypothesis_check_A <= 0 or self._hypothesis_check_A >= 1:
+            raise ValueError('false positive control parameter A is not between 0 and 1')
+
+        # hypothesis check parameter epsilon to specify the tolerance interval
+        self._hypothesis_check_epsilon = hypothesis_check_epsilon
+        if self._hypothesis_check_epsilon <= 0 or self._hypothesis_check_epsilon >= 1:
+            raise ValueError('tolerance parameter epsilon is not between 0 and 1')
+
+    @inheritdoc(DataStreamCachingAlgorithmCache)
+    def get(self, k):
+        # check in both LRU and top-k list
+        top_k_hit = k in self._guaranteed_top_k
+        lru_hit = False
+        if not top_k_hit:
+            lru_hit = self._lru_cache.get(k)
+        # report occurrence to Space Saving
+        if lru_hit or top_k_hit:
+            self._ss_cache.put(k)
+            self._window_counter += 1
+
+            if self._window_counter >= self._hypothesis_check_period:
+                self._cumulative_window_counter += self._window_counter
+                self._window_counter = 0
+                # only perform hypothesis check if the number of elements in the SS cache is at least max cache size + 1
+                if len(self._ss_cache) > self._maxlen:
+                    if self._hypothesis_check():
+                        self._end_of_window_operation()
+                        self._cumulative_window_counter = 0
+
+        return lru_hit or top_k_hit
+
+    @inheritdoc(DataStreamCachingAlgorithmCache)
+    def put(self, k):
+        self._ss_cache.put(k)
+        if not(k in self._guaranteed_top_k):
+            if not self._lru_cache.get(k):
+                evicted = self._lru_cache.put(k)
+                # counter is only increased if there is no cache hit
+                # because put should only be called when there is a cache miss
+                self._window_counter += 1
+
+                if self._window_counter >= self._hypothesis_check_period:
+                    self._cumulative_window_counter += self._window_counter
+                    self._window_counter = 0
+                    # only perform hypothesis check if the number of elements in the SS cache is at least max cache size + 1
+                    if len(self._ss_cache) > self._maxlen:
+                        if self._hypothesis_check():
+                            self._end_of_window_operation()
+                            self._cumulative_window_counter = 0
+
+                return evicted
+            else:
+                # element is in LRU, cache hit
+                return None
+        else:
+            # element is in top-k, cache hit
+            return None
+
+
+    def _hypothesis_check(self):
+        """The null hypothesis states that the sum of the estimated frequencies of the top-k guaranteed elements is
+        within an epsilon of the real frequencies of these elements. This is checked with a function. If the hypothesis
+        is not accepted, the algorithm keeps sampling. Rejection is not possible.
+
+        Returns
+        -------
+        bool: True if the hypothesis is accepted, False otherwise
+        """
+
+        _, top_k_frequencies, top_k_guaranteed_frequencies = \
+            self._ss_cache.guaranteed_top_k(min(self._maxlen, len(self._ss_cache) - 1), return_frequencies=True)
+
+        def func(x, epsilon, n, m):
+            return 0.5 * ((x-epsilon)**m * (1-x+epsilon)**(n-m) + (x+epsilon)**m * (1-x-epsilon)**(n-m)) \
+                   / x**m / (1-x)**(n-m)
+
+        top_k_frequencies_percentage = float(top_k_frequencies) / float(self._cumulative_window_counter)
+        if self._hypothesis_check_A > func(top_k_frequencies_percentage, self._hypothesis_check_epsilon,
+                                           self._cumulative_window_counter, top_k_frequencies) :
+            return True
+        else:
+            return False
+
+
+
+
 
 

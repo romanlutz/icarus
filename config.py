@@ -259,14 +259,16 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i not in [8, 21, 25, 30] and (i >= 31 or i <= 7):
+        if i not in [8, 21, 25, 30] and (i >= 31 or i <= 7) and i == 1:
             traces.append((line[0], int(line[1])))
         i += 1
 
 
 def append_default(cache_policy_parameters, window_size=False, subwindows=False, subwindow_size=False, monitored=False, warmup=False,
-                   segments=False, cached_segments=False, lru_portion=False):
-    variables = ['window_size', 'subwindows', 'subwindow_size', 'monitored', 'segments', 'cached_segments', 'lru_portion']
+                   segments=False, cached_segments=False, lru_portion=False, hypothesis_check_period=False,
+                   hypothesis_check_A=False, hypothesis_check_epsilon=False):
+    variables = ['window_size', 'subwindows', 'subwindow_size', 'monitored', 'segments', 'cached_segments', 'lru_portion',
+                 'hypothesis_check_period', 'hypothesis_check_A', 'hypothesis_check_epsilon']
     for variable in variables:
         if eval(variable):
             cache_policy_parameters[variable].append(None)
@@ -275,19 +277,21 @@ def append_default(cache_policy_parameters, window_size=False, subwindows=False,
 # Cache eviction policy
 CACHE_POLICY = []
 CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size': [], 'monitored': [], 'warmup': [],
-                           'segments': [], 'cached_segments': [], 'lru_portion': []}
+                           'segments': [], 'cached_segments': [], 'lru_portion': [], 'hypothesis_check_period': [],
+                           'hypothesis_check_A': [], 'hypothesis_check_epsilon': []}
 
 
 
 MONITORED_DEFAULT = NETWORK_CACHE * 2
-use_DSCA = True
-use_DSCASW = True
-use_DSCAFS = True
-use_ADSCASTK = True
-use_ADSCAATK = True
-use_ARC = True
-use_LRU = True
-use_KLRU = True
+use_DSCA = False
+use_DSCAAWS = True
+use_DSCASW = False
+use_DSCAFS = False
+use_ADSCASTK = False
+use_ADSCAATK = False
+use_ARC = False
+use_LRU = False
+use_KLRU = False
 
 if use_DSCA:
     for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
@@ -295,7 +299,20 @@ if use_DSCA:
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
         append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
-                       cached_segments=True, lru_portion=True)
+                       cached_segments=True, lru_portion=True, hypothesis_check_period=True, hypothesis_check_A=True,
+                       hypothesis_check_epsilon=True)
+
+if use_DSCAAWS:
+    for hypothesis_check_period in [1, 1000]:
+        for hypothesis_check_A in [0.33]:
+            for hypothesis_check_epsilon in [0.005]:
+                CACHE_POLICY.append('DSCAAWS')
+                CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+                CACHE_POLICY_PARAMETERS['hypothesis_check_period'].append(hypothesis_check_period)
+                CACHE_POLICY_PARAMETERS['hypothesis_check_A'].append(hypothesis_check_A)
+                CACHE_POLICY_PARAMETERS['hypothesis_check_epsilon'].append(hypothesis_check_epsilon)
+                append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
+                               cached_segments=True, lru_portion=True, window_size=True)
 
 if use_DSCASW:
     for subwindow_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
@@ -305,7 +322,8 @@ if use_DSCASW:
             CACHE_POLICY_PARAMETERS['subwindows'].append(subwindows)
             CACHE_POLICY_PARAMETERS['subwindow_size'].append(subwindow_size)
             append_default(CACHE_POLICY_PARAMETERS, window_size=True, warmup=True, segments=True, cached_segments=True,
-                           lru_portion=True)
+                           lru_portion=True, hypothesis_check_period=True, hypothesis_check_A=True,
+                           hypothesis_check_epsilon=True)
 
 if use_DSCAFS:
     for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
@@ -315,7 +333,8 @@ if use_DSCAFS:
             CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
             CACHE_POLICY_PARAMETERS['lru_portion'].append(lru_portion)
             append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
-                           cached_segments=True)
+                           cached_segments=True, hypothesis_check_period=True, hypothesis_check_A=True,
+                           hypothesis_check_epsilon=True)
 
 if use_ADSCASTK:
     for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
@@ -323,7 +342,8 @@ if use_ADSCASTK:
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
         append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
-                       cached_segments=True, lru_portion=True)
+                       cached_segments=True, lru_portion=True, hypothesis_check_period=True, hypothesis_check_A=True,
+                       hypothesis_check_epsilon=True)
 
 if use_ADSCAATK:
     for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
@@ -331,17 +351,20 @@ if use_ADSCAATK:
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
         append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
-                       cached_segments=True, lru_portion=True)
+                       cached_segments=True, lru_portion=True, hypothesis_check_period=True, hypothesis_check_A=True,
+                       hypothesis_check_epsilon=True)
 
 if use_ARC:
     CACHE_POLICY.append('ARC')
     append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
-                   warmup=True, segments=True, cached_segments=True, lru_portion=True)
+                   warmup=True, segments=True, cached_segments=True, lru_portion=True, hypothesis_check_period=True,
+                   hypothesis_check_A=True, hypothesis_check_epsilon=True)
 
 if use_LRU:
     CACHE_POLICY.append('LRU')
     append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
-                   warmup=True, segments=True, cached_segments=True, lru_portion=True)
+                   warmup=True, segments=True, cached_segments=True, lru_portion=True, hypothesis_check_period=True,
+                   hypothesis_check_A=True, hypothesis_check_epsilon=True)
 
 if use_KLRU:
     for segments in [2, 3]:
@@ -350,7 +373,8 @@ if use_KLRU:
             CACHE_POLICY_PARAMETERS['cached_segments'].append(cached_segments)
             CACHE_POLICY_PARAMETERS['segments'].append(segments)
             append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
-                           warmup=True, lru_portion=True)
+                           warmup=True, lru_portion=True, hypothesis_check_period=True, hypothesis_check_A=True,
+                           hypothesis_check_epsilon=True)
 
 
 # Zipf alpha parameter for non-trace-driven simulation

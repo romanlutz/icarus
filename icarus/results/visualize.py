@@ -122,6 +122,7 @@ def draw_cache_level_proportions(plotdir):
     for tree in result:
         trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion = \
             determine_policy_and_parameters(tree)
+        print trace, policy
         param_names = ['window_size', 'subwindows', 'subwindow_size', 'segments', 'cached_segments', 'lru_portion']
         params = [window_size, subwindows, subwindow_size, segments, cached_segments, lru_portion]
         if policy in ['ARC', 'DSCA', 'DSCASW', 'ADSCASTK', 'ADSCAATK']:
@@ -135,7 +136,6 @@ def draw_cache_level_proportions(plotdir):
                     elif 'LFU' in k[0][1]:
                         lfu_sizes = k[1]
             n = len(lru_sizes)
-            print n
 
             filename = trace[10:-6] + '/' + policy + '_cache_size=' + str(cache_size)
             title = 'Cache Level Proportions for %s with cache size=%i' % (policy, cache_size)
