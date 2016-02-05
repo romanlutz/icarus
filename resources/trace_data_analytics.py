@@ -14,7 +14,7 @@ with open('trace_overview.csv', 'r') as trace_file:
     i = 0
     for line in csv_reader:
         i += 1
-        if (i >= 31 or i <= 7) and i == 2:
+        if (i >= 31 or i <= 7) and i == 3:
             traces.append(line[0])
 
 properties = ['requests', 'objects', 'single_occurrences', 'average_distance']
