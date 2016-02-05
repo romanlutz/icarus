@@ -141,11 +141,11 @@ def determine_policy_and_parameters(tree):
 
         elif k[0] == ('cache_policy', 'hypothesis_check_A'):
             if k[1] is not None:
-                hypothesis_check_A = int(k[1])
+                hypothesis_check_A = float(k[1])
 
         elif k[0] == ('cache_policy', 'hypothesis_check_epsilon'):
             if k[1] is not None:
-                hypothesis_check_epsilon = int(k[1])
+                hypothesis_check_epsilon = float(k[1])
 
         elif k[0] == ('cache_placement', 'network_cache'):
             if k[1] is not None:

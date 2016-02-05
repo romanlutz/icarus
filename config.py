@@ -303,9 +303,9 @@ if use_DSCA:
                        hypothesis_check_epsilon=True)
 
 if use_DSCAAWS:
-    for hypothesis_check_period in [1, 1000]:
-        for hypothesis_check_A in [0.33]:
-            for hypothesis_check_epsilon in [0.005]:
+    for hypothesis_check_period in [1, 500, 1000, 2000, 4000]:
+        for hypothesis_check_A in [0.2, 0.33, 0.5]:
+            for hypothesis_check_epsilon in [0.001, 0.005, 0.01]:
                 CACHE_POLICY.append('DSCAAWS')
                 CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
                 CACHE_POLICY_PARAMETERS['hypothesis_check_period'].append(hypothesis_check_period)
