@@ -32,7 +32,7 @@ __modules_to_register = [
      'icarus.scenarios.contentplacement',
      'icarus.scenarios.cacheplacement',
      'icarus.scenarios.workload',
-     'icarus.tools',
+     'icarus.tools.traces',
                          ]
 
 for m in __modules_to_register:
