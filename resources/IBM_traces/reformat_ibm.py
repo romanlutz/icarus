@@ -8,21 +8,19 @@ def reformat(filename):
         csv_reader = csv.reader(csv_file)
 
         for row in csv_reader:
-            content = row[0]
+            content = row[2]
+            time = row[0]
 
-            event = {'receiver': 0, 'content': content}
+            event = {'receiver': 0, 'content': content, 'time': time}
             requests.append(event)
 
     extension = '_reformatted'
 
-    with open(filename[:-6] + extension + '.trace', 'wb') as file:
+    with open(filename[:-4] + extension + '.trace', 'wb') as file:
         writer = csv.writer(file, quoting = csv.QUOTE_NONE)
-        time = 0
 
         for event in requests:
-            writer.writerow((time, event['receiver'], event['content']))
-            time += 1
+            writer.writerow((event['time'], event['receiver'], event['content']))
 
 
-reformat('requests_full_ibm.trace')
-reformat('requests_ibm.trace')
+reformat('anon-url-trace.txt')

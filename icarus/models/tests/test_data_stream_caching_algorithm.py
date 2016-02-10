@@ -25,10 +25,10 @@ test_dsca_ibm = False
 test_dsca_fastly = False
 test_small_sliding_window = False
 test_medium_sliding_window = False
-test_dscasw_ibm = False
+test_dscasw_ibm = True
 test_dscasw_fastly = False
-test_adscastk_ibm = True
-test_adscastk_youtube = True
+test_adscastk_ibm = False
+test_adscastk_youtube = False
 
 class TestDSCA(unittest.TestCase):
     @unittest.skipUnless(test_dsca_ibm, 'Test DSCA on IBM trace')
@@ -223,7 +223,7 @@ class TestDSCA(unittest.TestCase):
     @unittest.skipUnless(test_dscasw_ibm, 'Test DSCASW on IBM trace')
     def test_dscasw_ibm(self):
         import csv
-        c = DataStreamCachingAlgorithmWithSlidingWindowCache(100, monitored=500, subwindow_size=1500, subwindows=2)
+        c = DataStreamCachingAlgorithmWithSlidingWindowCache(1000, monitored=2000, subwindow_size=2000, subwindows=4)
         cache_hits = 0
         contents = 0
 
@@ -233,8 +233,12 @@ class TestDSCA(unittest.TestCase):
                 contents += 1
                 content = int(row[0])
 
-                if (contents - 1) % 1500 == 0 or contents % 1500 == 0:
+                if (contents - 1) % 2000 == 0 or contents % 2000 == 0:
                     print 'number of requests so far: ', contents, 'next:', content
+                    try:
+                        print 'LRU size:', c._lru_cache._maxlen, 'top-k size:', len(c._guaranteed_top_k)
+                    except:
+                        print 'LRU size:', 0, 'top-k size:', len(c._guaranteed_top_k)
                     c.print_caches()
                     print ''
 
@@ -243,7 +247,10 @@ class TestDSCA(unittest.TestCase):
                 else:
                     c.put(content)
 
-        self.assertEquals([contents, cache_hits], [60000, 38839])
+                if contents == 25000:
+                    break
+
+        self.assertEquals([contents, cache_hits], [60000, 39969])
 
     @unittest.skipUnless(test_dscasw_fastly, 'Test DSCASW on Fastly trace')
     def test_dscasw_fastly(self):

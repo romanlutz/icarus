@@ -1,7 +1,5 @@
-IBM_traces/requests_full_ibm_reformatted.trace, 60000
-IBM_traces/requests_ibm_reformatted.trace, 500001
-UMass_YouTube_traces/requests_full_youtube_reformatted.trace, 60000
-UMass_YouTube_traces/requests_youtube_reformatted.trace, 300001
+IBM_traces/anon-url-trace_reformatted.trace, 8626163
+UMass_YouTube_traces/YouTube_Trace_7days_reformatted.trace, 258673
 Live_VoD_P2P_IPTV_elkhatib/NextSharePC_one_cache_scenario.trace, 78678
 Live_VoD_P2P_IPTV_elkhatib/NextShareTV_one_cache_scenario.trace, 15757
 Fastly_traces/requests_reformatted.trace, 14885146

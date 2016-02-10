@@ -24,7 +24,8 @@ __all__ = [
     'LinkLoadCollector',
     'LatencyCollector',
     'PathStretchCollector',
-    'TestCollector'
+    'TestCollector',
+    'WindowSizeCollector',
            ]
 
 
@@ -562,6 +563,52 @@ class CacheLevelProportionsCollector(DataCollector):
                 result_dict['node %d: LFU' % node] = self.cache_level_proportion_evolution[node]['LFU']
         return Tree(result_dict)
 
+@register_data_collector('WINDOW_SIZE')
+class WindowSizeCollector(DataCollector):
+    """Collector used for capturing window sizes in case of an adaptive window size.
+    """
+
+    def __init__(self, view):
+        """Constructor
+
+        Parameters
+        ----------
+        view : NetworkView
+            The network view instance
+        """
+        self.view = view
+        self.current_window_size = {}
+        self.window_sizes = {}
+
+    @inheritdoc(DataCollector)
+    def cache_miss(self, node):
+        self.check_window_size(node)
+
+    @inheritdoc(DataCollector)
+    def cache_hit(self, node):
+        self.check_window_size(node)
+
+    def check_window_size(self, node):
+        if self.view.model.cache[node].__class__.__name__ in \
+                ['DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlgorithmCache']:
+            if node not in self.window_sizes:
+                self.window_sizes[node] = []
+                self.current_window_size[node] = 0
+            # if the last seen count is higher than the actual current one then the window ended
+            actual_window_size = self.view.model.cache[node].get_cumulative_window_counter()
+            if actual_window_size < self.current_window_size[node]:
+                self.window_sizes[node].append(self.current_window_size)
+            self.current_window_size[node] = actual_window_size
+
+    @inheritdoc(DataCollector)
+    def results(self):
+        result_dict = {}
+        for node in self.window_sizes:
+            if self.view.model.cache[node].__class__.__name__ in \
+              ['DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlgorithmCache']:
+                result_dict['node %d: window sizes' % node] = self.window_sizes[node]
+        return Tree(result_dict)
+
 
 @register_data_collector('TEST')
 class TestCollector(DataCollector):
@@ -619,5 +666,3 @@ class TestCollector(DataCollector):
             Summary of session
         """
         return self.session
-
-    

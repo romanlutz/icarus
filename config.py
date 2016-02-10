@@ -236,7 +236,8 @@ DATA_COLLECTORS = [
            'LATENCY',           # Measure request and response latency (based on static link delays)
            #'LINK_LOAD',         # Measure link loads
            'PATH_STRETCH',      # Measure path stretch
-           'CACHE_LEVEL_PROPORTIONS']
+           'CACHE_LEVEL_PROPORTIONS',
+           'WINDOW_SIZE']
 
 
 
@@ -259,7 +260,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i not in [8, 21, 25, 30] and (i >= 31 or i <= 7):
+        if i >= 29 or i <= 5:
             traces.append((line[0], int(line[1])))
         i += 1
 
@@ -283,15 +284,15 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 MONITORED_DEFAULT = NETWORK_CACHE * 2
-use_DSCA = False
+use_DSCA = True
 use_DSCAAWS = True
 use_DSCASW = False
-use_DSCAFS = False
-use_ADSCASTK = False
-use_ADSCAATK = False
-use_ARC = False
-use_LRU = False
-use_KLRU = False
+use_DSCAFS = True
+use_ADSCASTK = True
+use_ADSCAATK = True
+use_ARC = True
+use_LRU = True
+use_KLRU = True
 
 if use_DSCA:
     for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
@@ -304,8 +305,8 @@ if use_DSCA:
 
 if use_DSCAAWS:
     for hypothesis_check_period in [1, 500, 1000, 2000, 4000]:
-        for hypothesis_check_A in [0.2, 0.33, 0.5]:
-            for hypothesis_check_epsilon in [0.001, 0.005, 0.01]:
+        for hypothesis_check_A in [0.33]:
+            for hypothesis_check_epsilon in [0.005]:
                 CACHE_POLICY.append('DSCAAWS')
                 CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
                 CACHE_POLICY_PARAMETERS['hypothesis_check_period'].append(hypothesis_check_period)

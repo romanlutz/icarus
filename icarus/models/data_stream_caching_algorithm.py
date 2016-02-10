@@ -442,7 +442,11 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
                 for element in list(new_window_elements - old_window_elements):
                     self._window_caches[window_index][element]['frequency'] -= min_frequency
                     self._window_caches[window_index][element]['max_error'] -= min_frequency
-
+                    # to be added:
+                    # if self._window_caches[window_index][element]['max_error'] < 0:
+                    #     self._window_caches[window_index][element]['max_error'] = 0
+                    # numbers are so low that everything is guaranteed! Let's limit it to elements that occurred at least 5 times, i.e. f>=5
+                    # even f-values get negative... and lots of (0,0) entries, how about removing them altogether?
 
 
 
@@ -1240,6 +1244,10 @@ class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlg
             return True
         else:
             return False
+
+
+    def get_cumulative_window_counter(self):
+        return self._cumulative_window_counter
 
 
 

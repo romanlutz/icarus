@@ -7,15 +7,25 @@ def reformat(filename):
     with open(filename, 'r') as csv_file:
         csv_reader = csv.reader(csv_file)
 
+        contents = {}
+        unique_contents = 0
         for row in csv_reader:
-            content = row[0]
-
-            event = {'receiver': 0, 'content': content}
-            requests.append(event)
+            parts = ' '.join(row).split()
+            request = parts[6]
+            if request[:6] == '/watch':
+                content = parts[6][9:20]
+                if content in contents:
+                    id = contents[content]
+                else:
+                    unique_contents += 1
+                    id = unique_contents
+                    contents[content] = id
+                event = {'receiver': 0, 'content': id}
+                requests.append(event)
 
     extension = '_reformatted'
 
-    with open(filename[:-6] + extension + '.trace', 'wb') as file:
+    with open(filename[:-4] + extension + '.trace', 'wb') as file:
         writer = csv.writer(file, quoting = csv.QUOTE_NONE)
         time = 0
 
@@ -24,5 +34,4 @@ def reformat(filename):
             time += 1
 
 
-reformat('requests_full_youtube.trace')
-reformat('requests_youtube.trace')
+reformat('YouTube_Trace_7days.txt')
