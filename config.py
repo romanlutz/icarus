@@ -213,7 +213,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = 6  # cpu_count()
+N_PROCESSES = cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -273,7 +273,8 @@ def append_default(cache_policy_parameters, window_size=False, subwindows=False,
     for variable in variables:
         if eval(variable):
             cache_policy_parameters[variable].append(None)
-    cache_policy_parameters['warmup'].append(NETWORK_CACHE*4)
+    if warmup:
+        cache_policy_parameters['warmup'].append(NETWORK_CACHE*4)
 
 # Cache eviction policy
 CACHE_POLICY = []
@@ -284,15 +285,24 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 MONITORED_DEFAULT = NETWORK_CACHE * 2
+use_SS = True
 use_DSCA = True
 use_DSCAAWS = True
 use_DSCASW = False
+use_DSCAFT = True
 use_DSCAFS = True
 use_ADSCASTK = True
 use_ADSCAATK = True
 use_ARC = True
 use_LRU = True
 use_KLRU = True
+
+if use_SS:
+    CACHE_POLICY.append('SS')
+    CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+    append_default(CACHE_POLICY_PARAMETERS, window_size=True, subwindows=True, subwindow_size=True, monitored=True,
+                   segments=True, cached_segments=True, lru_portion=True, hypothesis_check_period=True,
+                   hypothesis_check_A=True, hypothesis_check_epsilon=True, warmup=True)
 
 if use_DSCA:
     for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
@@ -325,6 +335,16 @@ if use_DSCASW:
             append_default(CACHE_POLICY_PARAMETERS, window_size=True, warmup=True, segments=True, cached_segments=True,
                            lru_portion=True, hypothesis_check_period=True, hypothesis_check_A=True,
                            hypothesis_check_epsilon=True)
+
+if use_DSCAFT:
+    for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
+        CACHE_POLICY.append('DSCAFT')
+        CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+        CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
+        # the threshold is used as specified through the default value
+        append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
+                       cached_segments=True, lru_portion=True, hypothesis_check_period=True, hypothesis_check_A=True,
+                       hypothesis_check_epsilon=True)
 
 if use_DSCAFS:
     for window_size in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
