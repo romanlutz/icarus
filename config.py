@@ -300,7 +300,7 @@ use_KLRU = True
 if use_SS:
     CACHE_POLICY.append('SS')
     CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
-    append_default(CACHE_POLICY_PARAMETERS, window_size=True, subwindows=True, subwindow_size=True, monitored=True,
+    append_default(CACHE_POLICY_PARAMETERS, window_size=True, subwindows=True, subwindow_size=True,
                    segments=True, cached_segments=True, lru_portion=True, hypothesis_check_period=True,
                    hypothesis_check_A=True, hypothesis_check_epsilon=True, warmup=True)
 

@@ -33,7 +33,7 @@ class DataStreamCachingAlgorithmCache(Cache):
     """
 
     @inheritdoc(Cache)
-    def __init__(self, maxlen, monitored=-1, window_size=1500, **kwargs):
+    def __init__(self, maxlen, monitored=-1, window_size=2000, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
@@ -218,7 +218,7 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
     """
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
-    def __init__(self, maxlen, monitored=-1, subwindow_size=1500, subwindows=2, **kwargs):
+    def __init__(self, maxlen, monitored=-1, subwindow_size=2000, subwindows=2, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
