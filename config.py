@@ -213,7 +213,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = 6 # cpu_count()
+N_PROCESSES = 6  # cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -273,7 +273,7 @@ def append_default(cache_policy_parameters, window_size=False, subwindows=False,
     for variable in variables:
         if eval(variable):
             cache_policy_parameters[variable].append(None)
-    cache_policy_parameters['warmup'].append(0)
+    cache_policy_parameters['warmup'].append(NETWORK_CACHE*4)
 
 # Cache eviction policy
 CACHE_POLICY = []

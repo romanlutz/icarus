@@ -92,13 +92,13 @@ class SpaceSavingCache(Cache):
         position : int
             The current position of the item in the cache
         """
-        if not k in self.dump():
+        if not self.has(k):
             raise ValueError('The item %s is not in the cache' % str(k))
         return self._cache.index(k)
 
     @inheritdoc(Cache)
     def has(self, k):
-        return k in self.dump()
+        return k in self._cache.id_to_bucket_map
 
     @inheritdoc(Cache)
     def get(self, k):

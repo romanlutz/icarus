@@ -1252,5 +1252,64 @@ class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlg
 
 
 
+@register_cache_policy('DSCAFT')
+class DataStreamCachingAlgorithmWithFrequencyThresholdCache(DataStreamCachingAlgorithmCache):
+    """DSCAFT is similar to DSCA. The only difference is that objects are considered for the LFU part only if their
+    relative frequency within a window is higher than a given percentage (the threshold).
+    """
 
+    @inheritdoc(DataStreamCachingAlgorithmCache)
+    def __init__(self, maxlen, monitored=-1, window_size=1500, threshold=0.0025, **kwargs):
+        DataStreamCachingAlgorithmCache.__init__(self, maxlen=maxlen, monitored=monitored, window_size=window_size)
+
+        # determine min threshold for LFU consideration
+        self.threshold = int(self._window_size * threshold)
+
+    def _end_of_window_operation(self):
+        """ At the end of every window the top k from the space saving cache are put into the _guaranteed_top_k list.
+        The Space Saving Cache is then re-initialized. The rest of the cache is then from the LRU cache.
+        The elements in the LRU cache carry over from one period to the next.
+        """
+        self._window_counter = 0
+        whole_dump = self._ss_cache.dump()
+
+        new_guaranteed_indices = self._ss_cache.guaranteed_top_k(min(self._maxlen, len(whole_dump) - 1))
+
+        # check which elements satisfy the threshold frequency
+        for index in new_guaranteed_indices:
+            if self._ss_cache._cache.id_to_bucket_map[whole_dump[index]] < self.threshold:
+                new_guaranteed_indices.remove(index)
+
+        new_k = len(new_guaranteed_indices)
+        if new_k > self._maxlen:
+            new_k = self._maxlen
+        prev_k = len(self._guaranteed_top_k)
+        prev_top_k = self._guaranteed_top_k
+        self._guaranteed_top_k = [whole_dump[i] for i in new_guaranteed_indices]
+        self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
+        lru_cache_size = self._maxlen - new_k
+
+        for still_existing_element in set(self._guaranteed_top_k) & set(prev_top_k):
+            prev_top_k.remove(still_existing_element)
+
+        for element in self._guaranteed_top_k:
+            self._lru_cache.remove(element)
+
+        if new_k == prev_k:
+            pass  # continue with current LRU cache
+        else:
+            lru_elements = self._lru_cache.dump()[:lru_cache_size]
+            lru_elements.reverse()
+            if new_k == self._maxlen:
+                self._lru_cache = NullCache()  # empty LRU cache
+            else:
+                self._lru_cache = LruCache(lru_cache_size)
+                for element in lru_elements:
+                    self._lru_cache.put(element)
+
+        # if there's still space keep some of the otherwise evicted former top-k elements
+        if type(self._lru_cache) is not NullCache:
+            while len(self._lru_cache) < self._lru_cache._maxlen and len(prev_top_k) > 0:
+                self._lru_cache._cache.append_bottom(prev_top_k[0])
+                prev_top_k = prev_top_k[1:]
 
