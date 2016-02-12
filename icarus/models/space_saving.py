@@ -364,6 +364,7 @@ class StreamSummary:
         """
         buckets = self.bucket_map.keys()
         buckets.sort()
+        # set indices to top element
         curr_bucket_index = len(buckets) - 1
         top_bucket_length = len(self.bucket_map[buckets[curr_bucket_index]])
         next_bucket_index = curr_bucket_index if top_bucket_length > 1 else curr_bucket_index - 1
@@ -389,7 +390,7 @@ class StreamSummary:
                 # move to next element within same bucket
                 next_list_index = curr_list_index - 1
 
-        max_frequency = buckets[next_bucket_index]
+        max_frequency = buckets[next_bucket_index] if next_bucket_index >= 0 else buckets[0]
         guaranteed_indices = []
         total_top_k_frequency = 0
         total_top_k_occurrences = 0

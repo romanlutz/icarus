@@ -390,8 +390,9 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
 
         self._ss_cache.clear()
 
-        for i, _ in enumerate(self._window_caches):
-            self._expire_window(i, expired_window_table)
+        # expire elements that occurred in expired window by reducing their counts
+        for expiring_element_id in expired_window_table:
+            self._expire_entry(expiring_element_id, expired_window_table)
 
         # put updated Stream Summary data structure into current SS cache
         new_stream_summary = StreamSummary(self._monitored, monitored_items=self._monitored)
@@ -403,50 +404,18 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         self._ss_cache._cache = new_stream_summary
 
 
-    def _expire_window(self, window_index, expired_window_table):
-        new_window_elements = set(self._window_caches[window_index].keys())
-        old_window_elements = set(expired_window_table.keys())
-
-        intersection = list(new_window_elements & old_window_elements)
-        reappearing_elements = []
-        # for every element that is still in the table the frequency and error need to be adjusted directly
-        for element in intersection:
-            self._window_caches[window_index][element]['frequency'] -= expired_window_table[element]['frequency']
-
-            if self._window_caches[window_index][element]['max_error'] > expired_window_table[element]['max_error']:
-                # element expired but re-appeared, so the error is at least the previous frequency
-                self._window_caches[window_index][element]['max_error'] -= expired_window_table[element]['frequency']
-                reappearing_elements.append(element)
+    def _expire_entry(self, expiring_element_id, expired_window_table):
+        for i in range(len(self._window_caches) - 1, -1):
+            if expiring_element_id not in self._window_caches[i]:
+                # element was evicted in this subwindow
+                break
+            elif self._window_caches[i][expiring_element_id]['max_error'] > expired_window_table[expiring_element_id]['max_error']:
+                # error has increased, so element was evicted in this subwindow and occurred again
+                break
             else:
-                # element did not expire, so the previous error can be subtracted
-                self._window_caches[window_index][element]['max_error'] -= expired_window_table[element]['max_error']
-
-        # some operations are for evicted and completely new elements only.
-        if not (len(intersection) == len(new_window_elements)):
-            # find the minimum frequency of all elements that are not in the window table any more
-            # this includes elements that are still present but with higher error
-            frequency_values = []
-            for element in list(old_window_elements - new_window_elements):
-                frequency_values.append(expired_window_table[element]['frequency'])
-            # also consider the reappearing elements that expired but are back in the table
-            for element in reappearing_elements:
-                frequency_values.append(expired_window_table[element]['frequency'])
-
-            if len(frequency_values) == 0:
-                # don't subtract anything for the new elements since the old elements are a subset of the new elements
-                pass
-            else:
-                min_frequency = min(frequency_values)
-
-                # subtract the minimum frequency of the expired elements from all frequencies and max errors in the newer window
-                for element in list(new_window_elements - old_window_elements):
-                    self._window_caches[window_index][element]['frequency'] -= min_frequency
-                    self._window_caches[window_index][element]['max_error'] -= min_frequency
-                    # to be added:
-                    # if self._window_caches[window_index][element]['max_error'] < 0:
-                    #     self._window_caches[window_index][element]['max_error'] = 0
-                    # numbers are so low that everything is guaranteed! Let's limit it to elements that occurred at least 5 times, i.e. f>=5
-                    # even f-values get negative... and lots of (0,0) entries, how about removing them altogether?
+                # element is still in the table and has not been evicted
+                self._window_caches[i][expiring_element_id]['frequency'] -= expired_window_table[expiring_element_id]['frequency']
+                self._window_caches[i][expiring_element_id]['max_error'] -= expired_window_table[expiring_element_id]['max_error']
 
 
 

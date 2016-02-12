@@ -4,11 +4,11 @@ from copy import deepcopy
 
 def beladys_algorithm(max_cache_sizes, traces):
     results = {}
-    for s in MAX_CACHE_SIZES:
+    for s in max_cache_sizes:
         results[s] = []
     request_index, cache_hits = 0, 0
     for trace_path in traces:
-        with open(trace_path, 'r') as trace:
+        with open('resources/' + trace_path, 'r') as trace:
             csv_reader = csv.reader(trace)
 
             # pre-processing
@@ -25,8 +25,8 @@ def beladys_algorithm(max_cache_sizes, traces):
 
 
 
-        for MAX_CACHE_SIZE in MAX_CACHE_SIZES:
-            with open(trace_path, 'r') as trace:
+        for max_cache_size in max_cache_sizes:
+            with open('resources/' + trace_path, 'r') as trace:
                 csv_reader = csv.reader(trace)
                 # actual processing of workload
                 request_index = 0
@@ -54,7 +54,7 @@ def beladys_algorithm(max_cache_sizes, traces):
                         else:
                             heapq.heappush(next_occurrence, (-occurrences[object][0], object))
                     else:
-                        if cache_size < MAX_CACHE_SIZE:
+                        if cache_size < max_cache_size:
                             if occurrences[object] == []:
                                 # object won't occur any more
                                 pass
@@ -79,9 +79,9 @@ def beladys_algorithm(max_cache_sizes, traces):
                                     cache[object] = True
                                     heapq.heappush(next_occurrence, (-occurrences[object][0], object))
 
-                results[MAX_CACHE_SIZE].append(str(float(cache_hits) / float(request_index)))
-                print 'finished', trace_path, results[MAX_CACHE_SIZE][-1]
+                results[max_cache_size].append(str(float(cache_hits) / float(request_index)))
+                print 'finished', trace_path, results[max_cache_size][-1]
 
 
-    for s in MAX_CACHE_SIZES:
+    for s in max_cache_sizes:
         print '\t'.join(results[s])
