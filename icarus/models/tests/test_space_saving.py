@@ -15,17 +15,18 @@ del sys
 
 from icarus.models.space_saving import SpaceSavingCache, StreamSummary
 
+
 class TestStreamSummary(unittest.TestCase):
 
     def test_init(self):
-        ss = StreamSummary(5)
+        ss = StreamSummary(5, 5)
         self.assertEquals(ss.id_to_bucket_map, {})
         self.assertEquals(ss.bucket_map, {})
         self.assertEquals(ss.max_size, 5)
         self.assertEquals(ss.size, 0)
 
     def test_add_a_few(self):
-        ss = StreamSummary(5)
+        ss = StreamSummary(5, 5)
         self.assertEquals(ss.size, 0)
         ss.add_occurrence(1)
         self.assertEquals(ss.size, 1)
@@ -88,10 +89,31 @@ class TestStreamSummary(unittest.TestCase):
         top_k = ss.guaranteed_top_k(5)
         self.assertEquals(top_k, [0]) # 10, 5 and 2 are guaranteed
 
+    def test_youtube(self):
+        import csv
+        c = SpaceSavingCache(1000, monitored=2000)
+        cache_hits = 0
+        contents = 0
+
+        print 'starting YouTube test'
+        with open('../../../resources/UMass_YouTube_traces/YouTube_Trace_7days_reformatted.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[2])
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+                if contents % 10000 == 0:
+                    print contents, 258673, float(contents) / float(258673)
+
+        self.assertListEqual([contents, cache_hits], [258673, 36816])
 
 
-
-
-
+if __name__ == "__main__":
+    unittest.main()
 
 

@@ -14,21 +14,23 @@ else:
         raise ImportError("The unittest2 package is needed to run the tests.")
 
 from icarus.models.data_stream_caching_algorithm import DataStreamCachingAlgorithmCache, \
-    DataStreamCachingAlgorithmWithSlidingWindowCache, AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache
+    DataStreamCachingAlgorithmWithSlidingWindowCache, AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache, \
+    DataStreamCachingAlgorithmWithFrequencyThresholdCache
 import pprint
 
 import os
 
 pp = pprint.PrettyPrinter(indent=4)
 
-test_dsca_ibm = False
+test_dsca_ibm = True
 test_dsca_fastly = False
-test_small_sliding_window = False
-test_medium_sliding_window = False
+test_small_sliding_window = True
+test_medium_sliding_window = True
 test_dscasw_ibm = True
-test_dscasw_fastly = False
-test_adscastk_ibm = False
-test_adscastk_youtube = False
+test_dscasw_fastly = True
+test_adscastk_ibm = True
+test_adscastk_youtube = True
+test_dscaft = True
 
 class TestDSCA(unittest.TestCase):
     @unittest.skipUnless(test_dsca_ibm, 'Test DSCA on IBM trace')
@@ -38,11 +40,11 @@ class TestDSCA(unittest.TestCase):
         cache_hits = 0
         contents = 0
 
-        with open('../../../resources/IBM_traces/requests_full_ibm.trace', 'r') as csv_file:
+        with open('../../../resources/IBM_traces/anon-url-trace_reformatted.trace', 'r') as csv_file:
             csv_reader = csv.reader(csv_file)
             for row in csv_reader:
                 contents += 1
-                content = int(row[0])
+                content = int(row[2])
 
                 if (contents - 1) % 1500 == 0:
                     # assert that end of window operation was executed by checking for SS cache size of 0
@@ -53,7 +55,7 @@ class TestDSCA(unittest.TestCase):
                 else:
                     c.put(content)
 
-        self.assertEquals([contents, cache_hits], [60000, 38808])
+        self.assertEquals([contents, cache_hits], [8626163, 2654063])
 
     @unittest.skipUnless(test_dsca_fastly, 'Test DSCA on Fastly trace')
     def test_dsca_fastly(self):
@@ -76,10 +78,7 @@ class TestDSCA(unittest.TestCase):
                     else:
                         cache.put(content)
 
-                if contents % 100000 == 0:
-                    print contents, 14885146, float(contents) / float(14885146)
-
-        self.assertEquals(cache_hits, [2205377, 2148139, 2101392, 2054625, 2021313, 1990615, 1933566])
+        self.assertEquals(cache_hits, [2205564, 2148198, 2101404, 2054630, 2021315, 1990617, 1933566])
 
     @unittest.skipUnless(test_small_sliding_window, 'Test DSCASW with a small artificial input stream')
     def test_small_sliding_window(self):
@@ -143,10 +142,8 @@ class TestDSCA(unittest.TestCase):
             contents += 1
             if not c.get(input_element):
                 c.put(input_element)
-                hit = False
             else:
                 cache_hits += 1
-                hit = True
 
             if i == 20:
                 stream_summary = c._ss_cache.get_stream_summary()
@@ -227,30 +224,18 @@ class TestDSCA(unittest.TestCase):
         cache_hits = 0
         contents = 0
 
-        with open('../../../resources/IBM_traces/requests_full_ibm.trace', 'r') as csv_file:
+        with open('../../../resources/IBM_traces/anon-url-trace_reformatted.trace', 'r') as csv_file:
             csv_reader = csv.reader(csv_file)
             for row in csv_reader:
                 contents += 1
-                content = int(row[0])
-
-                if (contents - 1) % 2000 == 0 or contents % 2000 == 0:
-                    print 'number of requests so far: ', contents, 'next:', content
-                    try:
-                        print 'LRU size:', c._lru_cache._maxlen, 'top-k size:', len(c._guaranteed_top_k)
-                    except:
-                        print 'LRU size:', 0, 'top-k size:', len(c._guaranteed_top_k)
-                    c.print_caches()
-                    print ''
+                content = int(row[2])
 
                 if c.get(content):
                     cache_hits += 1
                 else:
                     c.put(content)
 
-                if contents == 25000:
-                    break
-
-        self.assertEquals([contents, cache_hits], [60000, 39969])
+        self.assertEquals([contents, cache_hits], [8626163, 2970818])
 
     @unittest.skipUnless(test_dscasw_fastly, 'Test DSCASW on Fastly trace')
     def test_dscasw_fastly(self):
@@ -270,10 +255,7 @@ class TestDSCA(unittest.TestCase):
                 else:
                     c.put(content)
 
-                if contents % 100000 == 0:
-                    print contents, 14885146, float(contents) / float(14885146)
-
-        self.assertEquals([contents, cache_hits], [14885146, 1670687])
+        self.assertEquals([contents, cache_hits], [14885146, 1670797])
 
     @unittest.skipUnless(test_adscastk_ibm, 'Test ADSCASTK on IBM trace')
     def test_adscastk_ibm(self):
@@ -282,18 +264,18 @@ class TestDSCA(unittest.TestCase):
         cache_hits = 0
         contents = 0
 
-        with open('../../../resources/IBM_traces/requests_full_ibm.trace', 'r') as csv_file:
+        with open('../../../resources/IBM_traces/anon-url-trace_reformatted.trace', 'r') as csv_file:
             csv_reader = csv.reader(csv_file)
             for row in csv_reader:
                 contents += 1
-                content = int(row[0])
+                content = int(row[2])
 
                 if c.get(content):
                     cache_hits += 1
                 else:
                     c.put(content)
 
-        self.assertListEqual([contents, cache_hits], [60000, 39606])
+        self.assertListEqual([contents, cache_hits], [8626163, 2889917])
 
     @unittest.skipUnless(test_adscastk_youtube, 'Test ADSCASTK on YouTube trace')
     def test_adscastk_youtube(self):
@@ -302,19 +284,39 @@ class TestDSCA(unittest.TestCase):
         cache_hits = 0
         contents = 0
 
-        with open('../../../resources/UMass_YouTube_traces/requests_full_youtube.trace', 'r') as csv_file:
+        with open('../../../resources/UMass_YouTube_traces/YouTube_Trace_7days_reformatted.trace', 'r') as csv_file:
             csv_reader = csv.reader(csv_file)
             for row in csv_reader:
                 contents += 1
-                content = int(row[0])
+                content = int(row[2])
 
                 if c.get(content):
                     cache_hits += 1
                 else:
                     c.put(content)
 
-        print cache_hits
-        self.assertListEqual([contents, cache_hits], [60000, 6788])
+        self.assertListEqual([contents, cache_hits], [258673, 35758])
+
+
+    @unittest.skipUnless(test_dscaft, 'Test DSCAFT on YouTube trace')
+    def test_dscaft_youtube(self):
+        import csv
+        c = DataStreamCachingAlgorithmWithFrequencyThresholdCache(1000, monitored=2000, window_size=8000)
+        cache_hits = 0
+        contents = 0
+
+        with open('../../../resources/UMass_YouTube_traces/YouTube_Trace_7days_reformatted.trace', 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                contents += 1
+                content = int(row[2])
+
+                if c.get(content):
+                    cache_hits += 1
+                else:
+                    c.put(content)
+
+        self.assertListEqual([contents, cache_hits], [258673, 36039])
 
 
 if __name__ == "__main__":
