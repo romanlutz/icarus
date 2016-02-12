@@ -9,7 +9,7 @@ def main():
         i = 0
         for line in csv_reader:
             i += 1
-            if i == 5:
+            if i >= 29:
                 traces.append(line[0])
 
     # trace_analytics(traces, 'plots')

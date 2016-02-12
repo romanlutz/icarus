@@ -32,13 +32,13 @@ def print_cache_hit_rates():
 
     print ", ".join(traces)
 
-    policies = ['ARC', 'LRU', 'KLRU', 'DSCA', 'DSCAAWS', 'DSCASW', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
+    policies = ['ARC', 'LRU', 'KLRU', 'SS', 'DSCA', 'DSCAAWS', 'DSCASW', 'DSCAFT', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
 
     dict_list = []
 
     for policy in policies:
         if policy in rates.keys():
-            if policy in ['ARC', 'LRU']:
+            if policy in ['ARC', 'LRU', 'SS']:
                 dict_list.append((policy, rates[policy]))
             elif policy == 'KLRU':
                 segment_values = rates[policy].keys()
@@ -49,7 +49,7 @@ def print_cache_hit_rates():
                     for cached_segment_value in cached_segment_values:
                         dict_list.append(('KLRU (%d,%d)' % (segment_value, cached_segment_value),
                                           rates[policy][segment_value][cached_segment_value]))
-            elif policy == 'DSCA':
+            elif policy in ['DSCA', 'DSCAFT']:
                 window_sizes = rates[policy].keys()
                 window_sizes.sort()
                 for window_size in window_sizes:
@@ -181,12 +181,16 @@ def assign_cache_hit_rate(tree, rates, trace, policy, window_size, segments, cac
                 rates[policy][segments][cached_segments][trace] = k[1]
             elif policy == 'ARC':
                 rates[policy][trace] = k[1]
+            elif policy == 'SS':
+                rates[policy][trace] = k[1]
             elif policy == 'DSCA':
                 rates[policy][window_size][trace] = k[1]
             elif policy == 'DSCAAWS':
                 rates[policy][hypothesis_check_period][hypothesis_check_A][hypothesis_check_epsilon][trace] = k[1]
             elif policy == 'DSCASW':
                 rates[policy][subwindow_size][subwindows][trace] = k[1]
+            elif policy == 'DSCAFT':
+                rates[policy][window_size][trace] = k[1]
             elif policy == 'DSCAFS':
                 rates[policy][window_size][lru_portion][trace] = k[1]
             elif policy == 'ADSCASTK':
