@@ -285,17 +285,17 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 MONITORED_DEFAULT = NETWORK_CACHE * 2
-use_SS = True
+use_SS = False
 use_DSCA = True
 use_DSCAAWS = True
-use_DSCASW = False
+use_DSCASW = True
 use_DSCAFT = True
 use_DSCAFS = True
 use_ADSCASTK = True
 use_ADSCAATK = True
-use_ARC = True
-use_LRU = True
-use_KLRU = True
+use_ARC = False
+use_LRU = False
+use_KLRU = False
 
 if use_SS:
     CACHE_POLICY.append('SS')
