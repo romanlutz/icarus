@@ -621,7 +621,7 @@ class WindowSizeCollector(DataCollector):
                 self.window_sizes[node] = [0]
             # if the last seen count is higher than the actual current one then the window ended
             actual_window_size = self.view.model.cache[node].get_cumulative_window_counter()
-            if actual_window_size < self.window_size[node]:
+            if actual_window_size < self.window_sizes[node]:
                 # count is lower, that means new window started
                 self.window_sizes[node].append(actual_window_size)
             else:
