@@ -547,22 +547,22 @@ class CacheLevelProportionsCollector(DataCollector):
             if self.last_change[node] == 0 or \
                lru_length != self.cache_level_proportion_evolution['LRU'][self.last_change[node]] or \
                lfu_length != self.cache_level_proportion_evolution['LFU'][self.last_change[node]]:
-                self.cache_level_proportion_evolution[node]['LRU'].append(self.requests[node], lru_length)
-                self.cache_level_proportion_evolution[node]['LFU'].append(self.requests[node], lfu_length)
+                self.cache_level_proportion_evolution[node]['LRU'].append((self.requests[node], lru_length))
+                self.cache_level_proportion_evolution[node]['LFU'].append((self.requests[node], lfu_length))
                 self.last_change[node] = self.requests[node]
         elif self.view.model.cache[node].__class__.__name__ == 'DataStreamCachingAlgorithmCache' or \
              self.view.model.cache[node].__class__.__name__ == 'DataStreamCachingAlgorithmWithFrequencyThresholdCache':
             if self.requests[node] % self.view.model.cache[node]._window_size == 0:
                 lfu_length = len(self.view.model.cache[node]._guaranteed_top_k)
                 lru_length = self.view.model.cache[node]._maxlen - lfu_length
-                self.cache_level_proportion_evolution[node]['LFU'].append(self.requests[node], lfu_length)
-                self.cache_level_proportion_evolution[node]['LRU'].append(self.requests[node], lru_length)
+                self.cache_level_proportion_evolution[node]['LFU'].append((self.requests[node], lfu_length))
+                self.cache_level_proportion_evolution[node]['LRU'].append((self.requests[node], lru_length))
         elif self.view.model.cache[node].__class__.__name__ == 'DataStreamCachingAlgorithmWithSlidingWindowCache':
             if self.requests[node] % self.view.model.cache[node]._subwindow_size == 0:
                 lfu_length = len(self.view.model.cache[node]._guaranteed_top_k)
                 lru_length = self.view.model.cache[node]._maxlen - lfu_length
-                self.cache_level_proportion_evolution[node]['LFU'].append(self.requests[node], lfu_length)
-                self.cache_level_proportion_evolution[node]['LRU'].append(self.requests[node], lru_length)
+                self.cache_level_proportion_evolution[node]['LFU'].append((self.requests[node], lfu_length))
+                self.cache_level_proportion_evolution[node]['LRU'].append((self.requests[node], lru_length))
         elif self.view.model.cache[node].__class__.__name__ == 'AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache' or \
              self.view.model.cache[node].__class__.__name__ == 'AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache':
             lru_length = self.view.model.cache[node]._recency_cache_top_length
@@ -570,8 +570,8 @@ class CacheLevelProportionsCollector(DataCollector):
             if self.last_change[node] == 0 or \
                lru_length != self.cache_level_proportion_evolution[node]['LRU'][self.last_change[node]] or \
                lfu_length != self.cache_level_proportion_evolution[node]['LFU'][self.last_change[node]]:
-                self.cache_level_proportion_evolution[node]['LRU'].append(self.requests[node], lru_length)
-                self.cache_level_proportion_evolution[node]['LFU'].append(self.requests[node], lfu_length)
+                self.cache_level_proportion_evolution[node]['LRU'].append((self.requests[node], lru_length))
+                self.cache_level_proportion_evolution[node]['LFU'].append((self.requests[node], lfu_length))
                 self.last_change[node] = self.requests[node]
 
     @inheritdoc(DataCollector)
