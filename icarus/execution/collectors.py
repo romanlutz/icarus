@@ -616,7 +616,7 @@ class WindowSizeCollector(DataCollector):
 
     def check_window_size(self, node):
         if self.view.model.cache[node].__class__.__name__ in \
-                ['DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache', 'DataStreamCachingAlgorithmCache']:
+                ['DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache']:
             if node not in self.window_sizes:
                 self.window_sizes[node] = []
                 self.current_window_size[node] = 0
@@ -631,7 +631,7 @@ class WindowSizeCollector(DataCollector):
         result_dict = {}
         for node in self.window_sizes:
             if self.view.model.cache[node].__class__.__name__ in \
-              ['DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache', 'DataStreamCachingAlgorithmCache']:
+              ['DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache']:
                 result_dict['node %d: window sizes' % node] = self.window_sizes[node]
         return Tree(result_dict)
 
