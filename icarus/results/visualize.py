@@ -9,9 +9,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 from textwrap import wrap
 import networkx as nx
 from output_results import determine_policy_and_parameters
-from icarus.results.readwrite import read_results_pickle
+from icarus.results.readwrite import read_results
 from icarus.models import policy_parameter_usage
-#import spickle
 
 
 __all__ = [
@@ -117,18 +116,18 @@ def draw_network_load(topology, result, filename, plotdir):
                      with_labels=False)
     plt.savefig(plt.savefig(os.path.join(plotdir, filename), bbox_inches='tight'))
 
-def draw_cache_level_proportions(plotdir):
-    result = read_results_pickle('results.pickle')
+def draw_cache_level_proportions(plotdir, format):
+    result = read_results('results%s' % format, format)
     for tree in result:
-    #for tree in spickle.s_load(open('results.pickle')):
-        trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion = \
-            determine_policy_and_parameters(tree)
+        trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion, \
+           hypothesis_check_period, hypothesis_check_A, hypothesis_check_epsilon = determine_policy_and_parameters(tree)
         print trace, policy
         param_names = ['window_size', 'subwindows', 'subwindow_size', 'segments', 'cached_segments', 'lru_portion']
         params = [window_size, subwindows, subwindow_size, segments, cached_segments, lru_portion]
         if policy in ['ARC', 'DSCA', 'DSCASW', 'ADSCASTK', 'ADSCAATK']:
             lru_sizes = {}
             lfu_sizes = {}
+            node_name = -1
             for k in tree[1]:
                 if k[0][0] == 'CACHE_LEVEL_PROPORTIONS':
                     node_name = k[0][1].split(':')[0]
@@ -137,40 +136,42 @@ def draw_cache_level_proportions(plotdir):
                     elif 'LFU' in k[0][1]:
                         lfu_sizes = k[1]
 
-            filename = trace[10:-6] + '/' + policy + '_cache_size=' + str(cache_size)
-            title = 'Cache Level Proportions for %s with cache size=%i' % (policy, cache_size)
-            # use only policy-relevant parameters in the filename
-            used_parameters = policy_parameter_usage(policy)
-            for index, param in enumerate(params):
-                if used_parameters[param_names[index]]:
-                    filename += '_%s=%s' % (param_names[index], str(param))
-                    pretty_param_name = param_names[index].replace('_', ' ')
-                    title += ', %s=%s' % (pretty_param_name, str(param))
+            if node_name != -1 and lru_sizes != [] and lfu_sizes != []:
 
-            # include node name in filename if the method is used in a multi-cache scenario
-            filename += '_' + node_name.replace(' ', '') + '.pdf'
+                filename = trace[10:-6] + '/' + policy + '_cache_size=' + str(cache_size)
+                title = 'Cache Level Proportions for %s with cache size=%i' % (policy, cache_size)
+                # use only policy-relevant parameters in the filename
+                used_parameters = policy_parameter_usage(policy)
+                for index, param in enumerate(params):
+                    if used_parameters[param_names[index]]:
+                        filename += '_%s=%s' % (param_names[index], str(param))
+                        pretty_param_name = param_names[index].replace('_', ' ')
+                        title += ', %s=%s' % (pretty_param_name, str(param))
 
-            path = os.path.join(plotdir, filename)
+                # include node name in filename if the method is used in a multi-cache scenario
+                filename += '_' + node_name.replace(' ', '') + '.pdf'
 
-            # ensure the path exists and create it if necessary
-            directories = path.split('/')[1:-1]
-            current_path = plotdir
-            for directory in directories:
-                current_path += '/' + directory
-                if not os.path.isdir(current_path):
-                    os.makedirs(current_path)
+                path = os.path.join(plotdir, filename)
 
-            pdf=PdfPages(path)
-            fig = plt.figure()
-            indices = lru_sizes.keys()
-            indices.sort()
-            p1 = plt.plot(indices, [lru_sizes[i] for i in indices], '-', linewidth=2, color='r')
-            p2 = plt.plot(indices, [lfu_sizes[i] for i in indices], '-', linewidth=2, color='b')
-            plt.legend((p1[0], p2[0]), ('LRU', 'LFU'))
-            plt.xlabel('incoming elements')
-            plt.ylabel('cache size')
-            plt.title("\n".join(wrap(title, 60)))
+                # ensure the path exists and create it if necessary
+                directories = path.split('/')[1:-1]
+                current_path = plotdir
+                for directory in directories:
+                    current_path += '/' + directory
+                    if not os.path.isdir(current_path):
+                        os.makedirs(current_path)
 
-            pdf.savefig(fig)
-            pdf.close()
-            plt.close()
+                pdf=PdfPages(path)
+                fig = plt.figure()
+                [lru_indices, lru_sizes] = [list(t) for t in zip(*lru_sizes)]
+                [lfu_indices, lfu_sizes] = [list(t) for t in zip(*lfu_sizes)]
+                p1 = plt.plot(lru_indices, lru_sizes, '-', linewidth=2, color='r')
+                p2 = plt.plot(lfu_indices, lfu_sizes, '-', linewidth=2, color='b')
+                plt.legend((p1[0], p2[0]), ('LRU', 'LFU'))
+                plt.xlabel('incoming elements')
+                plt.ylabel('cache size')
+                plt.title("\n".join(wrap(title, 60)))
+
+                pdf.savefig(fig)
+                pdf.close()
+                plt.close()

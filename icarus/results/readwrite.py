@@ -8,6 +8,7 @@ except ImportError:
     import pickle
 from icarus.util import Tree
 from icarus.registry import register_results_reader, register_results_writer
+import spickle
 
 __all__ = [
     'ResultSet',
@@ -193,4 +194,46 @@ def read_results_pickle(path):
     """
     with open(path, 'rb') as pickle_file:
         return pickle.load(pickle_file)
+
+
+@register_results_writer('SPICKLE')
+def write_results_spickle(results, path):
+    """Write a resultset to a streaming pickle file
+
+    Parameters
+    ----------
+    results : ResultSet
+        The set of results
+    path : str
+        The path of the file to which write
+    """
+    with open(path, 'wb') as spickle_file:
+        spickle.s_dump(results, spickle_file)
+
+
+@register_results_reader('SPICKLE')
+def read_results_spickle(path):
+    """Reads a resultset from a streaming pickle file. This allows for iterative file reading instead of loading the
+    whole file first.
+
+    Parameters
+    ----------
+    path : str
+        The file path from which results are read
+
+    Returns
+    -------
+    results : ResultSet
+        The read result set
+    """
+    return spickle.s_load(open(path, 'rb'))
+
+def read_results(path, format):
+    if format == '.pickle':
+        return read_results_pickle(path)
+    elif format == '.spickle':
+        return read_results_spickle(path)
+    else:
+        raise ValueError('format has to be either .pickle or .spickle')
+
 

@@ -1,20 +1,21 @@
-from icarus.results.readwrite import read_results_pickle
+from icarus.results.readwrite import read_results
 import csv
+import spickle, pickle
 
-def print_results_full():
-    result = read_results_pickle('results.pickle')
-    for tree in result:
+
+
+def print_results_full(format):
+    for tree in read_results('results%s' % format, format):
         for k in tree[0]:
             print k
         for k in tree[1]:
             print k
         print ''
 
-def print_cache_hit_rates():
-    result = read_results_pickle('results.pickle')
+def print_cache_hit_rates(format):
     rates = {}
 
-    for tree in result:
+    for tree in read_results('results%s' % format, format):
         trace, policy, _, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion, \
         hypothesis_check_period, hypothesis_check_A, hypothesis_check_epsilon = determine_policy_and_parameters(tree)
 

@@ -222,7 +222,7 @@ CACHING_GRANULARITY = 'OBJECT'
 # Format in which results are saved.
 # Result readers and writers are located in module ./icarus/results/readwrite.py
 # Currently only PICKLE is supported 
-RESULTS_FORMAT = 'PICKLE'
+RESULTS_FORMAT = 'SPICKLE'
 
 # Number of times each experiment is replicated
 # This is necessary for extracting confidence interval of selected metrics
@@ -260,7 +260,8 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i >= 29 or i <= 5:
+        if i == 4:
+        #if i >= 29 or i <= 5:
             traces.append((line[0], int(line[1])))
         i += 1
 
