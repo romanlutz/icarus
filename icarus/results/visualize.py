@@ -11,7 +11,7 @@ import networkx as nx
 from output_results import determine_policy_and_parameters
 from icarus.results.readwrite import read_results_pickle
 from icarus.models import policy_parameter_usage
-import spickle
+#import spickle
 
 
 __all__ = [
