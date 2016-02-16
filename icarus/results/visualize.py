@@ -118,9 +118,9 @@ def draw_network_load(topology, result, filename, plotdir):
     plt.savefig(plt.savefig(os.path.join(plotdir, filename), bbox_inches='tight'))
 
 def draw_cache_level_proportions(plotdir):
-    #result = read_results_pickle('results.pickle')
-    #for tree in result:
-    for tree in spickle.s_load(open('results.pickle')):
+    result = read_results_pickle('results.pickle')
+    for tree in result:
+    #for tree in spickle.s_load(open('results.pickle')):
         trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion = \
             determine_policy_and_parameters(tree)
         print trace, policy
