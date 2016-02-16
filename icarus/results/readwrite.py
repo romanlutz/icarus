@@ -9,7 +9,6 @@ except ImportError:
 from icarus.util import Tree
 from icarus.registry import register_results_reader, register_results_writer
 
-
 __all__ = [
     'ResultSet',
     'write_results_pickle',
@@ -194,3 +193,4 @@ def read_results_pickle(path):
     """
     with open(path, 'rb') as pickle_file:
         return pickle.load(pickle_file)
+

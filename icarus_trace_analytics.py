@@ -9,11 +9,11 @@ def main():
         i = 0
         for line in csv_reader:
             i += 1
-            if i >= 29:
+            if i == 1:
                 traces.append(line[0])
 
-    # trace_analytics(traces, 'plots')
-    beladys_algorithm([1000], traces)
+    trace_analytics(traces, 'plots', zipf_estimation=False)
+    # beladys_algorithm([1000], traces)
 
 
 if __name__ == "__main__":

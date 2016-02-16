@@ -53,7 +53,7 @@ def print_cache_hit_rates():
                 window_sizes = rates[policy].keys()
                 window_sizes.sort()
                 for window_size in window_sizes:
-                    dict_list.append(('DSCA %d' % window_size, rates[policy][window_size]))
+                    dict_list.append(('%s %d' % (policy, window_size), rates[policy][window_size]))
             elif policy == 'DSCAAWS':
                 periods = rates[policy].keys()
                 periods.sort()

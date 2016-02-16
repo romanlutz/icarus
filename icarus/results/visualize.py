@@ -11,7 +11,7 @@ import networkx as nx
 from output_results import determine_policy_and_parameters
 from icarus.results.readwrite import read_results_pickle
 from icarus.models import policy_parameter_usage
-
+import spickle
 
 
 __all__ = [
@@ -118,16 +118,17 @@ def draw_network_load(topology, result, filename, plotdir):
     plt.savefig(plt.savefig(os.path.join(plotdir, filename), bbox_inches='tight'))
 
 def draw_cache_level_proportions(plotdir):
-    result = read_results_pickle('results.pickle')
-    for tree in result:
+    #result = read_results_pickle('results.pickle')
+    #for tree in result:
+    for tree in spickle.s_load(open('results.pickle')):
         trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion = \
             determine_policy_and_parameters(tree)
         print trace, policy
         param_names = ['window_size', 'subwindows', 'subwindow_size', 'segments', 'cached_segments', 'lru_portion']
         params = [window_size, subwindows, subwindow_size, segments, cached_segments, lru_portion]
         if policy in ['ARC', 'DSCA', 'DSCASW', 'ADSCASTK', 'ADSCAATK']:
-            lru_sizes = []
-            lfu_sizes = []
+            lru_sizes = {}
+            lfu_sizes = {}
             for k in tree[1]:
                 if k[0][0] == 'CACHE_LEVEL_PROPORTIONS':
                     node_name = k[0][1].split(':')[0]
@@ -135,7 +136,6 @@ def draw_cache_level_proportions(plotdir):
                         lru_sizes = k[1]
                     elif 'LFU' in k[0][1]:
                         lfu_sizes = k[1]
-            n = len(lru_sizes)
 
             filename = trace[10:-6] + '/' + policy + '_cache_size=' + str(cache_size)
             title = 'Cache Level Proportions for %s with cache size=%i' % (policy, cache_size)
@@ -162,8 +162,10 @@ def draw_cache_level_proportions(plotdir):
 
             pdf=PdfPages(path)
             fig = plt.figure()
-            p1 = plt.plot(range(n), lru_sizes, '-', linewidth=2, color='r')
-            p2 = plt.plot(range(n), lfu_sizes, '-', linewidth=2, color='b')
+            indices = lru_sizes.keys()
+            indices.sort()
+            p1 = plt.plot(indices, [lru_sizes[i] for i in indices], '-', linewidth=2, color='r')
+            p2 = plt.plot(indices, [lfu_sizes[i] for i in indices], '-', linewidth=2, color='b')
             plt.legend((p1[0], p2[0]), ('LRU', 'LFU'))
             plt.xlabel('incoming elements')
             plt.ylabel('cache size')
