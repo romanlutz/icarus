@@ -545,8 +545,8 @@ class CacheLevelProportionsCollector(DataCollector):
             lru_length = len(self.view.model.cache[node]._recency_cache_top)
             lfu_length = len(self.view.model.cache[node]._frequency_cache_top)
             if self.last_change[node] == 0 or \
-               lru_length != self.cache_level_proportion_evolution['LRU'][self.last_change[node]] or \
-               lfu_length != self.cache_level_proportion_evolution['LFU'][self.last_change[node]]:
+               lru_length != self.cache_level_proportion_evolution[node]['LRU'][-1][1] or \
+               lfu_length != self.cache_level_proportion_evolution[node]['LFU'][-1][1]:
                 self.cache_level_proportion_evolution[node]['LRU'].append((self.requests[node], lru_length))
                 self.cache_level_proportion_evolution[node]['LFU'].append((self.requests[node], lfu_length))
                 self.last_change[node] = self.requests[node]
@@ -568,8 +568,8 @@ class CacheLevelProportionsCollector(DataCollector):
             lru_length = self.view.model.cache[node]._recency_cache_top_length
             lfu_length = self.view.model.cache[node]._top_k_cached_length
             if self.last_change[node] == 0 or \
-               lru_length != self.cache_level_proportion_evolution[node]['LRU'][self.last_change[node]] or \
-               lfu_length != self.cache_level_proportion_evolution[node]['LFU'][self.last_change[node]]:
+               lru_length != self.cache_level_proportion_evolution[node]['LRU'][-1][1] or \
+               lfu_length != self.cache_level_proportion_evolution[node]['LFU'][-1][1]:
                 self.cache_level_proportion_evolution[node]['LRU'].append((self.requests[node], lru_length))
                 self.cache_level_proportion_evolution[node]['LFU'].append((self.requests[node], lfu_length))
                 self.last_change[node] = self.requests[node]
