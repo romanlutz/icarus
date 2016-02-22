@@ -1,7 +1,7 @@
 from icarus.results.readwrite import read_results
 import csv
 import spickle, pickle
-
+import os
 
 
 def print_results_full(format):
@@ -202,3 +202,12 @@ def assign_cache_hit_rate(tree, rates, trace, policy, window_size, segments, cac
                 print 'error: policy', policy, 'unknown'
 
     return rates
+
+
+def create_path_if_necessary(path, dir):
+    directories = path.split('/')[1:-1]
+    current_path = dir
+    for directory in directories:
+        current_path += '/' + directory
+        if not os.path.isdir(current_path):
+            os.makedirs(current_path)
