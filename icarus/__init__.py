@@ -27,7 +27,7 @@ __modules_to_register = [
      'icarus.models.k_lru',
      'icarus.models.strategy',
      'icarus.execution.collectors', 
-     'icarus.results.readwrite',
+     'icarus.io.readwrite',
      'icarus.scenarios.topology',
      'icarus.scenarios.contentplacement',
      'icarus.scenarios.cacheplacement',

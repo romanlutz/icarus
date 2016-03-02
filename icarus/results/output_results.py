@@ -1,7 +1,7 @@
-from icarus.results.readwrite import read_results
 import csv
-import spickle, pickle
 import os
+
+from icarus.io.readwrite import read_results
 
 
 def print_results_full(format):

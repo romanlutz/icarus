@@ -1,17 +1,18 @@
 """Functions for visualizing results on graphs of topologies"""
 from __future__ import division
-import os
 
-import numpy as np
+import os
+from textwrap import wrap
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-from textwrap import wrap
 import networkx as nx
-from output_results import determine_policy_and_parameters
-from icarus.results.readwrite import read_results
-from icarus.models import policy_parameter_usage
+import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
 
+from icarus.io.readwrite import read_results
+from icarus.models import policy_parameter_usage
+from output_results import determine_policy_and_parameters
 
 __all__ = [
        'draw_stack_deployment',

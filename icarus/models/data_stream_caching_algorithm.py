@@ -210,6 +210,72 @@ class DataStreamCachingAlgorithmCache(Cache):
                 prev_top_k = prev_top_k[1:]
 
 
+@register_cache_policy('2DSCA')
+class DataStreamCachingAlgorithmCache(DataStreamCachingAlgorithmCache):
+    """2DSCA only puts elements in the LRU part if they've been observed at least once before.
+    """
+
+    @inheritdoc(Cache)
+    def get(self, k):
+        # check in both LRU and top-k list
+        top_k_hit = k in self._guaranteed_top_k
+        lru_hit = False
+        if not top_k_hit:
+            lru_hit = self._lru_cache.get(k)
+
+        # report occurrence to Space Saving
+        if lru_hit or top_k_hit:
+            self._ss_cache.put(k)
+            self._window_counter += 1
+
+            if self._window_counter >= self._window_size:
+                self._end_of_window_operation()
+
+        return lru_hit or top_k_hit
+
+    def put(self, k):
+        """Insert an item in the cache if not already inserted.
+
+        If the element is already present in the cache, it's occurrence counter will be increased. Also, it will be
+        included in the LRU cache if it is not already among the top-k objects, but already observed at least in the
+        Space Saving table of monitored objects.
+
+
+        Parameters
+        ----------
+        k : any hashable type
+            The item to be inserted
+
+        Returns
+        -------
+        evicted : any hashable type
+            The evicted object or *None* if no contents were evicted.
+        """
+        monitored_before = self._ss_cache.has(k)
+        evicted = None
+
+        self._ss_cache.put(k)
+        if not(k in self._guaranteed_top_k):
+            if not self._lru_cache.get(k):
+                # if it's in neither top-k nor LRU, check whether it's in the Space Saving table
+                if monitored_before:
+                    # the LRU list is essentially LRU on the second observation
+                    evicted = self._lru_cache.put(k)
+                    # counter is only increased if there is no cache hit
+                    # because put should only be called when there is a cache miss
+                    self._window_counter += 1
+
+                if self._window_counter >= self._window_size:
+                    self._end_of_window_operation()
+
+                return evicted
+            else:
+                # element is in LRU, cache hit
+                return None
+        else:
+            # element is in top-k, cache hit
+            return None
+
 @register_cache_policy('DSCASW')
 class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorithmCache):
     """Based on DSCA, DSCASW considers multiple subwindows that make up the whole window. Whenever a subwindow is full,
