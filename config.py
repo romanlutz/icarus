@@ -251,7 +251,7 @@ REQ_RATE = 1.0
 # Total size of network cache as a fraction of content population
 # If the cache size is a static number (e.g. 100), set NETWORK_CACHE_FRACTION to False
 # In case the cache size is given as a natural number, set it to the cumulative total of the whole network
-NETWORK_CACHE = 1000
+NETWORK_CACHE = 2000
 NETWORK_CACHE_FRACTION = False
 
 # if running a trace-driven simulation, REQ_FILE is the path to the trace file
@@ -260,8 +260,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i >= 29 or i <= 5:
-            traces.append((line[0], int(line[1])))
+        traces.append((line[0], int(line[1])))
         i += 1
 
 
@@ -285,17 +284,18 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 MONITORED_DEFAULT = NETWORK_CACHE * 2
-use_SS = False
+use_SS = True
 use_DSCA = True
+use_2DSCA = True
 use_DSCAAWS = True
 use_DSCASW = True
 use_DSCAFT = True
 use_DSCAFS = True
 use_ADSCASTK = True
 use_ADSCAATK = True
-use_ARC = False
-use_LRU = False
-use_KLRU = False
+use_ARC = True
+use_LRU = True
+use_KLRU = True
 
 if use_SS:
     CACHE_POLICY.append('SS')
@@ -307,6 +307,15 @@ if use_SS:
 if use_DSCA:
     for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
         CACHE_POLICY.append('DSCA')
+        CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+        CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
+        append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
+                       cached_segments=True, lru_portion=True, hypothesis_check_period=True, hypothesis_check_A=True,
+                       hypothesis_check_epsilon=True)
+
+if use_2DSCA:
+    for window_size in [MONITORED_DEFAULT*4, MONITORED_DEFAULT*16, MONITORED_DEFAULT*64]:
+        CACHE_POLICY.append('2DSCA')
         CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
         CACHE_POLICY_PARAMETERS['window_size'].append(window_size)
         append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,

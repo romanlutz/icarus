@@ -3,7 +3,6 @@ import os
 
 from icarus.io.readwrite import read_results
 
-
 def print_results_full(format):
     for tree in read_results('results%s' % format, format):
         for k in tree[0]:
@@ -33,7 +32,7 @@ def print_cache_hit_rates(format):
 
     print ", ".join(traces)
 
-    policies = ['ARC', 'LRU', 'KLRU', 'SS', 'DSCA', 'DSCAAWS', 'DSCASW', 'DSCAFT', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
+    policies = ['ARC', 'LRU', 'KLRU', 'SS', 'DSCA', '2DSCA', 'DSCAAWS', 'DSCASW', 'DSCAFT', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
 
     dict_list = []
 
@@ -50,7 +49,7 @@ def print_cache_hit_rates(format):
                     for cached_segment_value in cached_segment_values:
                         dict_list.append(('KLRU (%d,%d)' % (segment_value, cached_segment_value),
                                           rates[policy][segment_value][cached_segment_value]))
-            elif policy in ['DSCA', 'DSCAFT']:
+            elif policy in ['DSCA', '2DSCA', 'DSCAFT']:
                 window_sizes = rates[policy].keys()
                 window_sizes.sort()
                 for window_size in window_sizes:
@@ -185,6 +184,8 @@ def assign_cache_hit_rate(tree, rates, trace, policy, window_size, segments, cac
             elif policy == 'SS':
                 rates[policy][trace] = k[1]
             elif policy == 'DSCA':
+                rates[policy][window_size][trace] = k[1]
+            elif policy == '2DSCA':
                 rates[policy][window_size][trace] = k[1]
             elif policy == 'DSCAAWS':
                 rates[policy][hypothesis_check_period][hypothesis_check_A][hypothesis_check_epsilon][trace] = k[1]

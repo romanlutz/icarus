@@ -3,9 +3,9 @@ from icarus.results.output_results import print_cache_hit_rates, print_results_f
 import time
 
 def main():
-    draw_cache_level_proportions('plots', '.spickle')
+    #draw_cache_level_proportions('plots', '.spickle')
     #print_results_full('.spickle')
-    #print_cache_hit_rates('.spickle')
+    print_cache_hit_rates('.spickle')
 
 
 if __name__ == "__main__":
