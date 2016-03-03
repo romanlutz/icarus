@@ -13,7 +13,21 @@ def reformat(filename):
             parts = ' '.join(row).split()
             request = parts[6]
             if request[:6] == '/watch':
-                content = parts[6][9:20]
+                index1 = parts[6].find('?v=')
+                index2 = parts[6].find('&v=')
+                index3 = parts[6].find('%20v=')
+
+                if index1 != -1:
+                    content = parts[6][index1+3:index1+14]
+                elif index2 != -1:
+                    content = parts[6][index2+3:index2+14]
+                elif index3 != -1:
+                    content = parts[6][index3+5:index3+16]
+                else:
+                    print 'error: unexpected format'
+                    print parts[6]
+
+
                 if content in contents:
                     id = contents[content]
                 else:

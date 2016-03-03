@@ -251,7 +251,7 @@ REQ_RATE = 1.0
 # Total size of network cache as a fraction of content population
 # If the cache size is a static number (e.g. 100), set NETWORK_CACHE_FRACTION to False
 # In case the cache size is given as a natural number, set it to the cumulative total of the whole network
-NETWORK_CACHE = 2000
+NETWORK_CACHE = 1000
 NETWORK_CACHE_FRACTION = False
 
 # if running a trace-driven simulation, REQ_FILE is the path to the trace file
