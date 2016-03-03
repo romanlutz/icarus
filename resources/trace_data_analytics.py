@@ -60,7 +60,7 @@ def trace_analytics(traces, trace_lengths, plotdir, min_interval_size=2000, zipf
                         occurrence_aggregate[i].append(0)
                     # add 1 to the counter in the corresponding bucket
                     for occurrence in occurrences[object]:
-                        occurrence_aggregate[occurrence/2000][-1] += 1
+                        occurrence_aggregate[occurrence/min_interval_size][-1] += 1
 
                 total_occurrence_count = len(occurrences[object])
 
@@ -111,7 +111,7 @@ def trace_analytics(traces, trace_lengths, plotdir, min_interval_size=2000, zipf
                 covered_intervals = [False]*occurrence_aggregate_length
                 for start_interval in range(0, occurrence_aggregate_length):
                     if not covered_intervals[start_interval]:
-                        for number_of_merged_intervals in range(occurrence_aggregate_length - start_interval, 0, -1):
+                        for number_of_merged_intervals in range(1, occurrence_aggregate_length - start_interval + 1):
                             if not covered_intervals[start_interval]:
                                 aggregate = occurrence_aggregate[start_interval]
                                 for i in range(start_interval+1, start_interval + number_of_merged_intervals):

@@ -54,16 +54,18 @@ def merge(path, day, month, year):
             in_file = fileinput.input(input_filename)
             merged_file = fileinput.input(merged_filename)
 
-            #with open(input_filename, 'rt') as in_file:
-            #    with open(merged_filename, 'rt') as merged_file:
-                    with open(temporary_merged_filename, 'wt') as temporary_merged_file:
+            with open(temporary_merged_filename, 'wt') as temporary_merged_file:
 
+                input_request = parse_line(in_file.next())
+                merged_request = parse_line(merged_file.next())
+
+                while True:
+                    if input_request['time'] < merged_request['time']:
+                        temporary_merged_filename.write(encode_dict(input_request))
                         input_request = parse_line(in_file.next())
+                    else:
+                        temporary_merged_filename.write(encode_dict(merged_request))
                         merged_request = parse_line(merged_file.next())
-
-                        while True:
-                            if input_request['time'] < merged_request['time']:
-                                temporary_merged_filename.write(encode_dict(input_request))
 
         finally:
             print 'deleting %s' % input_filename
