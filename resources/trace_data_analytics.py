@@ -228,7 +228,7 @@ def temporal_distance(trace_path):
             last_occurrence[object] = requests
             total_occurrences[object] += 1
 
-        single_occurrences = 0
+        single_occurrences = sum([1 if last_occurrence[id] == first_occurrence[id] else 0 for id in total_occurrences])
         # the formula for temporal distance is as follows: consider only elements with multiple occurrences
         # (sum over difference between element's first and last occurrence) / (number of element's occurrences - 1)
         total_distance = \
