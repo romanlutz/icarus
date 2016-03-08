@@ -1,9 +1,13 @@
-from icarus.io.compression import unzip_file
 import os, sys
 from collections import defaultdict
-from shutil import copyfile
 import fileinput
+import getopt
+import gzip
 
+def unzip_file(filename):
+    with gzip.open(filename, 'rb') as zip_file:
+        with open(filename[:-3], 'wt') as unzipped_file:
+            unzipped_file.writelines(zip_file)
 
 def parse_line(line):
     request = {}
@@ -183,8 +187,18 @@ def analyze(path, day, month, year):
                 os.remove(path + input_filename)
 
 
-def main():
-    merge('./', 27, 1, 2016)
+def main(argv):
+    opts, args = getopt.getopt(argv, 'd:m:y:')
+
+    for opt, arg in opts:
+        if opt == '-d':
+            day = int(arg)
+        elif opt == '-m':
+            month = int(arg)
+        elif opt == '-y':
+            year = int(arg)
+
+    merge('./', day, month, year)
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
