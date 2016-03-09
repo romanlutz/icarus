@@ -1,5 +1,4 @@
 import os, sys
-from collections import defaultdict
 import fileinput
 import getopt
 import gzip
@@ -8,6 +7,7 @@ def unzip_file(filename):
     with gzip.open(filename, 'rb') as zip_file:
         with open(filename[:-3], 'wt') as unzipped_file:
             unzipped_file.writelines(zip_file)
+
 
 def parse_line(line):
     request = {}
@@ -110,81 +110,6 @@ def merge(path, day, month, year):
         os.remove(path + merged_filename)
         print 'renaming merged file'
         os.rename(path + temporary_merged_filename, merged_filename)
-
-def analyze(path, day, month, year):
-    for filename in os.listdir(path):
-        if '%02d%02d%02d' % (year, month, day) in filename and filename[-7:] == '.log.gz':
-            print 'unzipping %s' % filename
-            # unzip file while keeping original
-            unzip_file(path + filename)
-
-            try:
-                input_filename = filename[:-3]
-                print 'reading %s' % input_filename
-                with open(input_filename, 'rt') as in_file:
-                    #with open(output_filename, 'wt') as out_file:
-                        ip_24_ranges = defaultdict(int)
-                        ip_16_ranges = defaultdict(int)
-                        ip_8_ranges = defaultdict(int)
-
-                        http_codes = defaultdict(int)
-
-                        request_names = defaultdict(int)
-
-                        body_bytes_sizes = defaultdict(int)
-
-                        content_version = defaultdict(int)
-
-                        for line in in_file:
-                            request = parse_line(line)
-
-
-                            ip_24 = ''.join(request['ip'][-1::-1].partition('.')[2])[-1::-1]
-                            ip_16 = ''.join(ip_24[-1::-1].partition('.')[2])[-1::-1]
-                            ip_8 = ''.join(ip_16[-1::-1].partition('.')[2])[-1::-1]
-
-                            ip_24_ranges[ip_24] += 1
-                            ip_16_ranges[ip_16] += 1
-                            ip_8_ranges[ip_8] += 1
-
-                            http_codes[request['code']] += 1
-
-                            request_names[request['http_request_name']] += 1
-
-                            body_bytes_sizes[(int(request['body_bytes_sent']) / 1000000) * 1000000] += 1
-
-                            if request['request_uri'][-3:] == '.ts' or request['request_uri'][-5:] == '.m3u8' or request['request_uri'][-7:] == '.webvtt':
-                                content_version[''.join(request['request_uri'].rpartition('manifest')[1:])] += 1
-                            elif '.mp4?' in request['request_uri'] or '.m3u8?' in request['request_uri']:
-                                content_version[request['request_uri'].rpartition('?')[0].rpartition('-')[2]] += 1
-                            elif request['request_uri'] == '/healthcheck':
-                                content_version[request['request_uri']] += 1
-                            elif '/Fragments(' in request['request_uri']:
-                                content_version['/Fragments'] += 1
-                            elif request['request_uri'][-16:] == '-manifest_hq.mpd' or 'manifest_hq.mpd?' in request['request_uri']:
-                                content_version['manifest_hq.mpd'] += 1
-                            elif request['request_uri'][-8:].lower() == "manifest" or 'manifest?' in request['request_uri']:
-                                content_version['Manifest'] += 1
-                            elif request['request_uri'] == '-':
-                                content_version['-'] += 1
-                            elif request['request_uri'] == '/':
-                                content_version['/'] += 1
-                            else:
-                                print request
-                                print line
-
-
-
-                print len(ip_8_ranges), len(ip_16_ranges), len(ip_24_ranges)
-                print http_codes
-                print request_names
-                print body_bytes_sizes
-                print content_version
-
-            finally:
-                print 'deleting %s' % input_filename
-                # delete unzipped file - original still exists
-                os.remove(path + input_filename)
 
 
 def main(argv):

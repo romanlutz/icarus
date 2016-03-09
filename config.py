@@ -236,7 +236,7 @@ DATA_COLLECTORS = [
            #'LATENCY',           # Measure request and response latency (based on static link delays)
            #'LINK_LOAD',         # Measure link loads
            'PATH_STRETCH',      # Measure path stretch
-           'CACHE_LEVEL_PROPORTIONS',
+           #'CACHE_LEVEL_PROPORTIONS',
            #'WINDOW_SIZE'
            ]
 
