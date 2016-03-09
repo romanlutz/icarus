@@ -22,5 +22,6 @@ def reformat(filename):
         for event in requests:
             writer.writerow((event['time'], event['receiver'], event['content']))
 
-
+'''
 reformat('anon-url-trace.txt')
+'''

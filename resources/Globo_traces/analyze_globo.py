@@ -26,7 +26,6 @@ def analyze(path, day, month, year):
                 for line in in_file:
                     request = parse_line(line)
 
-
                     ip_24 = ''.join(request['ip'][-1::-1].partition('.')[2])[-1::-1]
                     ip_16 = ''.join(ip_24[-1::-1].partition('.')[2])[-1::-1]
                     ip_8 = ''.join(ip_16[-1::-1].partition('.')[2])[-1::-1]
@@ -73,7 +72,8 @@ def analyze(path, day, month, year):
             buckets.sort()
             for bucket in buckets:
                 print bucket, ':', body_bytes_sizes[bucket], '; ',
-            print zero_bytes
+            print '\n'
+            print 'requests with 0 bytes:', zero_bytes
             # print content_version
 
 def main(argv):

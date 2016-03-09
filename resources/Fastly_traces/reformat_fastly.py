@@ -25,5 +25,6 @@ def reformat(filename):
                 if i % 10000 == 0:
                     print float(i)/float(14885146), len(contents)
 
-
+'''
 reformat('requests.txt')
+'''

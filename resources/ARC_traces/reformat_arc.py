@@ -22,6 +22,7 @@ def reformat(filename):
                 if time % 100000 == 0:
                     print filename, time
 
+'''
 for i in range(1, 15):
     reformat('P%i.lis.txt' % i)
 for i in range(1, 4):
@@ -32,3 +33,4 @@ reformat('DS1.lis.txt')
 reformat('MergeP.lis.txt')
 reformat('MergeS.lis.txt')
 reformat('OLTP.lis.txt')
+'''

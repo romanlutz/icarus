@@ -15,8 +15,10 @@ def parse_line(line):
     request['ip'], _, rest = rest.partition(' (')
     request['code'], _, rest = rest.partition(') ')
     request['cache_hit_or_miss'], _, rest= rest.partition(' ')
-    request['body_bytes_sent'], _, rest = rest.partition(' ')
-    request['answer_time'], _, rest = rest.partition(' [')
+    bytes_sent, _, rest = rest.partition(' ')
+    request['body_bytes_sent'] = int(bytes_sent)
+    answer_time, _, rest = rest.partition(' [')
+    request['answer_time'] = float(answer_time)
     request['upstream_response_time'], _, rest = rest.partition('] [\"') # only relevant in case of cache miss
     request['http_request_name'], _, rest = rest.partition(' ')
     request['http_or_https'], _, rest = rest.partition(' ')

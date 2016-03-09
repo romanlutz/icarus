@@ -28,9 +28,10 @@ def reformat(filename, omit_first_column = False):
             writer.writerow((time, event['receiver'], event['content']))
             time += 1
 
-
+'''
 for i in range(1, 11):
     reformat('mult_zip_run%d.trace' % i, omit_first_column=True)
 
 reformat('zip0.8.trace')
 reformat('zip0.8_300k_requests.trace')
+'''
