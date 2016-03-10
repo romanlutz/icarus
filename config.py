@@ -284,18 +284,19 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 MONITORED_DEFAULT = NETWORK_CACHE * 2
-use_SS = True
-use_DSCA = True
+use_SS = False
+use_DSCA = False
 use_2DSCA = True
-use_DSCAAWS = True
-use_DSCASW = True
-use_DSCAFT = True
-use_DSCAFS = True
-use_ADSCASTK = True
-use_ADSCAATK = True
-use_ARC = True
-use_LRU = True
-use_KLRU = True
+use_DSCAAWS = False
+use_2DSCAAWS = True
+use_DSCASW = False
+use_DSCAFT = False
+use_DSCAFS = False
+use_ADSCASTK = False
+use_ADSCAATK = False
+use_ARC = False
+use_LRU = False
+use_KLRU = False
 
 if use_SS:
     CACHE_POLICY.append('SS')
@@ -327,6 +328,18 @@ if use_DSCAAWS:
         for hypothesis_check_A in [0.33]:
             for hypothesis_check_epsilon in [0.005]:
                 CACHE_POLICY.append('DSCAAWS')
+                CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
+                CACHE_POLICY_PARAMETERS['hypothesis_check_period'].append(hypothesis_check_period)
+                CACHE_POLICY_PARAMETERS['hypothesis_check_A'].append(hypothesis_check_A)
+                CACHE_POLICY_PARAMETERS['hypothesis_check_epsilon'].append(hypothesis_check_epsilon)
+                append_default(CACHE_POLICY_PARAMETERS, subwindows=True, subwindow_size=True, warmup=True, segments=True,
+                               cached_segments=True, lru_portion=True, window_size=True)
+
+if use_2DSCAAWS:
+    for hypothesis_check_period in [1, 500, 1000, 2000, 4000]:
+        for hypothesis_check_A in [0.33]:
+            for hypothesis_check_epsilon in [0.005]:
+                CACHE_POLICY.append('2DSCAAWS')
                 CACHE_POLICY_PARAMETERS['monitored'].append(MONITORED_DEFAULT)
                 CACHE_POLICY_PARAMETERS['hypothesis_check_period'].append(hypothesis_check_period)
                 CACHE_POLICY_PARAMETERS['hypothesis_check_A'].append(hypothesis_check_A)
