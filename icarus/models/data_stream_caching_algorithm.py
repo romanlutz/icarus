@@ -215,24 +215,6 @@ class DataStreamCachingAlgorithmCache(DataStreamCachingAlgorithmCache):
     """2DSCA only puts elements in the LRU part if they've been observed at least once before.
     """
 
-    @inheritdoc(Cache)
-    def get(self, k):
-        # check in both LRU and top-k list
-        top_k_hit = k in self._guaranteed_top_k
-        lru_hit = False
-        if not top_k_hit:
-            lru_hit = self._lru_cache.get(k)
-
-        # report occurrence to Space Saving
-        if lru_hit or top_k_hit:
-            self._ss_cache.put(k)
-            self._window_counter += 1
-
-            if self._window_counter >= self._window_size:
-                self._end_of_window_operation()
-
-        return lru_hit or top_k_hit
-
     def put(self, k):
         """Insert an item in the cache if not already inserted.
 
@@ -261,9 +243,10 @@ class DataStreamCachingAlgorithmCache(DataStreamCachingAlgorithmCache):
                 if monitored_before:
                     # the LRU list is essentially LRU on the second observation
                     evicted = self._lru_cache.put(k)
-                    # counter is only increased if there is no cache hit
-                    # because put should only be called when there is a cache miss
-                    self._window_counter += 1
+
+                # counter is only increased if there is no cache hit
+                # because put should only be called when there is a cache miss
+                self._window_counter += 1
 
                 if self._window_counter >= self._window_size:
                     self._end_of_window_operation()
@@ -1285,7 +1268,43 @@ class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlg
         return self._cumulative_window_counter
 
 
+@register_cache_policy('2DSCAAWS')
+class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache):
+    """2DSCAAWS is the same as DSCAAWS, but elements only get into the LRU part after having occurred in the Space
+    Saving table.
+    """
 
+    @inheritdoc(DataStreamCachingAlgorithmCache)
+    def put(self, k):
+        monitored_before = self._ss_cache.has(k)
+        evicted = None
+
+        self._ss_cache.put(k)
+        if not(k in self._guaranteed_top_k):
+            if not self._lru_cache.get(k):
+                if monitored_before:
+                    evicted = self._lru_cache.put(k)
+
+                # counter is only increased if there is no cache hit
+                # because put should only be called when there is a cache miss
+                self._window_counter += 1
+
+                if self._window_counter >= self._hypothesis_check_period:
+                    self._cumulative_window_counter += self._window_counter
+                    self._window_counter = 0
+                    # only perform hypothesis check if the number of elements in the SS cache is at least max cache size + 1
+                    if len(self._ss_cache) > self._maxlen:
+                        if self._hypothesis_check():
+                            self._end_of_window_operation()
+                            self._cumulative_window_counter = 0
+
+                return evicted
+            else:
+                # element is in LRU, cache hit
+                return None
+        else:
+            # element is in top-k, cache hit
+            return None
 
 @register_cache_policy('DSCAFT')
 class DataStreamCachingAlgorithmWithFrequencyThresholdCache(DataStreamCachingAlgorithmCache):
