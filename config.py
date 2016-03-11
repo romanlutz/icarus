@@ -324,7 +324,7 @@ if use_2DSCA:
                        hypothesis_check_epsilon=True)
 
 if use_DSCAAWS:
-    for hypothesis_check_period in [1, 500, 1000, 2000, 4000]:
+    for hypothesis_check_period in [NETWORK_CACHE, NETWORK_CACHE*4, NETWORK_CACHE*16]:
         for hypothesis_check_A in [0.33]:
             for hypothesis_check_epsilon in [0.005]:
                 CACHE_POLICY.append('DSCAAWS')
@@ -336,7 +336,7 @@ if use_DSCAAWS:
                                cached_segments=True, lru_portion=True, window_size=True)
 
 if use_2DSCAAWS:
-    for hypothesis_check_period in [1, 500, 1000, 2000, 4000]:
+    for hypothesis_check_period in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
         for hypothesis_check_A in [0.33]:
             for hypothesis_check_epsilon in [0.005]:
                 CACHE_POLICY.append('2DSCAAWS')
