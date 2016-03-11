@@ -1,7 +1,7 @@
 import getopt
 import sys
 
-from resources import merge
+from .merge_globo import merge
 
 
 def main(argv):
