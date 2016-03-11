@@ -13,7 +13,8 @@ def parse_line(line):
     request = {}
     request['time'], _, rest = line.partition(' ')
     request['ip'], _, rest = rest.partition(' (')
-    request['code'], _, rest = rest.partition(') ')
+    code, _, rest = rest.partition(') ')
+    request['code'] = int(code)
     request['cache_hit_or_miss'], _, rest= rest.partition(' ')
     bytes_sent, _, rest = rest.partition(' ')
     request['body_bytes_sent'] = int(bytes_sent)
