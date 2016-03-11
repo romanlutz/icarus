@@ -22,7 +22,6 @@ def analyze(path, day, month, year):
                 content_version = defaultdict(int)
 
                 zero_bytes = 0
-                small_mp4s = 0
 
                 for line in in_file:
                     request = parse_line(line)
@@ -39,38 +38,13 @@ def analyze(path, day, month, year):
 
                     request_names[request['http_request_name']] += 1
 
-                    body_bytes_sizes[(int(request['body_bytes_sent']) / 1000000) * 1000000] += 1
-
-                    if request['body_bytes_sent'] == 0:
-                        zero_bytes += 1
-
-                    '''
-                    if request['request_uri'][-3:] == '.ts' or request['request_uri'][-5:] == '.m3u8' or request['request_uri'][-7:] == '.webvtt':
-                        content_version[''.join(request['request_uri'].rpartition('manifest')[1:])] += 1
-                    elif '.mp4?' in request['request_uri'] or '.m3u8?' in request['request_uri']:
-                        content_version[request['request_uri'].rpartition('?')[0].rpartition('-')[2]] += 1
-                    elif request['request_uri'] == '/healthcheck':
-                        content_version[request['request_uri']] += 1
-                    elif '/Fragments(' in request['request_uri']:
-                        content_version['/Fragments'] += 1
-                    elif request['request_uri'][-16:] == '-manifest_hq.mpd' or 'manifest_hq.mpd?' in request['request_uri']:
-                        content_version['manifest_hq.mpd'] += 1
-                    elif request['request_uri'][-8:].lower() == "manifest" or 'manifest?' in request['request_uri']:
-                        content_version['Manifest'] += 1
-                    elif request['request_uri'] == '-':
-                        content_version['-'] += 1
-                    elif request['request_uri'] == '/':
-                        content_version['/'] += 1
-                    else:
-                        print request
-                        print line
-                    '''
-
                     if 'mp4' in request['request_uri'] and request['request_uri'].partition('?')[0][-4:] == 'm3u8':
                         content_version['mp4'] += 1
 
-                        if request['body_bytes_sent'] < 1000000:
-                            small_mp4s += 1
+                        body_bytes_sizes[(int(request['body_bytes_sent']) / 10000) * 1000000] += 1
+
+                        if request['body_bytes_sent'] == 0:
+                            zero_bytes += 1
 
             print 'IPs:', len(ip_8_ranges), len(ip_16_ranges), len(ip_24_ranges)
             print http_codes
@@ -81,7 +55,7 @@ def analyze(path, day, month, year):
                 print bucket, ':', body_bytes_sizes[bucket], '; ',
             print '\n'
             print 'requests with 0 bytes:', zero_bytes
-            print content_version, small_mp4s
+            print content_version
 
 def main(argv):
     opts, args = getopt.getopt(argv, 'd:m:y:')
