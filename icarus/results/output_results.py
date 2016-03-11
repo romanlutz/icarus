@@ -32,7 +32,7 @@ def print_cache_hit_rates(format):
 
     print ", ".join(traces)
 
-    policies = ['ARC', 'LRU', 'KLRU', 'SS', 'DSCA', '2DSCA', 'DSCAAWS', 'DSCASW', 'DSCAFT', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
+    policies = ['ARC', 'LRU', 'KLRU', 'SS', 'DSCA', '2DSCA', 'DSCAAWS', '2DSCAAWS', 'DSCASW', 'DSCAFT', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
 
     dict_list = []
 
@@ -54,7 +54,7 @@ def print_cache_hit_rates(format):
                 window_sizes.sort()
                 for window_size in window_sizes:
                     dict_list.append(('%s %d' % (policy, window_size), rates[policy][window_size]))
-            elif policy == 'DSCAAWS':
+            elif policy in ['DSCAAWS', '2DSCAAWS']:
                 periods = rates[policy].keys()
                 periods.sort()
                 for period in periods:
@@ -64,7 +64,7 @@ def print_cache_hit_rates(format):
                         hypo_epsilons = rates[policy][period][A].keys()
                         hypo_epsilons.sort()
                         for epsilon in hypo_epsilons:
-                            dict_list.append(('DSCAAWS %d %f %f' % (period, A, epsilon),
+                            dict_list.append(('%s %d %f %f' % (policy, period, A, epsilon),
                                              rates[policy][period][A][epsilon]))
             elif policy == 'DSCASW':
                 subwindow_sizes = rates[policy].keys()
@@ -188,6 +188,8 @@ def assign_cache_hit_rate(tree, rates, trace, policy, window_size, segments, cac
             elif policy == '2DSCA':
                 rates[policy][window_size][trace] = k[1]
             elif policy == 'DSCAAWS':
+                rates[policy][hypothesis_check_period][hypothesis_check_A][hypothesis_check_epsilon][trace] = k[1]
+            elif policy == '2DSCAAWS':
                 rates[policy][hypothesis_check_period][hypothesis_check_A][hypothesis_check_epsilon][trace] = k[1]
             elif policy == 'DSCASW':
                 rates[policy][subwindow_size][subwindows][trace] = k[1]

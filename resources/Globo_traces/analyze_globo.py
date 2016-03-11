@@ -22,6 +22,7 @@ def analyze(path, day, month, year):
                 content_version = defaultdict(int)
 
                 zero_bytes = 0
+                small_mp4s = 0
 
                 for line in in_file:
                     request = parse_line(line)
@@ -65,6 +66,12 @@ def analyze(path, day, month, year):
                         print line
                     '''
 
+                    if 'mp4' in request['request_uri'] and request['request_uri'].partition('?')[0][-4:] == 'm3u8':
+                        content_version['mp4'] += 1
+
+                        if request['body_bytes_sent'] < 1000000:
+                            small_mp4s += 1
+
             print 'IPs:', len(ip_8_ranges), len(ip_16_ranges), len(ip_24_ranges)
             print http_codes
             print request_names
@@ -74,7 +81,7 @@ def analyze(path, day, month, year):
                 print bucket, ':', body_bytes_sizes[bucket], '; ',
             print '\n'
             print 'requests with 0 bytes:', zero_bytes
-            # print content_version
+            print content_version, small_mp4s
 
 def main(argv):
     opts, args = getopt.getopt(argv, 'd:m:y:')
