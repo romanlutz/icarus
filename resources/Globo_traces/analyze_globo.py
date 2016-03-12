@@ -58,6 +58,8 @@ def analyze(path, day, month, year):
                             content_type['.webvtt'] += 1
                         elif request['request_uri'].partition('?')[0][-4:] == '.mpd':
                             content_type['.mpd'] += 1
+                        elif request['request_uri'].partition('?')[0][-4:] == '.srt':
+                            content_type['.srt'] += 1
                         else:
                             print request
 
