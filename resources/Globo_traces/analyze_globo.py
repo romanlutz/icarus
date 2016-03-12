@@ -57,7 +57,10 @@ def analyze(path, day, month, year):
                         elif 'manifest' in request['request_uri'].partition('.ism')[2] and \
                              'Seg' in request['request_uri'].partition('.ism')[2] and \
                              'Frag' in request['request_uri'].partition('.ism')[2]:
-                             content_type['.ism with manifest and Seg/Frag index']
+                             content_type['.ism with manifest and Seg/Frag index'] += 1
+                        elif request['request_uri'].partition('.ism')[1] == '.ism' and \
+                             '.f4m' in request['request_uri'].partition('.ism')[2]:
+                             content_type['.ism and .f4m'] += 1
                         elif request['request_uri'].partition('?')[0][-7:] == '.webvtt':
                             content_type['.webvtt'] += 1
                         elif request['request_uri'].partition('?')[0][-4:] == '.mpd':
