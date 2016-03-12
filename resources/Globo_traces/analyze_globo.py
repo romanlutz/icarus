@@ -67,17 +67,21 @@ def analyze(path, day, month, year):
                             content_type['.mpd'] += 1
                         elif request['request_uri'].partition('?')[0][-4:] == '.srt':
                             content_type['.srt'] += 1
+                        elif request['request_uri'].partition('?')[0][-8:] == '.drmfaxs':
+                            content_type['.drmfaxs'] += 1
+                        elif request['request_uri'].partition('?')[0][-8:] == '.drmmeta':
+                            content_type['.drmmeta'] += 1
                         else:
                             print request
 
 
             print 'IPs:', len(ip_8_ranges), len(ip_16_ranges), len(ip_24_ranges)
             print request_names
-            buckets = body_bytes_sizes.keys()
-            buckets.sort()
-            for bucket in buckets:
-                print bucket, ':', body_bytes_sizes[bucket], '; ',
-            print '\n'
+            #buckets = body_bytes_sizes.keys()
+            #buckets.sort()
+            #for bucket in buckets:
+            #    print bucket, ':', body_bytes_sizes[bucket], '; ',
+            #print '\n'
             print 'requests with 0 bytes:', zero_bytes
             print content_type
 
