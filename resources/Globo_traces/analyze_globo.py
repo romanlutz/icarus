@@ -38,11 +38,12 @@ def analyze(path, day, month, year):
                         ip_16_ranges[ip_16] += 1
                         ip_8_ranges[ip_8] += 1
 
+                        # body_bytes_sizes[(int(request['body_bytes_sent']) / 10000) * 1000000] += 1
+
                         if 'mp4' in request['request_uri'] and request['request_uri'].partition('?')[0][-4:] == 'm3u8':
                             content_type['.mp4.m3u8'] += 1
-
-                            body_bytes_sizes[(int(request['body_bytes_sent']) / 10000) * 1000000] += 1
-
+                        elif request['request_uri'].partition('?')[0][-4:] == '.mp4':
+                            content_type['.mp4'] += 1
                         elif request['request_uri'].partition('?')[0][-3:] == '.ts':
                             content_type['.ts'] += 1
                         elif request['request_uri'].partition('?')[0][-5:] == '.m3u8':
