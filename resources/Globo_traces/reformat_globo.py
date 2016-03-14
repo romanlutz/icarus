@@ -25,7 +25,7 @@ def reformat(path, day, month, year, time_offset, contents, n_contents, file):
                             time = time_offset + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
 
                             # content ID is after last slash and before next dash, format is after dash
-                            content, _, format = request_path[::-1].partition('/')[2][::-1].partition('-')
+                            content, _, format = request_path[::-1].partition('/')[0][::-1].partition('-')
                             if format not in contents:
                                 print request['request_uri']
                                 contents[format] = True
