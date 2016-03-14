@@ -81,9 +81,10 @@ def analyze(path, day, month, year):
             #buckets.sort()
             #for bucket in buckets:
             #    print bucket, ':', body_bytes_sizes[bucket], '; ',
-            #print '\n'
+            #print ''
             print 'requests with 0 bytes:', zero_bytes
             print content_type
+            print ''
 
 def main(argv):
     opts, args = getopt.getopt(argv, 'd:m:y:')
