@@ -27,7 +27,7 @@ def reformat(path, day, month, year, time_offset, contents, n_contents, file):
                             # content ID is after last slash and before next dash, format is after dash
                             content, _, format = request_path[::-1].partition('/')[2][::-1].partition('-')
                             if format not in contents:
-                                contents.append(format)
+                                contents[format] = True
                             else:
                                 pass
                             #file.write('%d,%d,%s\n' % (time, 0, content))
