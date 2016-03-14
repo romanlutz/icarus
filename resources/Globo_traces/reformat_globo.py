@@ -17,8 +17,8 @@ def reformat(path, day, month, year, time_offset, contents, n_contents, file):
                     if request['body_bytes_sent'] > 0 and request['http_request_name'] == 'GET' and \
                                     request['code'] < 400:
 
-                        request_path = request['request_uri'].partition('?')[0][-4:]
-                        if request_path == '.mp4':
+                        request_path = request['request_uri'].partition('?')[0]
+                        if request_path[-4:] == '.mp4':
                             timestamp = request['time'].partition('T')[2].partition('-')[0]
                             hours, _, timestamp = timestamp.partition(':')
                             minutes, _, seconds = timestamp.partition(':')
