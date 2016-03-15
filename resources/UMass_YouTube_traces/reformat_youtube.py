@@ -1,6 +1,43 @@
-__author__ = 'romanlutz'
-
+from datetime import datetime, timedelta
 import csv
+
+
+def time_difference(timestamp1, timestamp2):
+    month1, _, rest = timestamp1.partition(' ')
+    day1, _, rest = rest.partition(' ')
+    year1, _, rest = rest.partition(' ')
+    hour1, _, rest = rest.partition(':')
+    min1, _, sec1 = rest.partition(':')
+    sec1, _, microsec1 = sec1.partition('.')
+    microsec1 = microsec1[:6]
+
+    month2, _, rest = timestamp2.partition(' ')
+    day2, _, rest = rest.partition(' ')
+    year2, _, rest = rest.partition(' ')
+    hour2, _, rest = rest.partition(':')
+    min2, _, sec2 = rest.partition(':')
+    sec2, _, microsec2 = sec2.partition('.')
+    microsec2 = microsec2[:6]
+    [year1, year2, day1, day2, hour1, hour2, min1, min2, sec1, sec2, microsec1, microsec2] = \
+        map(int, [year1, year2, day1, day2, hour1, hour2, min1, min2, sec1, sec2, microsec1, microsec2])
+
+    # there are only January and Feburary requests, so this simple rule works
+    month1 = 1 if month1 == 'Jan' else 2
+    month2 = 1 if month2 == 'Jan' else 2
+
+    time1 = datetime(year1, month1, day1, hour1, min1, sec1, microsec1)
+    time2 = datetime(year2, month2, day2, hour2, min2, sec2, microsec2)
+
+    if time2 > time1:
+        delta = time2 - time1
+    else:
+        delta = time1 - time2
+
+    if delta.days == 0:
+        return delta.seconds
+    else:
+        return 86400
+
 
 def reformat(filename):
     requests = []
@@ -8,6 +45,7 @@ def reformat(filename):
         csv_reader = csv.reader(csv_file)
 
         contents = {}
+        request_log = {} # id - ip - last request time
         unique_contents = 0
         for row in csv_reader:
             parts = ' '.join(row).split()
@@ -34,7 +72,18 @@ def reformat(filename):
                     unique_contents += 1
                     id = unique_contents
                     contents[content] = id
+                    request_log[id] = {}
                 event = {'receiver': 0, 'content': id}
+
+                ip = parts[4]
+                timestamp = ' '.join([parts[0], parts[1][:2], parts[2], parts[3]])
+
+                if ip in request_log[id]:
+                    # this ID was requested by this IP before
+                    print row, time_difference(request_log[id][ip], timestamp)
+
+                request_log[id][ip] = timestamp
+
                 requests.append(event)
 
     extension = '_reformatted'
@@ -48,6 +97,5 @@ def reformat(filename):
             time += 1
 
 
-'''
+
 reformat('YouTube_Trace_7days.txt')
-'''
