@@ -61,6 +61,7 @@ def analyze(path, day, month, year, data):
                         order_of_magnitude = 1
                         while byte_size != 0:
                             byte_size = byte_size / 10
+                            order_of_magnitude += 1
                         data['body_bytes_sizes']['10^%d < b < 10^%d' % (order_of_magnitude-1, order_of_magnitude)] += 1
 
                         if 'mp4' in request['request_uri'] and request['request_uri'].partition('?')[0][-4:] == 'm3u8':
