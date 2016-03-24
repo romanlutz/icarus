@@ -49,6 +49,7 @@ def create_default_data_dict():
     data['content_type'] = defaultdict(int)
     data['content_type_hits'] = {}
     data['zero_bytes'] = 0
+    data['min_hit_size'] = float('inf')
     #data['last_requests'] = {}
 
     return data
@@ -75,10 +76,11 @@ def print_data_dict_compact(data):
         print type, ':', data['content_type'][type], ',',
     print ''
     print data['content_type_hits']
+    print 'minimum size of a request with hit:', data['min_hit_size']
     print 'requests with 0 bytes:', data['zero_bytes']
 
 def analyze(path, day, month, year, data):
-    timestamp = '%d-%d-%dT00:00:00-02:00' % (year, month, day)
+    #timestamp = '%d-%d-%dT00:00:00-02:00' % (year, month, day)
     for filename in os.listdir(path):
         if '%02d%02d%02d-merged.log' % (year, month, day) == filename:
             print 'reading %s' % filename
@@ -89,8 +91,9 @@ def analyze(path, day, month, year, data):
 
                     data['request_names'][request['http_request_name']] += 1
 
-                    if request['http_request_name'] == 'GET' and request['code'] < 400:
-                        data['zero_bytes'] += 1
+                    if request['http_request_name'] == 'GET' and request['code'] < 300:
+                        if request['body_bytes_sent'] == 0:
+                            data['zero_bytes'] += 1
 
                         ip_24 = ''.join(request['ip'][-1::-1].partition('.')[2])[-1::-1]
                         ip_16 = ''.join(ip_24[-1::-1].partition('.')[2])[-1::-1]
@@ -100,7 +103,7 @@ def analyze(path, day, month, year, data):
                         data['ip_16_ranges'][ip_16] += 1
                         data['ip_8_ranges'][ip_8] += 1
 
-                        byte_size = int(request['body_bytes_sent'])
+                        byte_size = request['body_bytes_sent']
                         order_of_magnitude = 1
                         while byte_size != 0:
                             byte_size = byte_size / 10
@@ -146,6 +149,8 @@ def analyze(path, day, month, year, data):
                             data['content_type'][format] += 1
                             if request['cache_hit_or_miss'] == 'HIT':
                                 data['content_type_hits'][format] = True
+                                if request['body_bytes_sent'] < data['min_hit_size']:
+                                    data['min_hit_size'] = request['body_bytes_sent']
 
                     # clear old records from last-requests dictionary to save memory
                     # do this every 20 seconds because the last 10 seconds are saved
