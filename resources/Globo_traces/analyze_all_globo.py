@@ -1,7 +1,7 @@
 import getopt
 import sys
 
-from analyze_globo import analyze
+from analyze_globo import analyze, create_default_data_dict
 
 
 def main(argv):
@@ -20,8 +20,10 @@ def main(argv):
     if start_day > end_day:
         raise ValueError('start day has to be before or equal to end day')
 
+    data = create_default_data_dict()
+
     for day in range(start_day, end_day + 1):
-        analyze('./', day, month, year)
+        data = analyze('./', day, month, year, data)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -41,6 +41,8 @@ def time_difference(timestamp1, timestamp2):
 
 def reformat(filename):
     requests = []
+    duplicate_requests = 0 # only within 10 seconds
+
     with open(filename, 'r') as csv_file:
         csv_reader = csv.reader(csv_file)
 
@@ -65,7 +67,6 @@ def reformat(filename):
                     print 'error: unexpected format'
                     print parts[6]
 
-
                 if content in contents:
                     id = contents[content]
                 else:
@@ -80,13 +81,17 @@ def reformat(filename):
 
                 if ip in request_log[id]:
                     # this ID was requested by this IP before
-                    print row, time_difference(request_log[id][ip], timestamp)
+                    if time_difference(request_log[id][ip], timestamp) < 10:
+                        # duplicate request, ignore it
+                        duplicate_requests += 1
+                    else:
+                        requests.append(event)
 
                 request_log[id][ip] = timestamp
 
-                requests.append(event)
-
     extension = '_reformatted'
+
+    print 'duplicate requests:', duplicate_requests
 
     with open(filename[:-4] + extension + '.trace', 'wb') as file:
         writer = csv.writer(file, quoting = csv.QUOTE_NONE)
