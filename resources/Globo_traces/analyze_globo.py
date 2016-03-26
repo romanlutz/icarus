@@ -82,7 +82,7 @@ def print_data_dict_compact(data):
 def analyze(path, day, month, year, data):
     #timestamp = '%d-%d-%dT00:00:00-02:00' % (year, month, day)
 
-    mp4_versions = {'web360': '0', 'web480': '1', 'web720': '2', 'http200k': '3', 'http400k': '4', 'hls64k': '5', 'hls200k': '6'}
+    mp4_versions = {'web360': '0', 'web480': '1', 'web720': '2', 'http200k': '3', 'http400k': '4', 'hls64k': '5', 'hls200k': '6', 'iphone360': '7'}
 
     for filename in os.listdir(path):
         if '%02d%02d%02d-merged.log' % (year, month, day) == filename:
