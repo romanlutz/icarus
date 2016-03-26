@@ -128,7 +128,7 @@ def analyze(path, day, month, year, data):
                             content_id = int(until_question_mark.rpartition('-manifest')[0].rpartition('/')[2] + mp4_versions[until_question_mark.rpartition('.mp4.m3u8')[0].rpartition('/')[2]])
                         elif until_question_mark[-4:] == '.mp4':
                             format = '.mp4'
-                            content_id = int(until_question_mark.rpartition('-')[0].rpartition('/')[2] + mp4_versions[until_question_mark.rpartition('.mp4')[0].rpartititon('-')[2]])
+                            content_id = int(until_question_mark.rpartition('-')[0].rpartition('/')[2] + mp4_versions[until_question_mark.rpartition('.mp4')[0].rpartition('-')[2]])
                         elif until_question_mark[-3:] == '.ts':
                             format = '.ts'
                             content_id = int(until_question_mark.rpartition('-manifest')[0].rpartition('/')[2] + until_question_mark.rpartition('.ts')[0].rpartition('-')[2])
