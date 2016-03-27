@@ -213,7 +213,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = cpu_count()
+N_PROCESSES = 7 # cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -252,7 +252,7 @@ REQ_RATE = 1.0
 # Total size of network cache as a fraction of content population
 # If the cache size is a static number (e.g. 100), set NETWORK_CACHE_FRACTION to False
 # In case the cache size is given as a natural number, set it to the cumulative total of the whole network
-NETWORK_CACHE = 2000
+NETWORK_CACHE = 1000
 NETWORK_CACHE_FRACTION = False
 
 # if running a trace-driven simulation, REQ_FILE is the path to the trace file
@@ -261,7 +261,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i == 5:
+        if i >= 6 and i <= 14:
             traces.append((line[0], int(line[1])))
         i += 1
 
