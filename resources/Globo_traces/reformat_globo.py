@@ -2,8 +2,9 @@ import getopt
 import sys, os
 from collections import defaultdict
 from merge_globo import parse_line
+from analyze_globo import mp4_versions, determine_format_and_content_id, clear_from_last_requests
 
-def reformat(path, day, month, year, time_offset, contents, n_contents, file):
+def reformat(path, day, month, year, time_offset, contents, n_contents, out_file):
     day_existed = False
     for filename in os.listdir(path):
         if '%02d%02d%02d-merged.log' % (year, month, day) == filename:
@@ -14,24 +15,26 @@ def reformat(path, day, month, year, time_offset, contents, n_contents, file):
                 for line in in_file:
                     request = parse_line(line)
 
-                    if request['body_bytes_sent'] > 0 and request['http_request_name'] == 'GET' and \
-                                    request['code'] < 400:
+                    if request['http_request_name'] == 'GET' and request['code'] < 300:
 
-                        request_path = request['request_uri'].partition('?')[0]
-                        if request_path[-4:] == '.mp4':
-                            timestamp = request['time'].partition('T')[2].partition('-')[0]
-                            hours, _, timestamp = timestamp.partition(':')
-                            minutes, _, seconds = timestamp.partition(':')
+                        _, content_id = determine_format_and_content_id(request)
+
+                        # take content IDs for generating the trace only if they have been found (not None)
+                        if content_id is not None:
+                            time = request['time'].rpartition('T')[2].rpartition('-')[0]
+                            hours, _, time = time.partition(':')
+                            minutes, _, seconds = time.partition(':')
                             time = time_offset + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+                            # currently the receiver is constant (one cache scenario), set to 0
+                            out_file.write('%d,%d,%d\n' % (time, 0, content_id))
 
-                            # content ID is after last slash and before next dash, format is after dash
-                            content, _, format = request_path[::-1].partition('/')[0][::-1].partition('-')
-                            if format not in contents:
-                                print request['request_uri']
-                                contents[format] = True
-                            else:
-                                pass
-                            #file.write('%d,%d,%s\n' % (time, 0, content))
+
+                    # clear old records from last-requests dictionary to save memory
+                    # do this every 20 seconds because the last 10 seconds are saved
+                    #if time_difference(timestamp, request['time']) > 20:
+                    #    clear_from_last_requests(request['time'], data)
+
+
 
     return day_existed, contents, n_contents
 
