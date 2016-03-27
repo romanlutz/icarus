@@ -2,7 +2,7 @@ __author__ = 'romanlutz'
 
 import csv
 
-def reformat(filename, size_given=False):
+def reformat(filename, size_given=False, threshold=10000):
 
     if filename == 'requests.txt':
         n_requests = 14885146
@@ -30,7 +30,7 @@ def reformat(filename, size_given=False):
 
                 if size_given:
                     size = int(row[2])
-                    if size > 10000:
+                    if size > threshold:
                         file_sizes_above_threshold += 1
                         if content not in contents:
                             content_id += 1
@@ -53,4 +53,4 @@ def reformat(filename, size_given=False):
 '''
 reformat('requests.txt')
 '''
-reformat('requests-1M-2016-3-15.txt', True)
+reformat('requests-1M-2016-3-15.txt', False)

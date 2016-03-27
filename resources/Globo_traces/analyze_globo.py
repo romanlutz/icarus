@@ -105,10 +105,10 @@ def determine_format_and_content_id(request):
         format = 'other .m3u8'
         # content_id = int(until_question_mark.rpartition('-manifest')[0].rpartition('/')[2])
         # again there are some requests with audio-eng and video-eng, currently not handled
-    elif 'QualityLevels' in after_ism and 'Fragments' in after_ism:
-        format = '.ism with QualityLevels and Fragments configuration'
+    elif 'QualityLevels' in after_ism and ('Fragments' in after_ism or 'KeyFrames' in after_ism):
+        format = '.ism with QualityLevels and Fragments/KeyFrames configuration'
         # content_id = int(before_ism.rpartition('-manifest')[0].rpartition('/')[2])
-        # depending on the Fragments specification it may be audio-por or video
+        # depending on the Fragments/KeyFrames specification it may be audio-por or video
         # QualityLevels may also be of interest, but we can't handle all that right now
     elif '/manifest' == after_ism.lower() or until_question_mark[-13:] == '.ism/manifest':
         format = '.ism/manifest'

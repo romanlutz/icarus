@@ -1,6 +1,8 @@
 IBM_traces/anon-url-trace_reformatted.trace, 8626163
 UMass_YouTube_traces/YouTube_Trace_7days_reformatted.trace, 258673
+UMass_YouTube_traces/YouTube_Trace_7days_no_duplicates_reformatted.trace, 251335
 Fastly_traces/requests_reformatted.trace, 14885146
+Fastly_traces/requests-1M-2016-3-15_reformatted.trace, 1007545
 synthetic/mult_zip_run1_reformatted.trace, 199701
 synthetic/mult_zip_run2_reformatted.trace, 199035
 synthetic/mult_zip_run3_reformatted.trace, 199683

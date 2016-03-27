@@ -261,8 +261,9 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        traces.append((line[0], int(line[1])))
-        i += 1
+        if i == 3 or i == 5:
+            traces.append((line[0], int(line[1])))
+            i += 1
 
 def append_default(cache_policy_parameters, window_size=False, subwindows=False, subwindow_size=False, monitored=False, warmup=False,
                    segments=False, cached_segments=False, lru_portion=False, hypothesis_check_period=False,
@@ -284,19 +285,19 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 
 MONITORED_DEFAULT = NETWORK_CACHE * 2
-use_SS = False
-use_DSCA = False
+use_SS = True
+use_DSCA = True
 use_2DSCA = True
-use_DSCAAWS = False
+use_DSCAAWS = True
 use_2DSCAAWS = True
-use_DSCASW = False
-use_DSCAFT = False
-use_DSCAFS = False
-use_ADSCASTK = False
-use_ADSCAATK = False
-use_ARC = False
-use_LRU = False
-use_KLRU = False
+use_DSCASW = True
+use_DSCAFT = True
+use_DSCAFS = True
+use_ADSCASTK = True
+use_ADSCAATK = True
+use_ARC = True
+use_LRU = True
+use_KLRU = True
 
 if use_SS:
     CACHE_POLICY.append('SS')

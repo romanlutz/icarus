@@ -390,7 +390,6 @@ class DeterministicTraceDrivenWorkload(object):
         self.n_warmup = n_warmup
         self.n_measured = n_measured
         self.reqs_file = reqs_file
-        self.buffering = 64*1024*1024
         self.n_contents = 0
         self.contents = {}
         with open(self.reqs_file, 'r') as csv_file:

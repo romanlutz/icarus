@@ -39,7 +39,7 @@ def time_difference(timestamp1, timestamp2):
         return 86400
 
 
-def reformat(filename):
+def reformat(filename, no_duplicates=False):
     requests = []
     duplicate_requests = 0 # only within 10 seconds
 
@@ -67,31 +67,46 @@ def reformat(filename):
                     print 'error: unexpected format'
                     print parts[6]
 
-                if content in contents:
-                    id = contents[content]
-                else:
-                    unique_contents += 1
-                    id = unique_contents
-                    contents[content] = id
-                    request_log[id] = {}
-                event = {'receiver': 0, 'content': id}
+                if no_duplicates:
+                    if content in contents:
+                        id = contents[content]
+                    else:
+                        unique_contents += 1
+                        id = unique_contents
+                        contents[content] = id
+                        request_log[id] = {}
+                    event = {'receiver': 0, 'content': id}
 
-                ip = parts[4]
-                timestamp = ' '.join([parts[0], parts[1][:2], parts[2], parts[3]])
+                    ip = parts[4]
+                    timestamp = ' '.join([parts[0], parts[1][:2], parts[2], parts[3]])
 
-                if ip in request_log[id]:
-                    # this ID was requested by this IP before
-                    if time_difference(request_log[id][ip], timestamp) < 10:
-                        # duplicate request, ignore it
-                        duplicate_requests += 1
+                    if ip in request_log[id]:
+                        # this ID was requested by this IP before
+                        if time_difference(request_log[id][ip], timestamp) < 10:
+                            # duplicate request, ignore it
+                            duplicate_requests += 1
+                        else:
+                            requests.append(event)
                     else:
                         requests.append(event)
 
-                request_log[id][ip] = timestamp
+                    request_log[id][ip] = timestamp
 
-    extension = '_reformatted'
+                else:
+                    if content in contents:
+                        id = contents[content]
+                    else:
+                        unique_contents += 1
+                        id = unique_contents
+                        contents[content] = id
 
-    print 'duplicate requests:', duplicate_requests
+                    event = {'receiver': 0, 'content': id}
+                    requests.append(event)
+
+    extension = '_no_duplicates_reformatted' if no_duplicates else '_reformatted'
+
+    if no_duplicates:
+        print 'duplicate requests:', duplicate_requests
 
     with open(filename[:-4] + extension + '.trace', 'wb') as file:
         writer = csv.writer(file, quoting = csv.QUOTE_NONE)
@@ -104,3 +119,4 @@ def reformat(filename):
 
 
 reformat('YouTube_Trace_7days.txt')
+reformat('YouTube_Trace_7days.txt', True)
