@@ -418,4 +418,4 @@ class DeterministicTraceDrivenWorkload(object):
                 req_counter += 1
                 if(req_counter >= self.n_warmup + self.n_measured):
                     raise StopIteration()
-            raise ValueError("Trace did not contain enough requests")
+            raise ValueError("Trace did not contain enough requests: %d" % req_counter)
