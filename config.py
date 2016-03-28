@@ -261,8 +261,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i == 3 or i == 5:
-            traces.append((line[0], int(line[1])))
+        traces.append((line[0], int(line[1])))
         i += 1
 
 def append_default(cache_policy_parameters, window_size=False, subwindows=False, subwindow_size=False, monitored=False, warmup=False,
