@@ -39,7 +39,7 @@ def trace_analytics(traces, trace_lengths, plotdir, min_interval_size=2000, do_z
                                                rank_and_occurrence_evolution_intervals)
 
         if do_temporal_distance:
-            data[trace_path] = temporal_distance(trace_path)
+            data[trace_path] = temporal_distance(trace_path, plotdir)
 
 
 
@@ -206,7 +206,7 @@ def plot_rank_and_occurrence_evolution(trace, plotdir, data, rank_and_occurrence
     plt.close()
 
 
-def temporal_distance(trace_path):
+def temporal_distance(trace_path, plotdir):
     print 'computing average temporal distance'
 
     with open('resources/' + trace_path, 'r') as trace:
@@ -217,6 +217,7 @@ def temporal_distance(trace_path):
         last_occurrence = {}
         total_occurrences = defaultdict(int)
 
+        # count the first and last occurrence as well as the number of total occurrences of each object
         for index, line in enumerate(csv_reader):
             time, receiver, object = line[0], line[1], line[2]
             requests += 1
@@ -227,12 +228,52 @@ def temporal_distance(trace_path):
             last_occurrence[object] = requests
             total_occurrences[object] += 1
 
-        single_occurrences = sum([1 if last_occurrence[id] == first_occurrence[id] else 0 for id in total_occurrences])
-        # the formula for temporal distance is as follows: consider only elements with multiple occurrences
-        # (sum over difference between element's first and last occurrence) / (number of element's occurrences - 1)
-        total_distance = \
-            sum([last_occurrence[id] - first_occurrence[id] + 1 - total_occurrences[id] for id in total_occurrences])
-        total_pairs_count = sum([x-1 for x in total_occurrences.values()])
+    single_occurrences = sum([1 if last_occurrence[id] == first_occurrence[id] else 0 for id in total_occurrences])
+    # the formula for temporal distance is as follows: consider only elements with multiple occurrences
+    # (sum over difference between element's first and last occurrence) / (number of element's occurrences - 1)
+    total_distance = \
+        sum([last_occurrence[id] - first_occurrence[id] + 1 - total_occurrences[id] for id in total_occurrences])
+    total_pairs_count = sum([x-1 for x in total_occurrences.values()])
+
+    # produce histogram based on the number of occurrences
+    path = os.path.join(plotdir, trace_path[:-6] + '_occurrence_distribution.pdf')
+    create_path_if_necessary(path, plotdir)
+
+    pdf = PdfPages(path)
+    fig = plt.figure()
+
+    # the last bin is "20 or greater"
+    plt.hist(total_occurrences.values(), bins=[i for i in (set(total_occurrences.values())) if i <= 20], align='center')
+    plt.title("Occurrence distribution")
+    plt.xlabel("number of occurrences")
+    plt.ylabel("number of elements")
+
+    pdf.savefig(fig)
+    pdf.close()
+    plt.close()
+
+    # produce histogram based on the average temporal distance
+    path = os.path.join(plotdir, trace_path[:-6] + '_temporal_distance.pdf')
+    create_path_if_necessary(path, plotdir)
+
+    pdf = PdfPages(path)
+    fig = plt.figure()
+
+    X = [x for x in set(total_occurrences.values()) if x > 1 and x <= 20]
+    # there's no temporal distance with only a single occurrence
+    Y = [float(sum([last_occurrence[id] - first_occurrence[id] + 1 - total_occurrences[id] for id in total_occurrences if total_occurrences[id] == x]))/float(x-1) for x in X if x < 20 and x > 1]
+    # the last entry is for x >= 20
+    Y.append(float(sum([last_occurrence[id] - first_occurrence[id] + 1 - total_occurrences[id] for id in total_occurrences if total_occurrences[id] >= 20]))/float(19))
+    print len(X)
+    print len(Y)
+    plt.bar(X, Y, align='center')
+    plt.title("Temporal distance")
+    plt.ylabel("average temporal distance")
+    plt.xlabel("number of occurrences")
+
+    pdf.savefig(fig)
+    pdf.close()
+    plt.close()
 
     return {'requests': requests, 'objects': len(total_occurrences), 'single_occurrences': single_occurrences,
             'average_distance': float(total_distance) / float(total_pairs_count)}
