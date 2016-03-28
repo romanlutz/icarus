@@ -52,5 +52,5 @@ def reformat(filename, size_given=False, threshold=10000):
 
 '''
 reformat('requests.txt')
-'''
 reformat('requests-1M-2016-3-15.txt', False)
+'''

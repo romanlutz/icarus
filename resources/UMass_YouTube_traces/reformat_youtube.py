@@ -117,6 +117,7 @@ def reformat(filename, no_duplicates=False):
             time += 1
 
 
-
+'''
 reformat('YouTube_Trace_7days.txt')
 reformat('YouTube_Trace_7days.txt', True)
+'''

@@ -164,12 +164,14 @@ def plot_rank_and_occurrence_evolution(trace, plotdir, data, rank_and_occurrence
     pdf = PdfPages(path)
     fig = plt.figure()
 
-    for entry in data:
-        if entry == 'rank_evolution':
-            ranks = data[entry]
-            ids = ranks.keys()
-            for id in ids:
-                p = plt.plot(range(1, rank_and_occurrence_evolution_intervals + 1), ranks[id], '-', linewidth=2)
+    ranks = data['rank_evolution']
+    ids = ranks.keys()
+
+    cmap = plt.get_cmap('jet')
+    norm = plt.normalize(0, len(ids) - 1)
+
+    for index, id in enumerate(ids):
+        p = plt.plot(range(1, rank_and_occurrence_evolution_intervals + 1), ranks[id], '-', linewidth=2, color=cmap(norm(index)))
 
     plt.xlabel('intervals')
     plt.ylabel('rank')
@@ -189,13 +191,10 @@ def plot_rank_and_occurrence_evolution(trace, plotdir, data, rank_and_occurrence
     pdf = PdfPages(path)
     fig = plt.figure()
 
-    for entry in data:
-        if entry == 'occurrence_evolution':
-            occurrence_evolution = data[entry]
-            ids = occurrence_evolution.keys()
-            for id in ids:
-                p = plt.plot(range(1, rank_and_occurrence_evolution_intervals + 1), occurrence_evolution[id],
-                             '-', linewidth=2)
+    occurrence_evolution = data['occurrence_evolution']
+    ids = occurrence_evolution.keys()
+    for index, id in enumerate(ids):
+        p = plt.plot(range(1, rank_and_occurrence_evolution_intervals + 1), occurrence_evolution[id], '-', linewidth=2, color=cmap(norm(index)))
 
     plt.xlabel('intervals')
     plt.ylabel('occurrences')
