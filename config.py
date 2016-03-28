@@ -213,7 +213,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = 7 # cpu_count()
+N_PROCESSES = 5 # cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -261,7 +261,7 @@ with open('resources/trace_overview.csv', 'r') as trace_file:
     csv_reader = csv.reader(trace_file)
     i = 1
     for line in csv_reader:
-        if i >= 6 and i <= 14:
+        if i == 3 or i == 5:
             traces.append((line[0], int(line[1])))
         i += 1
 
@@ -325,7 +325,7 @@ if use_2DSCA:
                        hypothesis_check_epsilon=True)
 
 if use_DSCAAWS:
-    for hypothesis_check_period in [NETWORK_CACHE, NETWORK_CACHE*4, NETWORK_CACHE*16]:
+    for hypothesis_check_period in [MONITORED_DEFAULT, MONITORED_DEFAULT*4, MONITORED_DEFAULT*16]:
         for hypothesis_check_A in [0.33]:
             for hypothesis_check_epsilon in [0.005]:
                 CACHE_POLICY.append('DSCAAWS')
