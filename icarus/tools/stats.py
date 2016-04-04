@@ -13,6 +13,7 @@ import scipy.stats as ss
 __all__ = [
        'DiscreteDist',
        'TruncatedZipfDist',
+       'TruncatedMandelbrotZipfDist',
        'means_confidence_interval',
        'proportions_confidence_interval',
        'cdf',
@@ -124,6 +125,49 @@ class TruncatedZipfDist(DiscreteDist):
         return self._alpha
 
 
+def TruncatedMandelbrotZipfDist(DiscreteDist):
+    """Implements a truncated Mandelbrot-Zipf distribution, i.e. a Mandelbrot-Zipf distribution with
+        a finite population, which can hence take values of alpha > 0 and q >= 0.
+        """
+
+    def __init__(self, alpha=1.0, q=0, n=1000, seed=None):
+        """Constructor
+
+        Parameters
+        ----------
+        alpha : float
+            The value of the alpha parameter (it must be positive)
+        q : float
+            The value of the q parameter (it must be non-negative)
+        n : int
+            The size of population
+        seed : any hashable type, optional
+            The seed to be used for random number generation
+        """
+        # Validate parameters
+        if alpha <= 0:
+            raise ValueError('alpha must be positive')
+        if q < 0:
+            raise ValueError('q must be non-negative')
+        if n < 0:
+            raise ValueError('n must be positive')
+        # This is the PDF i. e. the array that contains the probability that
+        # content i + 1 is picked
+        pdf = np.arange(1.0 + q, n + 1.0 + q) ** -alpha
+        pdf /= np.sum(pdf)
+        self._alpha = alpha
+        self._q = q
+        super(TruncatedZipfDist, self).__init__(pdf, seed)
+
+    @property
+    def alpha(self):
+        return self._alpha
+
+    @property
+    def q(self):
+        return self._q
+
+
 def means_confidence_interval(data, confidence=0.95):
     """Computes the confidence interval for a given set of means.
     
@@ -135,7 +179,7 @@ def means_confidence_interval(data, confidence=0.95):
         The confidence level. It must be a value in the interval (0, 1)
         
     Returns
-    -------
+    -------im
     mean : float
         The mean of the sample
     err : float

@@ -22,7 +22,7 @@ import csv
 
 import networkx as nx
 
-from icarus.tools import TruncatedZipfDist
+from icarus.tools import TruncatedZipfDist, TruncatedMandelbrotZipfDist
 from icarus.registry import register_workload
 
 __all__ = [
@@ -83,15 +83,25 @@ class StationaryWorkload(object):
         the timestamp at which the event occurs and the second element is a
         dictionary of event attributes.
     """
-    def __init__(self, topology, n_contents, alpha, beta=0, rate=1.0,
+    def __init__(self, topology, n_contents, alpha, q=0, distribution='zipf', beta=0, rate=1.0,
                     n_warmup=10**5, n_measured=4*10**5, seed=None, **kwargs):
         if alpha < 0:
             raise ValueError('alpha must be positive')
+        if q < 0:
+            raise ValueError('q must be non-negative')
         if beta < 0:
             raise ValueError('beta must be positive')
+
         self.receivers = [v for v in topology.nodes_iter()
                      if topology.node[v]['stack'][0] == 'receiver']
-        self.zipf = TruncatedZipfDist(alpha, n_contents)
+
+        if distribution == 'zipf':
+            self.dist = TruncatedZipfDist(alpha=alpha, n=n_contents)
+        elif distribution == 'mandelbrot-zipf':
+            self.dist = TruncatedMandelbrotZipfDist(alpha=alpha, q=q, n=n_contents)
+        else:
+            raise ValueError('distribution must be either zipf or mandelbrot-zipf')
+
         self.n_contents = n_contents
         self.contents = range(1, n_contents + 1)
         self.alpha = alpha
@@ -114,7 +124,7 @@ class StationaryWorkload(object):
                 receiver = random.choice(self.receivers)
             else:
                 receiver = self.receivers[self.receiver_dist.rv()-1]
-            content = int(self.zipf.rv())
+            content = int(self.dist.rv())
             log = (req_counter >= self.n_warmup)
             event = {'receiver': receiver, 'content': content, 'log': log}
             yield (t_event, event)
