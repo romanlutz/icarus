@@ -6,7 +6,8 @@ def beladys_algorithm(max_cache_sizes, traces):
     results = {}
     for s in max_cache_sizes:
         results[s] = []
-    request_index, cache_hits = 0, 0
+    warmups = map(lambda x: 4*x, max_cache_sizes)
+
     for trace_path in traces:
         with open('resources/' + trace_path, 'r') as trace:
             csv_reader = csv.reader(trace)
@@ -25,7 +26,8 @@ def beladys_algorithm(max_cache_sizes, traces):
 
 
 
-        for max_cache_size in max_cache_sizes:
+        for i, max_cache_size in enumerate(max_cache_sizes):
+            warmup = warmups[i]
             with open('resources/' + trace_path, 'r') as trace:
                 csv_reader = csv.reader(trace)
                 # actual processing of workload
@@ -79,7 +81,12 @@ def beladys_algorithm(max_cache_sizes, traces):
                                     cache[object] = True
                                     heapq.heappush(next_occurrence, (-occurrences[object][0], object))
 
-                results[max_cache_size].append(str(float(cache_hits) / float(request_index)))
+                    # neglect cache hits from warmup period
+                    if request_index == warmup:
+                        cache_hits = 0
+
+                # ignore requests from warmup period
+                results[max_cache_size].append(str(float(cache_hits) / float(request_index - warmup)))
                 print 'finished', trace_path, results[max_cache_size][-1]
 
 
