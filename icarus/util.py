@@ -346,7 +346,8 @@ class Settings(object):
             self.freeze()
     
     def freeze(self):
-        "Freeze the objects. No settings can be added or modified any more"
+        """Freeze the objects. No settings can be added or modified any more
+        """
         self.__frozen = True
     
     def get(self, name):

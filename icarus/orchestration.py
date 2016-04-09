@@ -222,14 +222,19 @@ def run_scenario(settings, params, curr_exp, n_exp):
                 logger.error('No cache placement named %s was found.'
                              % cachepl_name)
                 return None
-            network_cache = cachepl_spec.pop('network_cache')
             # Cache budget is the cumulative number of cache entries across
             # the whole network
-            network_cache_fraction = cachepl_spec.pop('network_cache_fraction')
-            if network_cache_fraction:
-                cachepl_spec['cache_budget'] = workload.n_contents * network_cache
-            else:
+            network_cache_all_nodes = cachepl_spec.pop('network_cache_all_nodes')
+            network_cache_per_node = cachepl_spec.pop('network_cache_per_node')
+            if network_cache_per_node is not None:
+                network_cache = workload.n_contents * network_cache_per_node * len(topology.graph['icr_candidates'])
                 cachepl_spec['cache_budget'] = network_cache
+            elif network_cache_all_nodes is not None:
+                network_cache = workload.n_contents * network_cache_all_nodes
+                cachepl_spec['cache_budget'] = network_cache
+            else:
+                logger.error('Either network cache per node or for all nodes needs to be set.')
+                return None
             CACHE_PLACEMENT[cachepl_name](topology, **cachepl_spec)
         logger.info('Experiment %d/%d | Preparing scenario: cache placement finished, %s', curr_exp, n_exp, scenario)
 

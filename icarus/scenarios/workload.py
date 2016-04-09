@@ -83,7 +83,7 @@ class StationaryWorkload(object):
         the timestamp at which the event occurs and the second element is a
         dictionary of event attributes.
     """
-    def __init__(self, topology, n_contents, alpha, q=0, distribution='zipf', beta=0, rate=1.0,
+    def __init__(self, topology, n_contents, alpha, q=0, beta=0, rate=1.0,
                     n_warmup=10**5, n_measured=4*10**5, seed=None, **kwargs):
         if alpha < 0:
             raise ValueError('alpha must be positive')
@@ -95,12 +95,7 @@ class StationaryWorkload(object):
         self.receivers = [v for v in topology.nodes_iter()
                      if topology.node[v]['stack'][0] == 'receiver']
 
-        if distribution == 'zipf':
-            self.dist = TruncatedZipfDist(alpha=alpha, n=n_contents)
-        elif distribution == 'mandelbrot-zipf':
-            self.dist = TruncatedMandelbrotZipfDist(alpha=alpha, q=q, n=n_contents)
-        else:
-            raise ValueError('distribution must be either zipf or mandelbrot-zipf')
+        self.dist = TruncatedMandelbrotZipfDist(alpha=alpha, q=q, n=n_contents)
 
         self.n_contents = n_contents
         self.contents = range(1, n_contents + 1)

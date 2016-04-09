@@ -53,8 +53,8 @@ class IcnTopology(fnss.Topology):
     An ICN topology is a simple FNSS Topology with addition methods that
     return sets of caching nodes, sources and receivers.
     """
-    
-    def cache_nodes(self):
+
+    def cache_nodes(self, asList=False):
         """Return a dictionary mapping nodes with a cache and respective cache
         size
         

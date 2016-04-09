@@ -26,13 +26,11 @@ class SpaceSavingCache(Cache):
     """
 
     @inheritdoc(Cache)
-    def __init__(self, maxlen, monitored=-1, **kwargs):
+    def __init__(self, maxlen, monitored=2.0, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen < 0:
             raise ValueError('maxlen must be non-negative')
-        self._monitored = monitored
-        if self._monitored == -1:
-            self._monitored = 2 * self._maxlen
+        self._monitored = int(monitored * maxlen)
         if self._monitored < self._maxlen:
             raise ValueError('Number of monitored elements has to be greater or equal the cache size')
         self._cache = StreamSummary(self._maxlen, self._monitored)
@@ -173,7 +171,7 @@ class StreamSummary:
             self.id = id
             self.max_error = max_error
 
-    def __init__(self, size, monitored_items=-1):
+    def __init__(self, size, monitored_items):
         self.id_to_bucket_map = {}
         self.bucket_map = {}
         self.max_size = size  # max cache size

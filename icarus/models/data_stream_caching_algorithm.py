@@ -33,13 +33,11 @@ class DataStreamCachingAlgorithmCache(Cache):
     """
 
     @inheritdoc(Cache)
-    def __init__(self, maxlen, monitored=-1, window_size=2000, **kwargs):
+    def __init__(self, maxlen, monitored=2.0, window_size=4.0, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
-        self._monitored = monitored
-        if self._monitored == -1:
-            self._monitored = 2 * self._maxlen
+        self._monitored = int(monitored * maxlen)
         if self._monitored < self._maxlen:
             raise ValueError('Number of monitored elements has to be greater or equal the cache size')
 
@@ -49,7 +47,7 @@ class DataStreamCachingAlgorithmCache(Cache):
         self._guaranteed_top_k = [] # from previous window
 
         # to keep track of the windows, there is a counter and the (fixed) size of each window
-        self._window_size = window_size
+        self._window_size = int(window_size * self._monitored)
         if self._window_size <= 0:
             raise ValueError('window_size must be positive')
         self._window_counter = 0
@@ -267,13 +265,11 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
     """
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
-    def __init__(self, maxlen, monitored=-1, subwindow_size=2000, subwindows=2, **kwargs):
+    def __init__(self, maxlen, monitored=2.0, subwindow_size=1.0, subwindows=2, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
-        self._monitored = monitored
-        if self._monitored == -1:
-            self._monitored = 2 * self._maxlen
+        self._monitored = int(monitored * maxlen)
         if self._monitored < self._maxlen:
             raise ValueError('Number of monitored elements has to be greater or equal the cache size')
 
@@ -292,8 +288,8 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
 
         # to keep track of the windows, there is a counter and the (fixed) size of each window
         self._window_counter = 0
-        self._subwindow_size = subwindow_size
-        if self._subwindow_size < 0:
+        self._subwindow_size = int(subwindow_size * self._monitored)
+        if self._subwindow_size <= 0:
             raise ValueError('Size of subwindows needs to be positive.')
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
@@ -477,13 +473,11 @@ class DataStreamCachingAlgorithmWithFixedSplitsCache(Cache):
     """
 
     @inheritdoc(Cache)
-    def __init__(self, maxlen, lru_portion = 0.5, monitored=-1, window_size=1500, **kwargs):
+    def __init__(self, maxlen, lru_portion = 0.5, monitored=2.0, window_size=4.0, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
-        self._monitored = monitored
-        if self._monitored == -1:
-            self._monitored = 2 * self._maxlen
+        self._monitored = int(monitored * maxlen)
         if self._monitored < self._maxlen:
             raise ValueError('Number of monitored elements has to be greater or equal the cache size')
 
@@ -496,7 +490,7 @@ class DataStreamCachingAlgorithmWithFixedSplitsCache(Cache):
         self._k = self.maxlen - self._lru_cache.maxlen
 
         # to keep track of the windows, there is a counter and the (fixed) size of each window
-        self._window_size = window_size
+        self._window_size = int(window_size * self._monitored)
         if self._window_size <= 0:
             raise ValueError('window_size must be positive')
         self._window_counter = 0
@@ -646,13 +640,11 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
     """
 
     @inheritdoc(Cache)
-    def __init__(self, maxlen, monitored=-1, window_size=1500, **kwargs):
+    def __init__(self, maxlen, monitored=2.0, window_size=4.0, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
-        self._monitored = monitored
-        if self._monitored == -1:
-            self._monitored = 2 * self._maxlen
+        self._monitored = int(monitored * maxlen)
         if self._monitored < self._maxlen:
             raise ValueError('Number of monitored elements has to be greater or equal the cache size')
 
@@ -665,7 +657,7 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
         self._top_k = []  # from previous window
 
         # to keep track of the windows, there is a counter and the (fixed) size of each window
-        self._window_size = window_size
+        self._window_size = int(window_size * self._monitored)
         if self._window_size <= 0:
             raise ValueError('window_size must be positive')
         self._window_counter = 0
@@ -892,13 +884,11 @@ class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
     """
 
     @inheritdoc(Cache)
-    def __init__(self, maxlen, monitored=-1, window_size=1500, **kwargs):
+    def __init__(self, maxlen, monitored=2.0, window_size=4.0, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
-        self._monitored = monitored
-        if self._monitored == -1:
-            self._monitored = 2 * self._maxlen
+        self._monitored = int(monitored * maxlen)
         if self._monitored < self._maxlen:
             raise ValueError('Number of monitored elements has to be greater or equal the cache size')
 
@@ -912,7 +902,7 @@ class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
         self._top_k_uncached = LinkedSet()
 
         # to keep track of the windows, there is a counter and the (fixed) size of each window
-        self._window_size = window_size
+        self._window_size = int(window_size * self._monitored)
         if self._window_size <= 0:
             raise ValueError('window_size must be positive')
         self._window_counter = 0
@@ -1155,14 +1145,12 @@ class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlg
     """
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
-    def __init__(self, maxlen, monitored=-1, hypothesis_check_period=1, hypothesis_check_A=0.33,
+    def __init__(self, maxlen, monitored=2.0, hypothesis_check_period=1, hypothesis_check_A=0.33,
                  hypothesis_check_epsilon=0.005, **kwargs):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
-        self._monitored = monitored
-        if self._monitored == -1:
-            self._monitored = 2 * self._maxlen
+        self._monitored = int(monitored * maxlen)
         if self._monitored < self._maxlen:
             raise ValueError('Number of monitored elements has to be greater or equal the cache size')
 
@@ -1313,7 +1301,7 @@ class DataStreamCachingAlgorithmWithFrequencyThresholdCache(DataStreamCachingAlg
     """
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
-    def __init__(self, maxlen, monitored=-1, window_size=1500, threshold=0.0025, **kwargs):
+    def __init__(self, maxlen, monitored=2.0, window_size=4.0, threshold=0.0025, **kwargs):
         DataStreamCachingAlgorithmCache.__init__(self, maxlen=maxlen, monitored=monitored, window_size=window_size)
 
         # determine min threshold for LFU consideration

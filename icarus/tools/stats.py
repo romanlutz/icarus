@@ -91,44 +91,11 @@ class DiscreteDist(object):
         return int(np.searchsorted(self._cdf, rv) + 1)
 
 
-class TruncatedZipfDist(DiscreteDist):
-    """Implements a truncated Zipf distribution, i.e. a Zipf distribution with
-    a finite population, which can hence take values of alpha > 0.
-    """
-
-    def __init__(self, alpha=1.0, n=1000, seed=None):
-        """Constructor
-        
-        Parameters
-        ----------
-        alpha : float
-            The value of the alpha parameter (it must be positive)
-        n : int
-            The size of population
-        seed : any hashable type, optional
-            The seed to be used for random number generation
-        """
-        # Validate parameters
-        if alpha <= 0:
-            raise ValueError('alpha must be positive')
-        if n < 0:
-            raise ValueError('n must be positive')
-        # This is the PDF i. e. the array that  contains the probability that
-        # content i + 1 is picked
-        pdf = np.arange(1.0, n+1.0)**-alpha
-        pdf /= np.sum(pdf)
-        self._alpha = alpha
-        super(TruncatedZipfDist, self).__init__(pdf, seed)
-
-    @property
-    def alpha(self):
-        return self._alpha
-
-
 def TruncatedMandelbrotZipfDist(DiscreteDist):
     """Implements a truncated Mandelbrot-Zipf distribution, i.e. a Mandelbrot-Zipf distribution with
-        a finite population, which can hence take values of alpha > 0 and q >= 0.
-        """
+    a finite population, which can hence take values of alpha > 0 and q >= 0. If q=0 this is equal
+    to the commonly used Zipf distribution.
+    """
 
     def __init__(self, alpha=1.0, q=0, n=1000, seed=None):
         """Constructor
