@@ -389,7 +389,7 @@ class DeterministicTraceDrivenWorkload(object):
         the timestamp at which the event occurs and the second element is a
         dictionary of event attributes.
     """
-    def __init__(self, topology, reqs_file, n_warmup=10**5, n_measured=4*10**5, n_contents=0, **kwargs):
+    def __init__(self, topology, reqs_file, n_warmup=10**5, n_measured=4*10**5, **kwargs):
         self.receivers = [v for v in topology.nodes_iter()
                      if topology.node[v]['stack'][0] == 'receiver']
         self.n_warmup = n_warmup
