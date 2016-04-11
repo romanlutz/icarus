@@ -226,11 +226,15 @@ def run_scenario(settings, params, curr_exp, n_exp):
             # the whole network
             network_cache_all_nodes = cachepl_spec.pop('network_cache_all_nodes')
             network_cache_per_node = cachepl_spec.pop('network_cache_per_node')
+            network_cache_absolute = cachepl_spec.pop('network_cache_absolute')
             if network_cache_per_node is not None:
                 network_cache = workload.n_contents * network_cache_per_node * len(topology.graph['icr_candidates'])
                 cachepl_spec['cache_budget'] = network_cache
             elif network_cache_all_nodes is not None:
                 network_cache = workload.n_contents * network_cache_all_nodes
+                cachepl_spec['cache_budget'] = network_cache
+            elif network_cache_absolute is not None:
+                network_cache = network_cache_absolute
                 cachepl_spec['cache_budget'] = network_cache
             else:
                 logger.error('Either network cache per node or for all nodes needs to be set.')

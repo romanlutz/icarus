@@ -630,7 +630,7 @@ def topology_rocketfuel_latency(asn, source_ratio=0.1, ext_delay=EXTERNAL_LINK_D
     f_topo = path.join(TOPOLOGY_RESOURCES_DIR, 'rocketfuel-latency', str(asn), 'latencies.intra')
     topology = fnss.parse_rocketfuel_isp_latency(f_topo).to_undirected()
     topology = list(nx.connected_component_subgraphs(topology))[0]
-    # First mark all current links as inernal
+    # First mark all current links as internal
     for u,v in topology.edges_iter():
         topology.edge[u][v]['type'] = 'internal'
     # Note: I don't need to filter out nodes with degree 1 cause they all have

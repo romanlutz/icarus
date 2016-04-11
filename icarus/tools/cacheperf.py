@@ -7,7 +7,7 @@ import math
 import numpy as np
 from scipy.optimize import fsolve
 
-from icarus.tools import TruncatedZipfDist, DiscreteDist
+from icarus.tools import TruncatedMandelbrotZipfDist, DiscreteDist
 
 
 __all__ = [
@@ -357,7 +357,7 @@ def laoutaris_per_content_cache_hit_ratio(alpha, population, cache_size,
     ----------
     http://arxiv.org/pdf/0705.1970.pdf
     """
-    pdf = TruncatedZipfDist(alpha, population).pdf
+    pdf = TruncatedMandelbrotZipfDist(alpha, population).pdf
     r = laoutaris_characteristic_time(alpha, population, cache_size, order)
     items = range(len(pdf)) if target is None else [target-1]
     hit_ratio = [1 - math.exp(-pdf[i]*r) for i in items] 
@@ -388,7 +388,7 @@ def laoutaris_cache_hit_ratio(alpha, population, cache_size, order=3):
     ----------
     http://arxiv.org/pdf/0705.1970.pdf
     """
-    pdf = TruncatedZipfDist(alpha, population).pdf
+    pdf = TruncatedMandelbrotZipfDist(alpha, population).pdf
     r = laoutaris_characteristic_time(alpha, population, cache_size, order)
     return np.sum(pdf*(1 - math.e**-(r*pdf)))
 

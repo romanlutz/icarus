@@ -67,35 +67,26 @@ SYNTHETIC_EXPERIMENT = True
 # Remove collectors not needed
 DATA_COLLECTORS = [
     'CACHE_HIT_RATIO',  # Measure cache hit ratio
-    # 'LATENCY',           # Measure request and response latency (based on static link delays)
+    'LATENCY',           # Measure request and response latency (based on static link delays)
     # 'LINK_LOAD',         # Measure link loads
-    # 'PATH_STRETCH',      # Measure path stretch
+    'PATH_STRETCH',      # Measure path stretch
     # 'CACHE_LEVEL_PROPORTIONS',
     # 'WINDOW_SIZE' # only for adaptive window size cache policies / not usable yet
 ]
 
-# the warmup phase in which cache hits and misses are not counted
-WARMUP = 10000
-
-# List of topologies tested
-# Topology implementations are located in ./icarus/scenarios/topology.py
-# Remove topologies not needed
-TOPOLOGIES = [
-    'PATH'
-    # 'GEANT',
-    # 'WIDE',
-    # 'GARR',
-    # 'TISCALI',
-]
-
-TOPOLOGY_PARAMS = {'PATH': {'n': 3, 'delay': 0}}
-
-# The size of network cache can be set as a fraction of content population in two ways:
+# The size of network cache can be set as a fraction of content population in three ways:
 # 1. define a fraction of the number of contents which is assigned to every node, set NETWORK_CACHE_PER_NODE
 # 2. define a fraction of the number of contents which is distributed over all nodes, set NETWORK_CACHE_ALL_NODES
-NETWORK_CACHE_PER_NODE = 0.005
+# 3. define an absolute number as the total cache for the whole network
+NETWORK_CACHE_PER_NODE = 0.01
 NETWORK_CACHE_ALL_NODES = None
-NETWORK_CACHE = NETWORK_CACHE_PER_NODE if NETWORK_CACHE_PER_NODE is not None else NETWORK_CACHE_ALL_NODES
+NETWORK_CACHE_ABSOLUTE = None
+if NETWORK_CACHE_PER_NODE is not None:
+    NETWORK_CACHE = NETWORK_CACHE_PER_NODE
+elif NETWORK_CACHE_ALL_NODES is not None:
+    NETWORK_CACHE = NETWORK_CACHE_ALL_NODES
+elif NETWORK_CACHE_ABSOLUTE is not None:
+    NETWORK_CACHE = NETWORK_CACHE_ABSOLUTE
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
@@ -123,16 +114,16 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 MONITORED_DEFAULT = 2.0
 
-use_SS = True
+use_SS = False
 use_DSCA = True
 use_2DSCA = True
 use_DSCAAWS = True
 use_2DSCAAWS = True
 use_DSCASW = True
-use_DSCAFT = True
-use_DSCAFS = True
-use_ADSCASTK = True
-use_ADSCAATK = True
+use_DSCAFT = False
+use_DSCAFS = False
+use_ADSCASTK = False
+use_ADSCAATK = False
 use_ARC = True
 use_LRU = True
 use_KLRU = True
@@ -276,48 +267,61 @@ if SYNTHETIC_EXPERIMENT:
     N_REQUESTS = 10000000
 
     # Mandelbrot-Zipf alpha and q parameters for non-trace-driven simulation
-    ALPHA = [0.6, 0.8, 1.0]
-    Q = [0, 1]
+    ALPHA = [0.5, 0.75, 1, 2]
+    Q = [0, 5, 50]
 
     # random seeds given to workload creating library
     seeds = range(N_REPLICATIONS)
+
+    # List of topologies tested
+    # Topology implementations are located in ./icarus/scenarios/topology.py
+    # Remove topologies not needed
+    TOPOLOGIES = {
+        'PATH': {'n': [3]},
+        #'TREE': {'k': [2, 2, 2, 2, 4, 4], 'h': [2, 3, 4, 5, 2, 3]},
+        #'GEANT': {},
+        # 'WIDE': {},
+        # 'GARR': {},
+        # 'TISCALI': {},
+    }
 
     # Create experiments multiplexing all desired parameters
     for rep in range(N_REPLICATIONS):
         for (alpha, q) in list(itertools.product(ALPHA, Q)):
             for strategy in STRATEGIES:
                 for topology in TOPOLOGIES:
-                    for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
-                        experiment = Tree()
-                        experiment['workload'] = {'name': 'STATIONARY',
-                                                  'n_contents': N_CONTENTS,
-                                                  'n_warmup': WARMUP,
-                                                  'n_measured': N_REQUESTS - WARMUP,
-                                                  'rate': REQ_RATE,
-                                                  'seed': seeds[rep]
-                                                  }
-                        experiment['cache_placement']['name'] = 'UNIFORM'
-                        experiment['content_placement']['name'] = 'UNIFORM'
-                        experiment['workload']['alpha'] = alpha
-                        experiment['workload']['q'] = q
-                        experiment['strategy']['name'] = strategy
+                    for topology_configuration_index in range(len(TOPOLOGIES[topology].values()[0])):
+                        for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
+                            experiment = Tree()
+                            experiment['workload'] = {'name': 'STATIONARY',
+                                                      'n_contents': N_CONTENTS,
+                                                      'n_warmup': N_CONTENTS,
+                                                      'n_measured': N_REQUESTS - N_CONTENTS,
+                                                      'rate': REQ_RATE,
+                                                      'seed': seeds[rep]
+                                                      }
+                            experiment['cache_placement']['name'] = 'UNIFORM'
+                            experiment['content_placement']['name'] = 'UNIFORM'
+                            experiment['workload']['alpha'] = alpha
+                            experiment['workload']['q'] = q
+                            experiment['strategy']['name'] = strategy
 
-                        experiment['topology']['name'] = topology
-                        if topology in TOPOLOGY_PARAMS.keys():
-                            for topology_param in TOPOLOGY_PARAMS[topology].keys():
-                                experiment['topology'][topology_param] = TOPOLOGY_PARAMS[topology][topology_param]
+                            experiment['topology']['name'] = topology
+                            for topology_param in TOPOLOGIES[topology].keys():
+                                experiment['topology'][topology_param] = TOPOLOGIES[topology][topology_param][
+                                    topology_configuration_index]
 
-                        experiment['cache_policy']['name'] = cache_policy
-                        for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
-                            if param_name != 'warmup':
+                            experiment['cache_policy']['name'] = cache_policy
+                            for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
                                 experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
-                        experiment['cache_placement']['network_cache_per_node'] = NETWORK_CACHE_PER_NODE
-                        experiment['cache_placement']['network_cache_all_nodes'] = NETWORK_CACHE_ALL_NODES
-                        experiment[
-                            'desc'] = "topology: %s, Mandelbrot-Zipf: alpha=%f, q=%f, strategy: %s, cache policy: %s" \
-                                      % (topology, alpha, q, strategy, cache_policy)
+                            experiment['cache_placement']['network_cache_per_node'] = NETWORK_CACHE_PER_NODE
+                            experiment['cache_placement']['network_cache_all_nodes'] = NETWORK_CACHE_ALL_NODES
+                            experiment['cache_placement']['network_cache_absolute'] = NETWORK_CACHE_ABSOLUTE
+                            experiment[
+                                'desc'] = "topology: %s, Mandelbrot-Zipf: alpha=%f, q=%f, strategy: %s, cache policy: %s" \
+                                          % (topology, alpha, q, strategy, cache_policy)
 
-                        EXPERIMENT_QUEUE.append(experiment)
+                            EXPERIMENT_QUEUE.append(experiment)
 
 
 # trace driven simulation configuration:
@@ -328,39 +332,55 @@ else:
         csv_reader = csv.reader(trace_file)
         i = 1
         for line in csv_reader:
-            if i == 2:
-                traces.append((line[0], int(line[1])))
+            traces.append((line[0], int(line[1])))
             i += 1
+
+    # List of topologies tested
+    # Topology implementations are located in ./icarus/scenarios/topology.py
+    # Remove topologies not needed
+    TOPOLOGIES = {
+        'PATH': {'n': [3, 5, 7, 9]},
+        'TREE': {'k': [2, 2, 2, 2, 4, 4], 'h': [2, 3, 4, 5, 2, 3]},
+        'GEANT': {},
+        'GEANT_2': {},
+        'WIDE': {},
+        'GARR': {},
+        'GARR_2': {},
+        #'TISCALI': {},
+        #'TISCALI_2': {}
+    }
+
+    # the warmup phase in which cache hits and misses are not counted
+    WARMUP = 10000
 
     # Create experiments multiplexing all desired parameters
     for trace_name, N_REQUESTS in traces:
         for strategy in STRATEGIES:
             for topology in TOPOLOGIES:
-                for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
-                    experiment = Tree()
-                    experiment['workload'] = {'name': 'DETERMINISTIC_TRACE_DRIVEN',
-                                              'n_warmup': CACHE_POLICY_PARAMETERS['warmup'][cache_policy_index],
-                                              'n_measured': N_REQUESTS - CACHE_POLICY_PARAMETERS['warmup'][
-                                                  cache_policy_index],
-                                              'reqs_file': 'resources/' + trace_name
-                                              }
-                    experiment['cache_placement']['name'] = 'UNIFORM'
-                    experiment['content_placement']['name'] = 'UNIFORM'
-                    experiment['strategy']['name'] = strategy
+                for topology_configuration_index in range(len(TOPOLOGIES[topology].values()[0])):
+                    for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
+                        experiment = Tree()
+                        experiment['workload'] = {'name': 'DETERMINISTIC_TRACE_DRIVEN',
+                                                  'n_warmup': WARMUP,
+                                                  'n_measured': N_REQUESTS - WARMUP,
+                                                  'reqs_file': 'resources/' + trace_name
+                                                  }
+                        experiment['cache_placement']['name'] = 'UNIFORM'
+                        experiment['content_placement']['name'] = 'UNIFORM'
+                        experiment['strategy']['name'] = strategy
 
-                    experiment['topology']['name'] = topology
-                    if topology in TOPOLOGY_PARAMS.keys():
-                        for topology_param in TOPOLOGY_PARAMS[topology].keys():
-                            experiment['topology'][topology_param] = TOPOLOGY_PARAMS[topology][topology_param]
+                        experiment['topology']['name'] = topology
+                        for topology_param in TOPOLOGIES[topology].keys():
+                            experiment['topology'][topology_param] = TOPOLOGIES[topology][topology_param][topology_configuration_index]
 
-                    experiment['cache_policy']['name'] = cache_policy
-                    for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
-                        if param_name != 'warmup':
+                        experiment['cache_policy']['name'] = cache_policy
+                        for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
                             experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
-                    experiment['cache_placement']['network_cache_per_node'] = NETWORK_CACHE_PER_NODE
-                    experiment['cache_placement']['network_cache_all_nodes'] = NETWORK_CACHE_ALL_NODES
-                    experiment[
-                        'desc'] = "trace: %s, strategy: %s, cache policy: %s" \
-                                  % (trace_name, strategy, cache_policy)
+                        experiment['cache_placement']['network_cache_per_node'] = NETWORK_CACHE_PER_NODE
+                        experiment['cache_placement']['network_cache_all_nodes'] = NETWORK_CACHE_ALL_NODES
+                        experiment['cache_placement']['network_cache_absolute'] = NETWORK_CACHE_ABSOLUTE
+                        experiment[
+                            'desc'] = "trace: %s, strategy: %s, cache policy: %s" \
+                                      % (trace_name, strategy, cache_policy)
 
-                    EXPERIMENT_QUEUE.append(experiment)
+                        EXPERIMENT_QUEUE.append(experiment)

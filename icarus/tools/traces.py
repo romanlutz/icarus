@@ -9,7 +9,7 @@ import dateutil
 import numpy as np
 from scipy.stats import chisquare
 
-from icarus.tools import TruncatedZipfDist
+from icarus.tools import TruncatedMandelbrotZipfDist
 
 
 __all__ = [
@@ -90,7 +90,7 @@ def zipf_fit(obs_freqs, need_sorting=False):
     if alpha <= 0:
         # Silently report a zero probability of a fit
         return alpha, 0
-    exp_freqs = np.sum(obs_freqs) * TruncatedZipfDist(alpha, n).pdf
+    exp_freqs = np.sum(obs_freqs) * TruncatedMandelbrotZipfDist(alpha, 0, n).pdf
     p = chisquare(obs_freqs, exp_freqs)[1]
     return alpha, p
 

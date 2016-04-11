@@ -12,7 +12,6 @@ import scipy.stats as ss
 
 __all__ = [
        'DiscreteDist',
-       'TruncatedZipfDist',
        'TruncatedMandelbrotZipfDist',
        'means_confidence_interval',
        'proportions_confidence_interval',
@@ -91,7 +90,7 @@ class DiscreteDist(object):
         return int(np.searchsorted(self._cdf, rv) + 1)
 
 
-def TruncatedMandelbrotZipfDist(DiscreteDist):
+class TruncatedMandelbrotZipfDist(DiscreteDist):
     """Implements a truncated Mandelbrot-Zipf distribution, i.e. a Mandelbrot-Zipf distribution with
     a finite population, which can hence take values of alpha > 0 and q >= 0. If q=0 this is equal
     to the commonly used Zipf distribution.
@@ -124,7 +123,7 @@ def TruncatedMandelbrotZipfDist(DiscreteDist):
         pdf /= np.sum(pdf)
         self._alpha = alpha
         self._q = q
-        super(TruncatedZipfDist, self).__init__(pdf, seed)
+        super(TruncatedMandelbrotZipfDist, self).__init__(pdf, seed)
 
     @property
     def alpha(self):

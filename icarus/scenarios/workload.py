@@ -22,7 +22,7 @@ import csv
 
 import networkx as nx
 
-from icarus.tools import TruncatedZipfDist, TruncatedMandelbrotZipfDist
+from icarus.tools import TruncatedMandelbrotZipfDist
 from icarus.registry import register_workload
 
 __all__ = [
