@@ -45,7 +45,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = cpu_count()
+N_PROCESSES = 30  #cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -78,9 +78,9 @@ DATA_COLLECTORS = {
 # 1. define a fraction of the number of contents which is assigned to every node, set NETWORK_CACHE_PER_NODE
 # 2. define a fraction of the number of contents which is distributed over all nodes, set NETWORK_CACHE_ALL_NODES
 # 3. define an absolute number as the total cache for the whole network
-NETWORK_CACHE_PER_NODE = 0.01
+NETWORK_CACHE_PER_NODE = None  #0.01
 NETWORK_CACHE_ALL_NODES = None
-NETWORK_CACHE_ABSOLUTE = None
+NETWORK_CACHE_ABSOLUTE = 1000
 if NETWORK_CACHE_PER_NODE is not None:
     NETWORK_CACHE = NETWORK_CACHE_PER_NODE
 elif NETWORK_CACHE_ALL_NODES is not None:
@@ -114,7 +114,7 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 MONITORED_DEFAULT = 2.0
 
-use_SS = False
+use_SS = True
 use_DSCA = True
 use_2DSCA = True
 use_DSCAAWS = True
@@ -345,7 +345,7 @@ else:
         csv_reader = csv.reader(trace_file)
         i = 1
         for line in csv_reader:
-            if i == 2:
+            if i >= 6 and i <= 14:
                 traces.append((line[0], int(line[1]), line[2]))
             i += 1
 

@@ -410,11 +410,11 @@ class CacheHitRatioCollector(DataCollector):
     @inheritdoc(DataCollector)
     def results(self):
         n_session = self.cache_hits + self.server_hits
-        hit_ratio = self.cache_hits/n_session
+        hit_ratio = float(self.cache_hits)/float(n_session)
         results = Tree(**{'MEAN': hit_ratio})
 
         n_weighted_session = self.weighted_cache_hits + self.weighted_server_hits
-        weighted_hit_ratio = self.weighted_cache_hits/n_weighted_session
+        weighted_hit_ratio = float(self.weighted_cache_hits)/float(n_weighted_session)
         results['WEIGHTED_CACHE_HIT_RATIO'] = weighted_hit_ratio
 
         if self.off_path_hits:
