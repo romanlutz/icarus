@@ -108,7 +108,7 @@ class StationaryWorkload(object):
         if beta != 0:
             degree = nx.degree(self.topology)
             self.receivers = sorted(self.receivers, key=lambda x: degree[iter(topology.edge[x]).next()], reverse=True)
-            self.receiver_dist = TruncatedZipfDist(beta, len(self.receivers))
+            self.receiver_dist = TruncatedMandelbrotZipfDist(beta, len(self.receivers))
         
     def __iter__(self):
         req_counter = 0
@@ -121,7 +121,7 @@ class StationaryWorkload(object):
                 receiver = self.receivers[self.receiver_dist.rv()-1]
             content = int(self.dist.rv())
             log = (req_counter >= self.n_warmup)
-            event = {'receiver': receiver, 'content': content, 'log': log}
+            event = {'receiver': receiver, 'content': content, 'log': log, 'weight': 1}
             yield (t_event, event)
             req_counter += 1
         raise StopIteration()
@@ -182,7 +182,7 @@ class GlobetraffWorkload(object):
             self.receivers = sorted(self.receivers, key=lambda x: 
                                     degree[iter(topology.edge[x]).next()], 
                                     reverse=True)
-            self.receiver_dist = TruncatedZipfDist(beta, len(self.receivers))
+            self.receiver_dist = TruncatedMandelbrotZipfDist(beta, len(self.receivers))
         
     def __iter__(self):
         with open(self.request_file, 'r') as f:
@@ -192,7 +192,7 @@ class GlobetraffWorkload(object):
                     receiver = random.choice(self.receivers)
                 else:
                     receiver = self.receivers[self.receiver_dist.rv()-1]
-                event = {'receiver': receiver, 'content': content, 'size': size}
+                event = {'receiver': receiver, 'content': content, 'size': size, 'weight': 1}
                 yield (timestamp, event)
         raise StopIteration()
 
@@ -272,7 +272,7 @@ class TraceDrivenWorkload(object):
             self.receivers = sorted(self.receivers, key=lambda x:
                                     degree[iter(topology.edge[x]).next()],
                                     reverse=True)
-            self.receiver_dist = TruncatedZipfDist(beta, len(self.receivers))
+            self.receiver_dist = TruncatedMandelbrotZipfDist(beta, len(self.receivers))
         
     def __iter__(self):
         req_counter = 0
@@ -285,7 +285,7 @@ class TraceDrivenWorkload(object):
                 else:
                     receiver = self.receivers[self.receiver_dist.rv()-1]
                 log = (req_counter >= self.n_warmup)
-                event = {'receiver': receiver, 'content': content, 'log': log}
+                event = {'receiver': receiver, 'content': content, 'log': log, 'weight': 1}
                 yield (t_event, event)
                 req_counter += 1
                 if(req_counter >= self.n_warmup + self.n_measured):
@@ -343,7 +343,7 @@ class YCSBWorkload(object):
         self.workload = workload
         if seed is not None:
             random.seed(seed)
-        self.zipf = TruncatedZipfDist(alpha, n_contents)
+        self.zipf = TruncatedMandelbrotZipfDist(alpha, n_contents)
         self.n_warmup = n_warmup
         self.n_measured = n_measured
 
@@ -359,7 +359,7 @@ class YCSBWorkload(object):
                   }[self.workload]
             item = int(self.zipf.rv())
             log = (req_counter >= self.n_warmup)
-            event = {'op': op, 'item': item, 'log': log}
+            event = {'op': op, 'item': item, 'log': log, 'weight': 1}
             yield event
             req_counter += 1
         raise StopIteration()
@@ -381,6 +381,8 @@ class DeterministicTraceDrivenWorkload(object):
         The number of logged requests after the warmup
     reqs_file : str
         The path to the requests file
+    weights_file : str
+        The path to the weights file. If none is specified all weights are set to 1.
 
     Returns
     -------
@@ -389,7 +391,7 @@ class DeterministicTraceDrivenWorkload(object):
         the timestamp at which the event occurs and the second element is a
         dictionary of event attributes.
     """
-    def __init__(self, topology, reqs_file, n_warmup=10**5, n_measured=4*10**5, **kwargs):
+    def __init__(self, topology, reqs_file, weights=None, n_warmup=10**5, n_measured=4*10**5, **kwargs):
         self.receivers = [v for v in topology.nodes_iter()
                      if topology.node[v]['stack'][0] == 'receiver']
         self.n_warmup = n_warmup
@@ -397,15 +399,26 @@ class DeterministicTraceDrivenWorkload(object):
         self.reqs_file = reqs_file
         self.n_contents = 0
         self.contents = {}
-        with open(self.reqs_file, 'r') as csv_file:
-            csv_reader = csv.reader(csv_file)
-            for row in csv_reader:
-                self.n_contents += 1
-                content = int(row[2])
-                if content not in self.contents:
-                    self.contents[content] = True
-        self.contents = self.contents.keys()
+        uniform_weights = weights is None or weights == 'UNIFORM'
 
+        if not uniform_weights:
+            # read weights and save them in contents dictionary under the corresponding ID
+            with open(weights, 'r') as csv_file:
+                csv_reader = csv.reader(csv_file)
+                for row in csv_reader:
+                    self.n_contents += 1
+                    content = int(row[0])
+                    weight = int(row[1])
+                    self.contents[content] = weight
+        else:
+            # assign uniform weights
+            with open(self.reqs_file, 'r') as csv_file:
+                csv_reader = csv.reader(csv_file)
+                for row in csv_reader:
+                    content = int(row[2])
+                    if content not in self.contents:
+                        self.n_contents += 1
+                        self.contents[content] = 1
 
     def __iter__(self):
         req_counter = 0
@@ -416,9 +429,10 @@ class DeterministicTraceDrivenWorkload(object):
                 t_event = float(row[0])
                 receiver = int(row[1])
                 content = int(row[2])
+                weight = self.contents[content]
 
                 log = (req_counter >= self.n_warmup)
-                event = {'receiver': receiver, 'content': content, 'log': log}
+                event = {'receiver': receiver, 'content': content, 'log': log, 'weight': weight}
                 yield (t_event, event)
                 req_counter += 1
                 if(req_counter >= self.n_warmup + self.n_measured):

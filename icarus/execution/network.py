@@ -376,7 +376,7 @@ class NetworkController(object):
         """
         self.collector = None
     
-    def start_session(self, timestamp, receiver, content, log):
+    def start_session(self, timestamp, receiver, content, log, weight):
         """Instruct the controller to start a new session (i.e. the retrieval
         of a content).
         
@@ -391,13 +391,16 @@ class NetworkController(object):
         log : bool
             *True* if this session needs to be reported to the collector,
             *False* otherwise
+        weight : int
+            The weight/priority of the content
         """
         self.session = dict(timestamp=timestamp,
                             receiver=receiver,
                             content=content,
-                            log=log)
+                            log=log,
+                            weight=weight)
         if self.collector is not None and self.session['log']:
-            self.collector.start_session(timestamp, receiver, content)
+            self.collector.start_session(timestamp, receiver, content, weight)
     
     def forward_request_path(self, s, t, path=None, main_path=True):
         """Forward a request from node *s* to node *t* over the provided path.
@@ -478,7 +481,7 @@ class NetworkController(object):
             The evicted object or *None* if no contents were evicted.
         """
         if node in self.model.cache:
-            return self.model.cache[node].put(self.session['content'])
+            return self.model.cache[node].put(self.session['content'], self.session['weight'])
     
     def get_content(self, node):
         """Get a content from a server or a cache.
@@ -494,7 +497,7 @@ class NetworkController(object):
             True if the content is available, False otherwise
         """
         if node in self.model.cache:
-            cache_hit = self.model.cache[node].get(self.session['content'])
+            cache_hit = self.model.cache[node].get(self.session['content'], self.session['weight'])
             if self.session['log']:
                 if cache_hit:
                     self.collector.cache_hit(node)

@@ -276,7 +276,7 @@ def run_scenario(settings, params, curr_exp, n_exp):
             logger.error('There are no implementations for at least one data collector specified')
             return None
     
-        collectors = {m: {} for m in metrics}
+        collectors = metrics
 
         logger.info('Experiment %d/%d | Start simulation, %s', curr_exp, n_exp, scenario)
         results = exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors, scenario)
@@ -284,7 +284,7 @@ def run_scenario(settings, params, curr_exp, n_exp):
         duration = time.time() - start_time
         logger.info('Experiment %d/%d | End simulation %s | Duration %s.',
                     curr_exp, n_exp, scenario, timestr(duration, True))
-        return (params, results, duration)
+        return params, results, duration
     except KeyboardInterrupt:
         logger.error('Received keyboard interrupt. Terminating')
         sys.exit(-signal.SIGINT)

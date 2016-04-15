@@ -68,6 +68,6 @@ def exec_experiment(topology, workload, netconf, strategy, cache_policy, collect
         processed_events += 1
 
         if processed_events % 1000000 == 0:
-            logger.info('Progress: %s, %f' % (desc, float(processed_events) / float(workload.n_contents)))
+            logger.info('Progress: %s, %f' % (desc, float(processed_events) / float(workload.n_measured)))
 
     return collector.results()

@@ -6,7 +6,7 @@ from icarus.util import inheritdoc
 from copy import deepcopy
 
 __all__ = ['SpaceSavingCache',
-           'StreamSummary']
+           'WeightedStreamSummary']
 
 
 @register_cache_policy('SS')
@@ -23,6 +23,8 @@ class SpaceSavingCache(Cache):
     for each element. For each element, the difference between these two
     numbers is a lower bound for the actual number of occurrences. For k
     of the m elements with k<=m the algorithm guarantees to be the top-k.
+    In this implementation SpaceSaving uses WeightedStreamSummary which is
+    a generalization of StreamSummary allowing for weighted items.
     """
 
     @inheritdoc(Cache)
@@ -33,7 +35,7 @@ class SpaceSavingCache(Cache):
         self._monitored = int(monitored * maxlen)
         if self._monitored < self._maxlen:
             raise ValueError('Number of monitored elements has to be greater or equal the cache size')
-        self._cache = StreamSummary(self._maxlen, self._monitored)
+        self._cache = WeightedStreamSummary(self._maxlen, self._monitored)
 
     @inheritdoc(Cache)
     def __len__(self):
@@ -70,7 +72,7 @@ class SpaceSavingCache(Cache):
         for key in buckets:
             list = deepcopy(self._cache.bucket_map[key])
             list.reverse()
-            print key, ':', [(node.id, node.max_error) for node in list]
+            print("%d: %s" %(key, str([(node.id, node.max_error) for node in list])))
 
     def position(self, k):
         """Return the current overall position of an item in the cache. Position *0*
@@ -99,15 +101,15 @@ class SpaceSavingCache(Cache):
         return k in self._cache.id_to_bucket_map
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         # search content over the list
         # if it has it push on top, otherwise return false
         if not (self.has(k)):
             return False
-        self._cache.add_occurrence(k)
+        self._cache.add_occurrence(k, weight)
         return True
 
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
 
         If the element is already present in the cache, it's occurrence counter will be increased.
@@ -116,13 +118,15 @@ class SpaceSavingCache(Cache):
         ----------
         k : any hashable type
             The item to be inserted
+        weight : int
+            The weight of the item
 
         Returns
         -------
         evicted : any hashable type
             The evicted object or *None* if no contents were evicted.
         """
-        return self._cache.add_occurrence(k)
+        return self._cache.add_occurrence(k, weight)
 
     @inheritdoc(Cache)
     def remove(self, k):
@@ -132,7 +136,7 @@ class SpaceSavingCache(Cache):
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache = StreamSummary(self._maxlen, self._monitored)
+        self._cache = WeightedStreamSummary(self._maxlen, self._monitored)
 
     def guaranteed_top_k(self, k, return_frequencies=False):
         """
@@ -145,7 +149,7 @@ class SpaceSavingCache(Cache):
         return deepcopy(self._cache)
 
 
-class StreamSummary:
+class WeightedStreamSummary:
     """The StreamSummary data structure was proposed in
 
     Metwally, Ahmed, Divyakant Agrawal, and Amr El Abbadi.
@@ -158,6 +162,8 @@ class StreamSummary:
     structure. The node contains the id of the object and the maximum error. The node is always inserted into a bucket
     that has an index representing the estimated number of occurrences. All these buckets together make up the
     StreamSummary data structure.
+
+    WeightedStreamSummary extends this by allowing items to be weighted, that is their occurrences can count more than once.
     """
 
     class Node:
@@ -167,9 +173,10 @@ class StreamSummary:
         occurrence counter and the ID representing the cached content itself.
         """
 
-        def __init__(self, id, max_error):
+        def __init__(self, id, max_error, weight):
             self.id = id
             self.max_error = max_error
+            self.weight = weight
 
     def __init__(self, size, monitored_items):
         self.id_to_bucket_map = {}
@@ -182,16 +189,17 @@ class StreamSummary:
         self.last_cached_bucket = 1  # bucket of last cached item
         self.last_cached_index = 0  # index of last cached item in bucket's list
 
-    def add_occurrence(self, id):
+    def add_occurrence(self, id, weight):
         # node already exists
         if id in self.id_to_bucket_map:
-            bucket = self.id_to_bucket_map[id]
-            node, index = self.index(bucket=bucket, id=id)
-            del self.bucket_map[bucket][index]
-            if len(self.bucket_map[bucket]) == 0:
-                del self.bucket_map[bucket]
+            old_bucket = self.id_to_bucket_map[id]
+            node, index = self.index(bucket=old_bucket, id=id)
+            del self.bucket_map[old_bucket][index]
+            if len(self.bucket_map[old_bucket]) == 0:
+                del self.bucket_map[old_bucket]
 
-            new_bucket = bucket + 1
+            # one occurrence moves the element up by 'weight' buckets
+            new_bucket = old_bucket + weight
             self._insert_node_into_bucket(node, new_bucket)
 
             if self.size > self.max_size:
@@ -201,12 +209,27 @@ class StreamSummary:
                     # 1. insertion before last cached item -> shift index by 1
                     # 2. insertion after last cached item -> shift index by 1
                     self.last_cached_index += 1
-                elif new_bucket == self.last_cached_bucket + 1:
-                    if len(self.bucket_map[self.last_cached_bucket]) == self.last_cached_index + 1:
-                        # move last_cached pointers to new_bucket
-                        self.last_cached_bucket = new_bucket
-                        self.last_cached_index = 0
-
+                elif new_bucket > self.last_cached_bucket:
+                    if old_bucket == self.last_cached_bucket:
+                        # previously last element index is now beyond the end of the list (= length)
+                        if len(self.bucket_map[self.last_cached_bucket]) == self.last_cached_index:
+                            # move last_cached pointers to new_bucket
+                            self.last_cached_bucket = new_bucket
+                            self.last_cached_index = 0
+                        else:
+                            # there could elements after the former position which would mean we have to advance the
+                            # pointer by 1, but since the element itself was removed from the list, all elements after
+                            # it have a larger index automatically so nothing needs to be done!
+                            pass
+                    elif old_bucket < self.last_cached_bucket:
+                        # last cached bucket is in between old and new bucket
+                        if len(self.bucket_map[self.last_cached_bucket]) == self.last_cached_index + 1:
+                            # move last_cached pointers to new_bucket
+                            self.last_cached_bucket = new_bucket
+                            self.last_cached_index = 0
+                        else:
+                            # move the last cached index one further within the bucket
+                            self.last_cached_index += 1
             return None
 
         # new node has to be created for id
@@ -214,29 +237,33 @@ class StreamSummary:
             # check if a node has to be dropped
             if self.size == self.max_size:
                 min_bucket = min(self.bucket_map.keys())
-                del_id = self.bucket_map[min_bucket][0].id
-
-                del self.id_to_bucket_map[del_id]
                 evicted_node = self.bucket_map[min_bucket][0]
+                evicted_occurrences = min_bucket / evicted_node.weight
+
+                del self.id_to_bucket_map[evicted_node.id]
                 del self.bucket_map[min_bucket][0]
                 if len(self.bucket_map[min_bucket]) == 0:
                     del self.bucket_map[min_bucket]
 
-                # insert new node at min_bucket+1
-                # with error of min_bucket
-                node = self.Node(id=id, max_error=min_bucket)
-                self._insert_node_into_bucket(node, min_bucket + 1)
+                # insert new node at min_bucket+weight with error of (min_bucket/old weight)*new weight
+                node = self.Node(id=id, max_error=evicted_occurrences*weight, weight=weight)
+                self._insert_node_into_bucket(node, (evicted_occurrences+1) * weight)
 
                 return evicted_node.id
 
             # no node has to be dropped, cache not full yet
             else:
                 self.size += 1
-                node = self.Node(id=id, max_error=0)
-                self._insert_node_into_bucket(node=node, bucket=1)
+                node = self.Node(id=id, max_error=0, weight=weight)
+                self._insert_node_into_bucket(node=node, bucket=weight)
                 return None
 
     def _insert_node_into_bucket(self, node, bucket):
+        """ This method is not supposed to be used from outside SpaceSaving. Without appropriate additional calls this
+        will compromise the overall data structure!
+        insert_node_into_bucket simply inserts the node at the correct position within the bucket and updates the
+        bucket_map accordingly.
+        """
         self.id_to_bucket_map[node.id] = bucket
         # if bucket exists, insert node at corresponding index
         if bucket in self.bucket_map:
@@ -252,7 +279,7 @@ class StreamSummary:
         True, otherwise False.
         """
         if self.size >= self.monitored_items:
-            # data structure already full - replacement not implemented so far
+            # data structure already full - replacement not implemented so far for safe insert
             return False
 
         self.size += 1
@@ -265,18 +292,24 @@ class StreamSummary:
             # insertion was first one
             self.last_cached_bucket = bucket
             self.last_cached_index = 0
-        elif self.last_cached_bucket < bucket:
-            # potentially changes to last_cached pointers
-            if len(self.bucket_map[self.last_cached_bucket]) == self.last_cached_index + 1:
-                # move last_cached pointers to next bucket
-                self.last_cached_bucket += 1
-                while self.last_cached_bucket not in self.bucket_map.keys():
+        elif self.size <= self.max_size:
+            # keep bucket pointer at lowest bucket
+            if bucket < self.last_cached_bucket:
+                self.last_cached_bucket = bucket
+        else:
+            # we have more elements than we can cache, so the pointers might need to be moved
+            if self.last_cached_bucket < bucket:
+                # potentially changes to last_cached pointers
+                if len(self.bucket_map[self.last_cached_bucket]) == self.last_cached_index + 1:
+                    # move last_cached pointers to next bucket
                     self.last_cached_bucket += 1
-                self.last_cached_index = 0
-            else:
+                    while self.last_cached_bucket not in self.bucket_map.keys():
+                        self.last_cached_bucket += 1
+                    self.last_cached_index = 0
+                else:
+                    self.last_cached_index += 1
+            elif self.last_cached_bucket == bucket:
                 self.last_cached_index += 1
-        elif self.last_cached_bucket == bucket:
-            self.last_cached_index += 1
 
         return True
 
@@ -415,5 +448,5 @@ class StreamSummary:
         for key in buckets:
             bucket_list = deepcopy(self.bucket_map[key])
             for node in bucket_list:
-                dict[node.id] = {'max_error': node.max_error, 'frequency': key}
+                dict[node.id] = {'max_error': node.max_error, 'frequency': key, 'weight': node.weight}
         return dict

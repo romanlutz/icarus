@@ -68,14 +68,14 @@ class KLruCache(Cache):
         return False
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         if not self.has(k):
             return False
         else:
             self._cache.get(k)
             return True
 
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
 
         If the element is already present in the cache, it will pushed to the

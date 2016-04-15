@@ -83,7 +83,7 @@ def run(config_file, output, config_override):
     
     Parameters
     ----------
-    config : str
+    config_file : str
         Path of the configuration file
     output : str
         The file name where results will be saved

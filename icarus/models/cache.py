@@ -546,7 +546,7 @@ class Cache(object):
         raise NotImplementedError('This method is not implemented')    
 
     @abc.abstractmethod
-    def get(self, k):
+    def get(self, k, weight):
         """Retrieves an item from the cache.
         
         Differently from *has(k)*, calling this method may change the internal
@@ -557,6 +557,8 @@ class Cache(object):
         ----------
         k : any hashable type
             The item looked up in the cache
+        weight : int
+            The weight of the item
 
         Returns
         -------
@@ -567,7 +569,7 @@ class Cache(object):
         raise NotImplementedError('This method is not implemented') 
 
     @abc.abstractmethod
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
         
         If the element is already present in the cache, it will not be inserted
@@ -577,6 +579,8 @@ class Cache(object):
         ----------
         k : any hashable type
             The item to be inserted
+        weight : int
+            The weight of the item
             
         Returns
         -------
@@ -681,13 +685,15 @@ class NullCache(Cache):
         """
         return False
 
-    def get(self, k):
+    def get(self, k, weight):
         """Retrieves an item from the cache.
         
         Parameters
         ----------
         k : any hashable type
             The item looked up in the cache
+        weight : int
+            The weight of the item
 
         Returns
         -------
@@ -697,13 +703,15 @@ class NullCache(Cache):
         """
         return False
 
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
         
         Parameters
         ----------
         k : any hashable type
             The item to be inserted
+        weight : int
+            The weight of the item
             
         Returns
         -------
@@ -797,7 +805,7 @@ class LruCache(Cache):
         return k in self._cache
             
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         # search content over the list
         # if it has it push on top, otherwise return false
         if k not in self._cache:
@@ -805,7 +813,7 @@ class LruCache(Cache):
         self._cache.move_to_top(k)
         return True
     
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
         
         If the element is already present in the cache, it will pushed to the
@@ -815,6 +823,8 @@ class LruCache(Cache):
         ----------
         k : any hashable type
             The item to be inserted
+        weight : int
+            The weight of the item
             
         Returns
         -------
@@ -899,7 +909,7 @@ class SegmentedLruCache(Cache):
         return k in self._cache
             
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         if k not in self._cache:
             return False
         seg = self._cache[k]
@@ -915,7 +925,7 @@ class SegmentedLruCache(Cache):
                 self._cache[demoted] = seg
         return True
     
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
         
         If the element is already present in the cache, it will pushed to the
@@ -925,6 +935,8 @@ class SegmentedLruCache(Cache):
         ----------
         k : any hashable type
             The item to be inserted
+        weight : int
+            The weight of the item
             
         Returns
         -------
@@ -1053,7 +1065,7 @@ class InCacheLfuCache(Cache):
         return k in self._cache
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         if self.has(k):
             freq, t = self._cache[k]
             self._cache[k] = freq+1, t 
@@ -1062,7 +1074,7 @@ class InCacheLfuCache(Cache):
             return False
 
     @inheritdoc(Cache)
-    def put(self, k):
+    def put(self, k, weight):
         if not self.has(k):
             self.t += 1
             self._cache[k] = (1, self.t)
@@ -1135,7 +1147,7 @@ class PerfectLfuCache(Cache):
         return k in self._cache
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         self.t += 1
         if k in self._counter:
             freq, t = self._counter[k]
@@ -1148,7 +1160,7 @@ class PerfectLfuCache(Cache):
             return False
 
     @inheritdoc(Cache)
-    def put(self, k):
+    def put(self, k, weight):
         if not self.has(k):
             if k in self._counter:
                 freq, t = self._counter[k]
@@ -1241,11 +1253,11 @@ class FifoCache(Cache):
         raise ValueError('The item %s is not in the cache' % str(k))
                  
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         return self.has(k)
              
     @inheritdoc(Cache)
-    def put(self, k):
+    def put(self, k, weight):
         evicted = None
         if not self.has(k):
             self._cache.add(k)
@@ -1326,7 +1338,7 @@ class ClimbCache(Cache):
         return k in self._cache
             
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         # search content over the list
         # if it has it move it one position up, otherwise return false
         if k not in self._cache:
@@ -1334,7 +1346,7 @@ class ClimbCache(Cache):
         self._cache.move_up(k)
         return True
     
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
         
         If the element is already present in the cache, it will pushed one
@@ -1417,11 +1429,11 @@ class RandEvictionCache(Cache):
         return k in self._cache
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         return self.has(k)
 
     @inheritdoc(Cache)
-    def put(self, k):
+    def put(self, k, weight):
         evicted = None
         if not self.has(k):
             if len(self._cache) == self._maxlen:

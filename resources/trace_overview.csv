@@ -1,26 +1,26 @@
-IBM_traces/anon-url-trace_reformatted.trace, 8626163
-UMass_YouTube_traces/YouTube_Trace_7days_reformatted.trace, 258673
-UMass_YouTube_traces/YouTube_Trace_7days_no_duplicates_reformatted.trace, 251335
-Fastly_traces/requests_reformatted.trace, 14885146
-Fastly_traces/requests-1M-2016-3-15_reformatted.trace, 1007545
-Globo_traces/12-2015-01-2016-0.trace, 20000000
-Globo_traces/12-2015-01-2016-1.trace, 20000000
-Globo_traces/12-2015-01-2016-2.trace, 20000000
-Globo_traces/12-2015-01-2016-3.trace, 20000000
-Globo_traces/12-2015-01-2016-4.trace, 20000000
-Globo_traces/12-2015-01-2016-5.trace, 20000000
-Globo_traces/12-2015-01-2016-6.trace, 20000000
-Globo_traces/12-2015-01-2016-7.trace, 20000000
-Globo_traces/12-2015-01-2016-8.trace, 4931768
-synthetic/mult_zip_run1_reformatted.trace, 199701
-synthetic/mult_zip_run2_reformatted.trace, 199035
-synthetic/mult_zip_run3_reformatted.trace, 199683
-synthetic/mult_zip_run4_reformatted.trace, 199913
-synthetic/mult_zip_run5_reformatted.trace, 199600
-synthetic/mult_zip_run6_reformatted.trace, 200286
-synthetic/mult_zip_run7_reformatted.trace, 199754
-synthetic/mult_zip_run8_reformatted.trace, 199704
-synthetic/mult_zip_run9_reformatted.trace, 200240
-synthetic/mult_zip_run10_reformatted.trace, 200423
-synthetic/zip0.8_300k_requests_reformatted.trace, 300003
-synthetic/zip0.8_reformatted.trace, 100004
+IBM_traces/anon-url-trace_reformatted.trace,8626163,UNIFORM
+UMass_YouTube_traces/YouTube_Trace_7days_reformatted.trace,258673,UNIFORM
+UMass_YouTube_traces/YouTube_Trace_7days_no_duplicates_reformatted.trace,251335,UNIFORM
+Fastly_traces/requests_reformatted.trace,14885146,UNIFORM
+Fastly_traces/requests-1M-2016-3-15_reformatted.trace,1007545,UNIFORM
+Globo_traces/12-2015-01-2016-0.trace,20000000,UNIFORM
+Globo_traces/12-2015-01-2016-1.trace,20000000,UNIFORM
+Globo_traces/12-2015-01-2016-2.trace,20000000,UNIFORM
+Globo_traces/12-2015-01-2016-3.trace,20000000,UNIFORM
+Globo_traces/12-2015-01-2016-4.trace,20000000,UNIFORM
+Globo_traces/12-2015-01-2016-5.trace,20000000,UNIFORM
+Globo_traces/12-2015-01-2016-6.trace,20000000,UNIFORM
+Globo_traces/12-2015-01-2016-7.trace,20000000,UNIFORM
+Globo_traces/12-2015-01-2016-8.trace,4931768,UNIFORM
+synthetic/mult_zip_run1_reformatted.trace,199701,UNIFORM
+synthetic/mult_zip_run2_reformatted.trace,199035,UNIFORM
+synthetic/mult_zip_run3_reformatted.trace,199683,UNIFORM
+synthetic/mult_zip_run4_reformatted.trace,199913,UNIFORM
+synthetic/mult_zip_run5_reformatted.trace,199600,UNIFORM
+synthetic/mult_zip_run6_reformatted.trace,200286,UNIFORM
+synthetic/mult_zip_run7_reformatted.trace,199754,UNIFORM
+synthetic/mult_zip_run8_reformatted.trace,199704,UNIFORM
+synthetic/mult_zip_run9_reformatted.trace,200240,UNIFORM
+synthetic/mult_zip_run10_reformatted.trace,200423,UNIFORM
+synthetic/zip0.8_300k_requests_reformatted.trace,300003,UNIFORM
+synthetic/zip0.8_reformatted.trace,100004,UNIFORM

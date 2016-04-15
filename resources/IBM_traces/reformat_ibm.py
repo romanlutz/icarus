@@ -1,6 +1,5 @@
-__author__ = 'romanlutz'
-
 import csv
+from resources.uniform_weight_generation import generate_uniform_weights_file
 
 def reformat(filename):
     requests = []

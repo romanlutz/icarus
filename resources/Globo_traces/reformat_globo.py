@@ -4,11 +4,14 @@ from collections import defaultdict
 from merge_globo import parse_line
 from analyze_globo import mp4_versions, determine_format_and_content_id, clear_from_last_requests
 
-def reformat(path, day, month, year, time_offset, contents, n_contents, out_file):
+priority_content_types = ['fantastico', 'jornal-nacional', 'bom-dia-brasil', 'globo-news', 'jornal-da-globo', 'sportv']
+
+
+def reformat(path, day, month, year, time_offset, contents, n_contents, out_file, weights_file):
     day_existed = False
     for filename in os.listdir(path):
         if '%02d%02d%02d-merged.log' % (year, month, day) == filename:
-            print 'reading %s' % filename
+            print('reading %s' % filename)
             day_existed = True
             with open(filename, 'rt') as in_file:
 
@@ -28,13 +31,22 @@ def reformat(path, day, month, year, time_offset, contents, n_contents, out_file
                             # currently the receiver is constant (one cache scenario), set to 0
                             out_file.write('%d,%d,%d\n' % (time, 0, content_id))
 
+                            # determine weight of content
+                            if content_id not in contents:
+                                is_priority_content = False
+                                for priority_content_type in priority_content_types:
+                                    if priority_content_type in line:
+                                        is_priority_content = True
+                                        break
+
+                                weight = 2 if is_priority_content else 1
+                                weights_file.write('%d,%d\n' % (content_id, weight))
+
 
                     # clear old records from last-requests dictionary to save memory
                     # do this every 20 seconds because the last 10 seconds are saved
                     #if time_difference(timestamp, request['time']) > 20:
                     #    clear_from_last_requests(request['time'], data)
-
-
 
     return day_existed, contents, n_contents
 
@@ -82,11 +94,12 @@ def main(argv):
                     dmys.append((day, month, year))
 
     with open('%d%d-%d%d-reformatted.trace' %(start_month, start_year, end_month, end_year), 'wt') as reformatted_file:
-        for dmy in dmys:
-            day_existed, contents, n_contents = reformat('./', dmy[0], dmy[1], dmy[2], time_offset, contents, n_contents, reformatted_file)
-            if day_existed:
-                time_offset += 24 * 60 * 60 # seconds of one day
-            print contents
+        with open('%d%d-%d%d-reformatted.weights' %(start_month, start_year, end_month, end_year), 'wt') as weights_file:
+            for dmy in dmys:
+                day_existed, contents, n_contents = reformat('./', dmy[0], dmy[1], dmy[2], time_offset, contents,
+                                                             n_contents, reformatted_file, weights_file)
+                if day_existed:
+                    time_offset += 24 * 60 * 60 # seconds of one day
 
 if __name__ == "__main__":
     main(sys.argv[1:])

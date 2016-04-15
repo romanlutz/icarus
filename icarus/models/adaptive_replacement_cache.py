@@ -77,7 +77,6 @@ class AdaptiveReplacementCache(Cache):
         else:
             raise ValueError('The item %s is not in the cache' % str(k))
 
-
     @inheritdoc(Cache)
     def has(self, k):
         if k in self._frequency_cache_top:
@@ -88,7 +87,7 @@ class AdaptiveReplacementCache(Cache):
             return False
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         # two basic cases:
         # 1. cache hit
         # 2. cache miss
@@ -107,7 +106,7 @@ class AdaptiveReplacementCache(Cache):
 
             return True
 
-    def put(self, k):
+    def put(self, k, weight):
         """Register an item's occurrence with the cache if not already inserted.
         This operation changes the state of the cache in that it might influence
         the number of elements taken from the recency and frequency caches and
@@ -120,6 +119,8 @@ class AdaptiveReplacementCache(Cache):
         ----------
         k : any hashable type
             The item to be inserted
+        weight : int
+            The weight of the item (not used here)
 
         Returns
         -------
@@ -226,5 +227,5 @@ class AdaptiveReplacementCache(Cache):
         return self._p
 
     def print_internal_dump(self):
-        print self._recency_cache_bottom, self._recency_cache_top, self._frequency_cache_bottom, self._frequency_cache_top
-
+        print("%s %s %s %s" % (str(self._recency_cache_bottom), str(self._recency_cache_top),
+                               str(self._frequency_cache_bottom), str(self._frequency_cache_top)))

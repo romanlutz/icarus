@@ -1,13 +1,10 @@
-__author__ = 'romanlutz'
-
-from icarus.models import Cache, LruCache, SpaceSavingCache, NullCache, StreamSummary, LinkedSet
+from __future__ import print_function
+from icarus.models import Cache, LruCache, SpaceSavingCache, NullCache, WeightedStreamSummary, LinkedSet
 from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc
 from copy import deepcopy
 import pprint
-import numpy as np
 pp = pprint.PrettyPrinter(indent=4)
-
 
 
 __all__ = ['DataStreamCachingAlgorithmCache',
@@ -16,6 +13,7 @@ __all__ = ['DataStreamCachingAlgorithmCache',
            'AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache',
            'AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache',
            'DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache']
+
 
 @register_cache_policy('DSCA')
 class DataStreamCachingAlgorithmCache(Cache):
@@ -44,7 +42,7 @@ class DataStreamCachingAlgorithmCache(Cache):
         # initially only LRU
         self._lru_cache = LruCache(self._maxlen)
         self._ss_cache = SpaceSavingCache(self._monitored, self._monitored)
-        self._guaranteed_top_k = [] # from previous window
+        self._guaranteed_top_k = []  # from previous window
 
         # to keep track of the windows, there is a counter and the (fixed) size of each window
         self._window_size = int(window_size * self._monitored)
@@ -68,9 +66,9 @@ class DataStreamCachingAlgorithmCache(Cache):
         return whole_cache
 
     def print_caches(self):
-        print 'LRU:', self._lru_cache.dump()
-        print 'top-k:', self._guaranteed_top_k
-        print 'SS-Cache of current window:'
+        print ('LRU: ' + self._lru_cache.dump())
+        print ('top-k: ' + self._guaranteed_top_k)
+        print ('SS-Cache of current window:')
         self._ss_cache.print_buckets()
 
     def position(self, k):
@@ -100,15 +98,15 @@ class DataStreamCachingAlgorithmCache(Cache):
         return k in self.dump()
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         # check in both LRU and top-k list
         top_k_hit = k in self._guaranteed_top_k
         lru_hit = False
         if not top_k_hit:
-            lru_hit = self._lru_cache.get(k)
+            lru_hit = self._lru_cache.get(k, weight)
         # report occurrence to Space Saving
         if lru_hit or top_k_hit:
-            self._ss_cache.put(k)
+            self._ss_cache.put(k, weight)
             self._window_counter += 1
 
             if self._window_counter >= self._window_size:
@@ -116,7 +114,7 @@ class DataStreamCachingAlgorithmCache(Cache):
 
         return lru_hit or top_k_hit
 
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
 
         If the element is already present in the cache, it's occurrence counter will be increased. Also, it will be
@@ -127,16 +125,18 @@ class DataStreamCachingAlgorithmCache(Cache):
         ----------
         k : any hashable type
             The item to be inserted
+        weight: int
+            The weight of the item
 
         Returns
         -------
         evicted : any hashable type
             The evicted object or *None* if no contents were evicted.
         """
-        self._ss_cache.put(k)
+        self._ss_cache.put(k, weight)
         if not(k in self._guaranteed_top_k):
-            if not self._lru_cache.get(k):
-                evicted = self._lru_cache.put(k)
+            if not self._lru_cache.get(k, weight):
+                evicted = self._lru_cache.put(k, weight)
                 # counter is only increased if there is no cache hit
                 # because put should only be called when there is a cache miss
                 self._window_counter += 1
@@ -199,7 +199,7 @@ class DataStreamCachingAlgorithmCache(Cache):
             else:
                 self._lru_cache = LruCache(lru_cache_size)
                 for element in lru_elements:
-                    self._lru_cache.put(element)
+                    self._lru_cache.put(element, 1)  # weight is irrelevant here
 
         # if there's still space keep some of the otherwise evicted former top-k elements
         if type(self._lru_cache) is not NullCache:
@@ -213,7 +213,7 @@ class DataStreamCachingAlgorithmCache(DataStreamCachingAlgorithmCache):
     """2DSCA only puts elements in the LRU part if they've been observed at least once before.
     """
 
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
 
         If the element is already present in the cache, it's occurrence counter will be increased. Also, it will be
@@ -234,13 +234,13 @@ class DataStreamCachingAlgorithmCache(DataStreamCachingAlgorithmCache):
         monitored_before = self._ss_cache.has(k)
         evicted = None
 
-        self._ss_cache.put(k)
+        self._ss_cache.put(k, weight)
         if not(k in self._guaranteed_top_k):
-            if not self._lru_cache.get(k):
+            if not self._lru_cache.get(k, weight):
                 # if it's in neither top-k nor LRU, check whether it's in the Space Saving table
                 if monitored_before:
                     # the LRU list is essentially LRU on the second observation
-                    evicted = self._lru_cache.put(k)
+                    evicted = self._lru_cache.put(k, weight)
 
                 # counter is only increased if there is no cache hit
                 # because put should only be called when there is a cache miss
@@ -308,10 +308,10 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         return whole_cache
 
     def print_caches(self):
-        print 'LRU:', self._lru_cache.dump()
-        print 'top-k:', self._guaranteed_top_k
+        print('LRU:' + self._lru_cache.dump())
+        print('top-k:' + self._guaranteed_top_k)
 
-        print 'Cumulative SS-Cache:'
+        print('Cumulative SS-Cache:')
         self._ss_cache.print_buckets()
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
@@ -326,15 +326,15 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         return k in self.dump()
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
-    def get(self, k):
+    def get(self, k, weight):
         # check in both LRU and top-k list
         top_k_hit = k in self._guaranteed_top_k
         lru_hit = False
         if not top_k_hit:
-            lru_hit = self._lru_cache.get(k)
+            lru_hit = self._lru_cache.get(k, weight)
         # report occurrence to Space Saving
         if lru_hit or top_k_hit:
-            self._ss_cache.put(k)
+            self._ss_cache.put(k, weight)
             self._window_counter += 1
 
             if self._window_counter >= self._subwindow_size:
@@ -343,11 +343,11 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
         return lru_hit or top_k_hit
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
-    def put(self, k):
-        self._ss_cache.put(k)
+    def put(self, k, weight):
+        self._ss_cache.put(k, weight)
         if not(k in self._guaranteed_top_k):
-            if not self._lru_cache.get(k):
-                evicted = self._lru_cache.put(k)
+            if not self._lru_cache.get(k, weight):
+                evicted = self._lru_cache.put(k, weight)
                 # counter is only increased if there is no cache hit
                 # because put should only be called when there is a cache miss
                 self._window_counter += 1
@@ -415,7 +415,7 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
             else:
                 self._lru_cache = LruCache(lru_cache_size)
                 for element in lru_elements:
-                    self._lru_cache.put(element)
+                    self._lru_cache.put(element, 1)  # weight is irrelevant here
 
         # if there's still space keep some of the otherwise evicted former top-k elements
         if type(self._lru_cache) is not NullCache:
@@ -440,11 +440,13 @@ class DataStreamCachingAlgorithmWithSlidingWindowCache(DataStreamCachingAlgorith
             self._expire_entry(expiring_element_id, expired_window_table)
 
         # put updated Stream Summary data structure into current SS cache
-        new_stream_summary = StreamSummary(self._monitored, monitored_items=self._monitored)
+        new_stream_summary = WeightedStreamSummary(self._monitored, monitored_items=self._monitored)
 
         for id in self._window_caches[0]:
             new_stream_summary.safe_insert_node(
-                StreamSummary.Node(id, self._window_caches[0][id]['max_error']), self._window_caches[0][id]['frequency'])
+                WeightedStreamSummary.Node(id, self._window_caches[0][id]['max_error'],
+                                           self._window_caches[0][id]['weight']),
+                    self._window_caches[0][id]['frequency'])
 
         self._ss_cache._cache = new_stream_summary
 
@@ -511,9 +513,9 @@ class DataStreamCachingAlgorithmWithFixedSplitsCache(Cache):
         return whole_cache
 
     def print_caches(self):
-        print 'LRU:', self._lru_cache.dump()
-        print 'top-k:', self._top_k
-        print 'SS-Cache of current window:'
+        print('LRU:' + self._lru_cache.dump())
+        print('top-k:' + self._top_k)
+        print('SS-Cache of current window:')
         self._ss_cache.print_buckets()
 
     def position(self, k):
@@ -543,15 +545,15 @@ class DataStreamCachingAlgorithmWithFixedSplitsCache(Cache):
         return k in self.dump()
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         # check in both LRU and top-k list
         top_k_hit = k in self._top_k
         lru_hit = False
         if not top_k_hit:
-            lru_hit = self._lru_cache.get(k)
+            lru_hit = self._lru_cache.get(k, weight)
         # report occurrence to Space Saving
         if lru_hit or top_k_hit:
-            self._ss_cache.put(k)
+            self._ss_cache.put(k, weight)
             self._window_counter += 1
 
             if self._window_counter >= self._window_size:
@@ -559,7 +561,7 @@ class DataStreamCachingAlgorithmWithFixedSplitsCache(Cache):
 
         return lru_hit or top_k_hit
 
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
 
         If the element is already present in the cache, it's occurrence counter will be increased. Also, it will be
@@ -576,10 +578,10 @@ class DataStreamCachingAlgorithmWithFixedSplitsCache(Cache):
         evicted : any hashable type
             The evicted object or *None* if no contents were evicted.
         """
-        self._ss_cache.put(k)
+        self._ss_cache.put(k, weight)
         if not(k in self._top_k):
-            if not self._lru_cache.get(k):
-                evicted = self._lru_cache.put(k)
+            if not self._lru_cache.get(k, weight):
+                evicted = self._lru_cache.put(k, weight)
                 # counter is only increased if there is no cache hit
                 # because put should only be called when there is a cache miss
                 self._window_counter += 1
@@ -678,11 +680,11 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
         return whole_cache
 
     def print_caches(self):
-        print 'Recency top:', list(iter(self._recency_cache_top))
-        print 'Recency bottom:', list(iter(self._recency_cache_bottom))
-        print 'top-k cached:', self._top_k[:self._top_k_cached_length]
-        print 'top-k not cached:', self._top_k[self._top_k_cached_length:]
-        print 'SS-Cache of current window:'
+        print('Recency top:' + list(iter(self._recency_cache_top)))
+        print('Recency bottom:' + list(iter(self._recency_cache_bottom)))
+        print('top-k cached:' + self._top_k[:self._top_k_cached_length])
+        print('top-k not cached:' + self._top_k[self._top_k_cached_length:])
+        print('SS-Cache of current window:')
         self._ss_cache.print_buckets()
 
     def position(self, k):
@@ -712,7 +714,7 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
         return k in self._top_k[:self._top_k_cached_length] or k in self._recency_cache_top
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         # check in both LRU and top-k list
         top_k_hit = k in self._top_k[:self._top_k_cached_length]
         lru_hit = False
@@ -723,7 +725,7 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
                 self._recency_cache_top.move_to_top(k)
         # report occurrence to Space Saving
         if lru_hit or top_k_hit:
-            self._ss_cache.put(k)
+            self._ss_cache.put(k, weight)
             self._window_counter += 1
 
             if self._window_counter >= self._window_size:
@@ -731,7 +733,7 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
 
         return lru_hit or top_k_hit
 
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
 
         If the element is already present in the cache, it's occurrence counter will be increased. Also, it will be
@@ -748,7 +750,7 @@ class AdaptiveDataStreamCachingAlgorithmWithStaticTopKCache(Cache):
         evicted : any hashable type
             The evicted object or *None* if no contents were evicted.
         """
-        self._ss_cache.put(k)
+        self._ss_cache.put(k, weight)
 
         # cache hit in recency cache
         if k in self._recency_cache_top:
@@ -923,11 +925,11 @@ class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
         return whole_cache
 
     def print_caches(self):
-        print 'Recency top:', list(iter(self._recency_cache_top))
-        print 'Recency bottom:', list(iter(self._recency_cache_bottom))
-        print 'top-k cached:', list(iter(self._top_k_cached))
-        print 'top-k not cached:', list(iter(self._top_k_uncached))
-        print 'SS-Cache of current window:'
+        print('Recency top:', list(iter(self._recency_cache_top)))
+        print('Recency bottom:', list(iter(self._recency_cache_bottom)))
+        print('top-k cached:', list(iter(self._top_k_cached)))
+        print('top-k not cached:', list(iter(self._top_k_uncached)))
+        print('SS-Cache of current window:')
         self._ss_cache.print_buckets()
 
     def position(self, k):
@@ -957,7 +959,7 @@ class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
         return k in self._top_k_cached or k in self._recency_cache_top
 
     @inheritdoc(Cache)
-    def get(self, k):
+    def get(self, k, weight):
         # check in both LRU and top-k list
         top_k_hit = k in self._top_k_cached
         lru_hit = False  # possibly doesn't need to be checked
@@ -970,7 +972,7 @@ class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
                 self._recency_cache_top.move_to_top(k)
         # report occurrence to Space Saving
         if lru_hit or top_k_hit:
-            self._ss_cache.put(k)
+            self._ss_cache.put(k, weight)
             self._window_counter += 1
 
             if self._window_counter >= self._window_size:
@@ -978,7 +980,7 @@ class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
 
         return lru_hit or top_k_hit
 
-    def put(self, k):
+    def put(self, k, weight):
         """Insert an item in the cache if not already inserted.
 
         If the element is already present in the cache, it's occurrence counter will be increased. Also, it will be
@@ -995,7 +997,7 @@ class AdaptiveDataStreamCachingAlgorithmWithAdaptiveTopKCache(Cache):
         evicted : any hashable type
             The evicted object or *None* if no contents were evicted.
         """
-        self._ss_cache.put(k)
+        self._ss_cache.put(k, weight)
 
         # cache hit in recency cache
         if k in self._recency_cache_top:
@@ -1177,15 +1179,15 @@ class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlg
             raise ValueError('tolerance parameter epsilon is not between 0 and 1')
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
-    def get(self, k):
+    def get(self, k, weight):
         # check in both LRU and top-k list
         top_k_hit = k in self._guaranteed_top_k
         lru_hit = False
         if not top_k_hit:
-            lru_hit = self._lru_cache.get(k)
+            lru_hit = self._lru_cache.get(k, weight)
         # report occurrence to Space Saving
         if lru_hit or top_k_hit:
-            self._ss_cache.put(k)
+            self._ss_cache.put(k, weight)
             self._window_counter += 1
 
             if self._window_counter >= self._hypothesis_check_period:
@@ -1200,11 +1202,11 @@ class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlg
         return lru_hit or top_k_hit
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
-    def put(self, k):
-        self._ss_cache.put(k)
+    def put(self, k, weight):
+        self._ss_cache.put(k, weight)
         if not(k in self._guaranteed_top_k):
-            if not self._lru_cache.get(k):
-                evicted = self._lru_cache.put(k)
+            if not self._lru_cache.get(k, weight):
+                evicted = self._lru_cache.put(k, weight)
                 # counter is only increased if there is no cache hit
                 # because put should only be called when there is a cache miss
                 self._window_counter += 1
@@ -1245,8 +1247,11 @@ class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlg
                           ((x+epsilon)/x)**m * ((1-x-epsilon)/(1-x))**(n-m))
 
         top_k_frequencies_percentage = float(top_k_frequencies) / float(self._cumulative_window_counter)
+        if top_k_frequencies_percentage == 0 or 1 - top_k_frequencies_percentage == 0:
+            return False
+
         if self._hypothesis_check_A > func(top_k_frequencies_percentage, self._hypothesis_check_epsilon,
-                                           self._cumulative_window_counter, top_k_frequencies) :
+                                           self._cumulative_window_counter, top_k_frequencies):
             return True
         else:
             return False
@@ -1263,15 +1268,15 @@ class DataStreamCachingAlgorithmWithAdaptiveWindowSizeCache(DataStreamCachingAlg
     """
 
     @inheritdoc(DataStreamCachingAlgorithmCache)
-    def put(self, k):
+    def put(self, k, weight):
         monitored_before = self._ss_cache.has(k)
         evicted = None
 
-        self._ss_cache.put(k)
+        self._ss_cache.put(k, weight)
         if not(k in self._guaranteed_top_k):
-            if not self._lru_cache.get(k):
+            if not self._lru_cache.get(k, weight):
                 if monitored_before:
-                    evicted = self._lru_cache.put(k)
+                    evicted = self._lru_cache.put(k, weight)
 
                 # counter is only increased if there is no cache hit
                 # because put should only be called when there is a cache miss
@@ -1347,7 +1352,7 @@ class DataStreamCachingAlgorithmWithFrequencyThresholdCache(DataStreamCachingAlg
             else:
                 self._lru_cache = LruCache(lru_cache_size)
                 for element in lru_elements:
-                    self._lru_cache.put(element)
+                    self._lru_cache.put(element, 1)  # weight is irrelevant here
 
         # if there's still space keep some of the otherwise evicted former top-k elements
         if type(self._lru_cache) is not NullCache:

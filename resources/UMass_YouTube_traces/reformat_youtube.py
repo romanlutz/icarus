@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import csv
-
+from resources.uniform_weight_generation import generate_uniform_weights_file
 
 def time_difference(timestamp1, timestamp2):
     month1, _, rest = timestamp1.partition(' ')
@@ -115,7 +115,6 @@ def reformat(filename, no_duplicates=False):
         for event in requests:
             writer.writerow((time, event['receiver'], event['content']))
             time += 1
-
 
 '''
 reformat('YouTube_Trace_7days.txt')

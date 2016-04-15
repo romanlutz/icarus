@@ -46,7 +46,7 @@ class DataCollector(object):
         """
         self.view = view
     
-    def start_session(self, timestamp, receiver, content):
+    def start_session(self, timestamp, receiver, content, weight):
         """Notifies the collector that a new network session started.
         
         A session refers to the retrieval of a content from a receiver, from
@@ -60,6 +60,8 @@ class DataCollector(object):
             The receiver node requesting a content
         content : any hashable type
             The content identifier requested by the receiver
+        weight: int
+            The weight or priority of the content (the higher the more important)
         """
         pass
     
@@ -181,9 +183,9 @@ class CollectorProxy(DataCollector):
                            for e in self.EVENTS}
     
     @inheritdoc(DataCollector)
-    def start_session(self, timestamp, receiver, content):
+    def start_session(self, timestamp, receiver, content, weight):
         for c in self.collectors['start_session']:
-            c.start_session(timestamp, receiver, content)
+            c.start_session(timestamp, receiver, content, weight)
     
     @inheritdoc(DataCollector)
     def cache_hit(self, node):
@@ -247,7 +249,7 @@ class LinkLoadCollector(DataCollector):
         self.t_end = 1
     
     @inheritdoc(DataCollector)
-    def start_session(self, timestamp, receiver, content):
+    def start_session(self, timestamp, receiver, content, weight):
         if self.t_start < 0:
             self.t_start = timestamp
         self.t_end = timestamp
@@ -304,7 +306,7 @@ class LatencyCollector(DataCollector):
             self.latency_data = collections.deque()
     
     @inheritdoc(DataCollector)
-    def start_session(self, timestamp, receiver, content):
+    def start_session(self, timestamp, receiver, content, weight):
         self.sess_count += 1
         self.sess_latency = 0.0
     
@@ -357,65 +359,77 @@ class CacheHitRatioCollector(DataCollector):
         self.view = view
         self.off_path_hits = off_path_hits
         self.per_node = per_node
-        self.cont_hits = content_hits
-        self.sess_count = 0
+        self.content_hits = content_hits
+        self.session_count = 0
+        self.weighted_session_count = 0
         self.cache_hits = 0
-        self.serv_hits = 0
+        self.server_hits = 0
+        self.weighted_cache_hits = 0
+        self.weighted_server_hits = 0
         if off_path_hits:
             self.off_path_hit_count = 0
         if per_node:
             self.per_node_cache_hits = collections.defaultdict(int)
             self.per_node_server_hits = collections.defaultdict(int)
         if content_hits:
-            self.curr_cont = None
-            self.cont_cache_hits = collections.defaultdict(int)
-            self.cont_serv_hits = collections.defaultdict(int)
+            self.current_content = None
+            self.content_cache_hits = collections.defaultdict(int)
+            self.content_server_hits = collections.defaultdict(int)
 
     @inheritdoc(DataCollector)
-    def start_session(self, timestamp, receiver, content):
-        self.sess_count += 1
+    def start_session(self, timestamp, receiver, content, weight):
+        self.session_count += 1
+        self.weighted_session_count += weight
+        self.current_weight = weight
         if self.off_path_hits:
             source = self.view.content_source(content)
-            self.curr_path = self.view.shortest_path(receiver, source)
-        if self.cont_hits:
-            self.curr_cont = content
+            self.current_path = self.view.shortest_path(receiver, source)
+        if self.content_hits:
+            self.current_content = content
     
     @inheritdoc(DataCollector)
     def cache_hit(self, node):
         self.cache_hits += 1
-        if self.off_path_hits and node not in self.curr_path:
+        self.weighted_cache_hits += self.current_weight
+        if self.off_path_hits and node not in self.current_path:
             self.off_path_hit_count += 1
-        if self.cont_hits:
-            self.cont_cache_hits[self.curr_cont] += 1
+        if self.content_hits:
+            self.content_cache_hits[self.current_content] += 1
         if self.per_node:
             self.per_node_cache_hits[node] += 1
 
     @inheritdoc(DataCollector)
     def server_hit(self, node):
-        self.serv_hits += 1
-        if self.cont_hits:
-            self.cont_serv_hits[self.curr_cont] += 1
+        self.server_hits += 1
+        self.weighted_server_hits += self.current_weight
+        if self.content_hits:
+            self.content_server_hits[self.current_content] += 1
         if self.per_node:
             self.per_node_server_hits[node] += 1
     
     @inheritdoc(DataCollector)
     def results(self):
-        n_sess = self.cache_hits + self.serv_hits
-        hit_ratio = self.cache_hits/n_sess
+        n_session = self.cache_hits + self.server_hits
+        hit_ratio = self.cache_hits/n_session
         results = Tree(**{'MEAN': hit_ratio})
+
+        n_weighted_session = self.weighted_cache_hits + self.weighted_server_hits
+        weighted_hit_ratio = self.weighted_cache_hits/n_weighted_session
+        results['WEIGHTED_CACHE_HIT_RATIO'] = weighted_hit_ratio
+
         if self.off_path_hits:
-            results['MEAN_OFF_PATH'] = self.off_path_hit_count/n_sess
+            results['MEAN_OFF_PATH'] = self.off_path_hit_count/n_session
             results['MEAN_ON_PATH'] = results['MEAN'] - results['MEAN_OFF_PATH']
-        if self.cont_hits:
-            cont_set = set(self.cont_cache_hits.keys() + self.cont_serv_hits.keys())
-            cont_hits=dict((self.cont_cache_hits[i]/(self.cont_cache_hits[i] + self.cont_serv_hits[i])) 
-                            for i in cont_set)
-            results['PER_CONTENT'] = cont_hits
+        if self.content_hits:
+            content_set = set(self.content_cache_hits.keys() + self.content_server_hits.keys())
+            content_hits=dict((self.content_cache_hits[i] / (self.content_cache_hits[i] + self.content_server_hits[i]))
+                            for i in content_set)
+            results['PER_CONTENT'] = content_hits
         if self.per_node:
             for v in self.per_node_cache_hits:
-                self.per_node_cache_hits[v] /= n_sess
+                self.per_node_cache_hits[v] /= n_session
             for v in self.per_node_server_hits:
-                self.per_node_server_hits[v] /= n_sess    
+                self.per_node_server_hits[v] /= n_session
             results['PER_NODE_CACHE_HIT_RATIO'] = self.per_node_cache_hits
             results['PER_NODE_SERVER_HIT_RATIO'] = self.per_node_server_hits
         return results
@@ -451,7 +465,7 @@ class PathStretchCollector(DataCollector):
             self.stretch_data = collections.deque()
     
     @inheritdoc(DataCollector)
-    def start_session(self, timestamp, receiver, content):
+    def start_session(self, timestamp, receiver, content, weight):
         self.receiver = receiver
         self.source = self.view.content_source(content)
         self.req_path_len = 0
@@ -656,7 +670,7 @@ class TestCollector(DataCollector):
         self.view = view
     
     @inheritdoc(DataCollector)
-    def start_session(self, timestamp, receiver, content):
+    def start_session(self, timestamp, receiver, content, weight):
         self.session = dict(timestamp=timestamp, receiver=receiver,
                             content=content, cache_misses=[],
                             request_hops=[], content_hops=[])

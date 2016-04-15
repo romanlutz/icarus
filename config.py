@@ -60,19 +60,19 @@ RESULTS_FORMAT = 'SPICKLE'
 
 # whether the experiments will be based on synthetic data or traces
 # some later steps are relevant only for synthetic or trace-driven experiments
-SYNTHETIC_EXPERIMENT = True
+SYNTHETIC_EXPERIMENT = False
 
 # List of metrics to be measured in the experiments
 # The implementation of data collectors are located in ./icarus/execution/collectors.py
 # Remove collectors not needed
-DATA_COLLECTORS = [
-    'CACHE_HIT_RATIO',  # Measure cache hit ratio
-    'LATENCY',           # Measure request and response latency (based on static link delays)
-    # 'LINK_LOAD',         # Measure link loads
-    'PATH_STRETCH',      # Measure path stretch
-    # 'CACHE_LEVEL_PROPORTIONS',
-    # 'WINDOW_SIZE' # only for adaptive window size cache policies / not usable yet
-]
+DATA_COLLECTORS = {
+    'CACHE_HIT_RATIO': {'content_hits': False, 'per_node': True},  # Measure cache hit ratio
+    'LATENCY': {},           # Measure request and response latency (based on static link delays)
+    # 'LINK_LOAD': {},         # Measure link loads
+    'PATH_STRETCH': {},      # Measure path stretch
+    # 'CACHE_LEVEL_PROPORTIONS': {},
+    # 'WINDOW_SIZE': {} # only for adaptive window size cache policies / not usable yet
+}
 
 # The size of network cache can be set as a fraction of content population in three ways:
 # 1. define a fraction of the number of contents which is assigned to every node, set NETWORK_CACHE_PER_NODE
@@ -278,11 +278,15 @@ if SYNTHETIC_EXPERIMENT:
     # Remove topologies not needed
     TOPOLOGIES = {
         'PATH': {'n': [3]},
-        #'TREE': {'k': [2, 2, 2, 2, 4, 4], 'h': [2, 3, 4, 5, 2, 3]},
-        #'GEANT': {},
-        # 'WIDE': {},
-        # 'GARR': {},
+        'PATH': {'n': [3, 5, 7, 9]},
+        'TREE': {'k': [2, 2, 2, 2, 4, 4], 'h': [2, 3, 4, 5, 2, 3]},
+        'GEANT': {},
+        'GEANT_2': {},
+        'WIDE': {},
+        'GARR': {},
+        'GARR_2': {},
         # 'TISCALI': {},
+        # 'TISCALI_2': {}
     }
 
     # Create experiments multiplexing all desired parameters
@@ -290,13 +294,22 @@ if SYNTHETIC_EXPERIMENT:
         for (alpha, q) in list(itertools.product(ALPHA, Q)):
             for strategy in STRATEGIES:
                 for topology in TOPOLOGIES:
-                    for topology_configuration_index in range(len(TOPOLOGIES[topology].values()[0])):
+                    param_names = TOPOLOGIES[topology].keys()
+                    no_params = param_names == []
+                    if not no_params:
+                        topology_param_combinations = list(
+                            itertools.product(*[TOPOLOGIES[topology][param_name] for param_name in param_names]))
+                    else:
+                        topology_param_combinations = [None]
+
+                    for topology_configuration_index, topology_configuration in enumerate(topology_param_combinations):
                         for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
                             experiment = Tree()
                             experiment['workload'] = {'name': 'STATIONARY',
                                                       'n_contents': N_CONTENTS,
                                                       'n_warmup': N_CONTENTS,
                                                       'n_measured': N_REQUESTS - N_CONTENTS,
+                                                      'weights': 'UNIFORM',
                                                       'rate': REQ_RATE,
                                                       'seed': seeds[rep]
                                                       }
@@ -307,9 +320,9 @@ if SYNTHETIC_EXPERIMENT:
                             experiment['strategy']['name'] = strategy
 
                             experiment['topology']['name'] = topology
-                            for topology_param in TOPOLOGIES[topology].keys():
-                                experiment['topology'][topology_param] = TOPOLOGIES[topology][topology_param][
-                                    topology_configuration_index]
+                            if not no_params:
+                                for index, param_name in enumerate(param_names):
+                                    experiment['topology'][param_name] = topology_configuration[index]
 
                             experiment['cache_policy']['name'] = cache_policy
                             for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
@@ -332,20 +345,21 @@ else:
         csv_reader = csv.reader(trace_file)
         i = 1
         for line in csv_reader:
-            traces.append((line[0], int(line[1])))
+            if i == 2:
+                traces.append((line[0], int(line[1]), line[2]))
             i += 1
 
     # List of topologies tested
     # Topology implementations are located in ./icarus/scenarios/topology.py
     # Remove topologies not needed
     TOPOLOGIES = {
-        'PATH': {'n': [3, 5, 7, 9]},
-        'TREE': {'k': [2, 2, 2, 2, 4, 4], 'h': [2, 3, 4, 5, 2, 3]},
-        'GEANT': {},
-        'GEANT_2': {},
-        'WIDE': {},
-        'GARR': {},
-        'GARR_2': {},
+        'PATH': {'n': [3]},
+        #'TREE': {'k': [2, 2, 2, 2, 4, 4], 'h': [2, 3, 4, 5, 2, 3]},
+        #'GEANT': {},
+        #'GEANT_2': {},
+        #'WIDE': {},
+        #'GARR': {},
+        #'GARR_2': {},
         #'TISCALI': {},
         #'TISCALI_2': {}
     }
@@ -354,24 +368,33 @@ else:
     WARMUP = 10000
 
     # Create experiments multiplexing all desired parameters
-    for trace_name, N_REQUESTS in traces:
+    for trace_name, N_REQUESTS, weights in traces:
         for strategy in STRATEGIES:
             for topology in TOPOLOGIES:
-                for topology_configuration_index in range(len(TOPOLOGIES[topology].values()[0])):
+                param_names = TOPOLOGIES[topology].keys()
+                no_params = param_names == []
+                if not no_params:
+                    topology_param_combinations = list(itertools.product(*[TOPOLOGIES[topology][param_name] for param_name in param_names]))
+                else:
+                    topology_param_combinations = [None]
+
+                for topology_configuration_index, topology_configuration in enumerate(topology_param_combinations):
                     for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
                         experiment = Tree()
                         experiment['workload'] = {'name': 'DETERMINISTIC_TRACE_DRIVEN',
                                                   'n_warmup': WARMUP,
                                                   'n_measured': N_REQUESTS - WARMUP,
-                                                  'reqs_file': 'resources/' + trace_name
+                                                  'reqs_file': 'resources/' + trace_name,
+                                                  'weights': weights
                                                   }
                         experiment['cache_placement']['name'] = 'UNIFORM'
                         experiment['content_placement']['name'] = 'UNIFORM'
                         experiment['strategy']['name'] = strategy
 
                         experiment['topology']['name'] = topology
-                        for topology_param in TOPOLOGIES[topology].keys():
-                            experiment['topology'][topology_param] = TOPOLOGIES[topology][topology_param][topology_configuration_index]
+                        if not no_params:
+                            for index, param_name in enumerate(param_names):
+                                experiment['topology'][param_name] = topology_configuration[index]
 
                         experiment['cache_policy']['name'] = cache_policy
                         for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():

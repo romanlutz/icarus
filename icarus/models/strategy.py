@@ -3,12 +3,11 @@
 from __future__ import division
 import random
 import abc
-import collections
 
 import networkx as nx
 
 from icarus.registry import register_strategy
-from icarus.util import inheritdoc, multicast_tree, path_links
+from icarus.util import inheritdoc, path_links
 
 
 __all__ = [
@@ -53,7 +52,7 @@ class Strategy(object):
         self.controller = controller
         
     @abc.abstractmethod
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         """Process an event received from the simulation engine.
         
         This event is processed by executing relevant actions of the network
@@ -71,6 +70,8 @@ class Strategy(object):
         log : bool
             Indicates whether the event must be registered by the data
             collectors attached to the network.
+        weight : int
+            The weight indicating the importance of the content - default is 1 for every content
         """
         raise NotImplementedError('The selected strategy must implement '
                                   'a process_event method')
@@ -128,7 +129,7 @@ class Hashrouting(Strategy):
             The hash code of the content
         """
         #TODO: This hash function needs revision because it does not return
-        # equally probably hash codes
+        # equally probable hash codes
         n = len(self.cache_nodes)
         h = content % n
         return h if (content/n) % 2 == 0 else (n - h - 1)
@@ -144,12 +145,12 @@ class HashroutingSymmetric(Hashrouting):
         super(HashroutingSymmetric, self).__init__(view, controller)
 
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         cache = self.authoritative_cache(content)
         # handle (and log if required) actual request
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         # Forward request to authoritative cache
         self.controller.forward_request_path(receiver, cache)
         if self.controller.get_content(cache):
@@ -159,7 +160,7 @@ class HashroutingSymmetric(Hashrouting):
             # Cache miss: go all the way to source
             self.controller.forward_request_path(cache, source)
             if not self.controller.get_content(source):
-                raise RuntimeError('The content is not found the expected source')
+                raise RuntimeError('The content is not found at the expected source')
             self.controller.forward_content_path(source, cache)
             # Insert in cache
             self.controller.put_content(cache)
@@ -178,12 +179,12 @@ class HashroutingAsymmetric(Hashrouting):
         super(HashroutingAsymmetric, self).__init__(view, controller)
         
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         cache = self.authoritative_cache(content)
         # handle (and log if required) actual request
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         # Forward request to authoritative cache
         self.controller.forward_request_path(receiver, cache)
         if self.controller.get_content(cache):
@@ -225,12 +226,12 @@ class HashroutingMulticast(Hashrouting):
         # map id of content to node with cache responsibility
 
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         cache = self.authoritative_cache(content)
         # handle (and log if required) actual request
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         # Forward request to authoritative cache
         self.controller.forward_request_path(receiver, cache)
         if self.controller.get_content(cache):
@@ -286,12 +287,12 @@ class HashroutingHybridAM(Hashrouting):
         self.max_stretch = nx.diameter(view.topology()) * max_stretch
 
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         cache = self.authoritative_cache(content)
         # handle (and log if required) actual request
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         # Forward request to authoritative cache
         self.controller.forward_request_path(receiver, cache)
         if self.controller.get_content(cache):
@@ -346,12 +347,12 @@ class HashroutingHybridSM(Hashrouting):
         super(HashroutingHybridSM, self).__init__(view, controller)
 
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         cache = self.authoritative_cache(content)
         # handle (and log if required) actual request
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         # Forward request to authoritative cache
         self.controller.forward_request_path(receiver, cache)
         if self.controller.get_content(cache):
@@ -415,12 +416,12 @@ class NoCache(Strategy):
         super(NoCache, self).__init__(view, controller)
     
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         path = self.view.shortest_path(receiver, source)
         # Route requests to original source
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         self.controller.forward_request_path(receiver, source)
         self.controller.get_content(source)
         # Route content back to receiver
@@ -448,12 +449,12 @@ class Edge(Strategy):
         super(Edge, self).__init__(view, controller)
 
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         path = self.view.shortest_path(receiver, source)
         # Route requests to original source and queries caches on the path
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         edge_cache = None
         for u, v in path_links(path):
             self.controller.forward_request_hop(u, v)
@@ -493,12 +494,12 @@ class LeaveCopyEverywhere(Strategy):
         super(LeaveCopyEverywhere, self).__init__(view, controller)
 
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         path = self.view.shortest_path(receiver, source)
         # Route requests to original source and queries caches on the path
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         for u, v in path_links(path):
             self.controller.forward_request_hop(u, v)
             if self.view.has_cache(v):
@@ -539,12 +540,12 @@ class LeaveCopyDown(Strategy):
         super(LeaveCopyDown, self).__init__(view, controller)
 
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         path = self.view.shortest_path(receiver, source)
         # Route requests to original source and queries caches on the path
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         for u, v in path_links(path):
             self.controller.forward_request_hop(u, v)
             if self.view.has_cache(v):
@@ -599,12 +600,12 @@ class ProbCache(Strategy):
         self.cache_size = view.cache_nodes(size=True)
     
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         path = self.view.shortest_path(receiver, source)
         # Route requests to original source and queries caches on the path
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         for hop in range(1, len(path)):
             u = path[hop - 1]
             v = path[hop]
@@ -660,12 +661,12 @@ class CacheLessForMore(Strategy):
             self.betw = nx.betweenness_centrality(topology)
     
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         path = self.view.shortest_path(receiver, source)
         # Route requests to original source and queries caches on the path
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         for u, v in path_links(path):
             self.controller.forward_request_hop(u, v)
             if self.view.has_cache(v):
@@ -717,13 +718,13 @@ class NearestReplicaRouting(Strategy):
         self.metacaching = metacaching
         
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         locations = self.view.content_locations(content)
         nearest_replica = min(locations, 
                               key=lambda s: sum(self.view.shortest_path(receiver, s)))
         # Route request to nearest replica
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         self.controller.forward_request_path(receiver, nearest_replica)
         self.controller.get_content(nearest_replica)
         # Now we need to return packet and we have options
@@ -760,12 +761,12 @@ class RandomBernoulli(Strategy):
         self.p = p
     
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         path = self.view.shortest_path(receiver, source)
         # Route requests to original source and queries caches on the path
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         for u, v in path_links(path):
             self.controller.forward_request_hop(u, v)
             if self.view.has_cache(v):
@@ -798,12 +799,12 @@ class RandomChoice(Strategy):
         super(RandomChoice, self).__init__(view, controller)
     
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, weight):
         # get all required data
         source = self.view.content_source(content)
         path = self.view.shortest_path(receiver, source)
         # Route requests to original source and queries caches on the path
-        self.controller.start_session(time, receiver, content, log)
+        self.controller.start_session(time, receiver, content, log, weight)
         for u, v in path_links(path):
             self.controller.forward_request_hop(u, v)
             if self.view.has_cache(v):
