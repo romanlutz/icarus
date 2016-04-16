@@ -117,16 +117,16 @@ MONITORED_DEFAULT = 2.0
 use_SS = False
 use_DSCA = False
 use_2DSCA = False
-use_DSCAAWS = False
-use_2DSCAAWS = False
+use_DSCAAWS = True
+use_2DSCAAWS = True
 use_DSCASW = False
 use_DSCAFT = False
 use_DSCAFS = False
 use_ADSCASTK = False
 use_ADSCAATK = False
-use_ARC = True
+use_ARC = False
 use_LRU = False
-use_KLRU = True
+use_KLRU = False
 
 if use_SS:
     CACHE_POLICY.append('SS')
