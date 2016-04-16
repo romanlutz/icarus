@@ -128,7 +128,7 @@ class AdaptiveReplacementCache(Cache):
             The evicted object or *None* if no contents were evicted.
         """
         # in case of k already being cached, move it to the top of the frequency cache
-        if self.get(k):
+        if self.get(k, weight):
             return None
         # there are three cases:
         # 1. k is in bottom of recency cache (i.e. not cached, only observed)

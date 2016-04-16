@@ -114,18 +114,18 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 MONITORED_DEFAULT = 2.0
 
-use_SS = True
-use_DSCA = True
-use_2DSCA = True
-use_DSCAAWS = True
-use_2DSCAAWS = True
-use_DSCASW = True
+use_SS = False
+use_DSCA = False
+use_2DSCA = False
+use_DSCAAWS = False
+use_2DSCAAWS = False
+use_DSCASW = False
 use_DSCAFT = False
 use_DSCAFS = False
 use_ADSCASTK = False
 use_ADSCAATK = False
 use_ARC = True
-use_LRU = True
+use_LRU = False
 use_KLRU = True
 
 if use_SS:

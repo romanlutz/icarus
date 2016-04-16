@@ -147,7 +147,7 @@ def determine_policy_and_parameters(tree):
             if k[1] is not None:
                 hypothesis_check_epsilon = float(k[1])
 
-        elif k[0] in [('cache_placement', 'network_cache_per_node'), ('cache_placement', 'network_cache_all_nodes')]:
+        elif k[0] in [('cache_placement', 'network_cache_per_node'), ('cache_placement', 'network_cache_all_nodes'), ('cache_placement', 'network_cache_absolute')]:
             if k[1] is not None:
                 cache_size = int(k[1])
 

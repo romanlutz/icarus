@@ -72,7 +72,7 @@ class KLruCache(Cache):
         if not self.has(k):
             return False
         else:
-            self._cache.get(k)
+            self._cache.get(k, weight)
             return True
 
     def put(self, k, weight):
@@ -94,7 +94,7 @@ class KLruCache(Cache):
         last_cached_segment = self._cache.get_segment_by_id(self._cached_segments - 1)
         last_cached_element = list(iter(last_cached_segment))
 
-        self._cache.put(k)
+        self._cache.put(k, weight)
 
         if self.has(last_cached_element):
             return None
