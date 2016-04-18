@@ -12,7 +12,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from icarus.io.readwrite import read_results
 from icarus.models import policy_parameter_usage
-from output_results import determine_policy_and_parameters
+from output_results import determine_parameters
 
 __all__ = [
        'draw_stack_deployment',
@@ -121,7 +121,7 @@ def draw_cache_level_proportions(plotdir, format):
     result = read_results('results%s' % format, format)
     for tree in result:
         trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion, \
-           hypothesis_check_period, hypothesis_check_A, hypothesis_check_epsilon = determine_policy_and_parameters(tree)
+           hypothesis_check_period, hypothesis_check_A, hypothesis_check_epsilon = determine_parameters(tree)
         print trace, policy
         param_names = ['window_size', 'subwindows', 'subwindow_size', 'segments', 'cached_segments', 'lru_portion']
         params = [window_size, subwindows, subwindow_size, segments, cached_segments, lru_portion]

@@ -60,7 +60,7 @@ RESULTS_FORMAT = 'SPICKLE'
 
 # whether the experiments will be based on synthetic data or traces
 # some later steps are relevant only for synthetic or trace-driven experiments
-SYNTHETIC_EXPERIMENT = False
+SYNTHETIC_EXPERIMENT = True
 
 # List of metrics to be measured in the experiments
 # The implementation of data collectors are located in ./icarus/execution/collectors.py
@@ -99,10 +99,10 @@ STRATEGIES = [
     # 'HR_MULTICAST',    # Multicast hash-routing
     # 'HR_HYBRID_AM',    # Hybrid Asymm-Multicast hash-routing
     # 'HR_HYBRID_SM',    # Hybrid Symm-Multicast hash-routing
-    # 'CL4M',            # Cache less for more
-    # 'PROB_CACHE',      # ProbCache
-    # 'LCD',             # Leave Copy Down
-    # 'RAND_CHOICE',     # Random choice: cache in one random cache on path
+    'CL4M',            # Cache less for more
+    'PROB_CACHE',      # ProbCache
+    'LCD',             # Leave Copy Down
+    'RAND_CHOICE',     # Random choice: cache in one random cache on path
     # 'RAND_BERNOULLI',  # Random Bernoulli: cache randomly in caches on path
 ]
 
@@ -115,18 +115,18 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 MONITORED_DEFAULT = 2.0
 
 use_SS = False
-use_DSCA = False
-use_2DSCA = False
+use_DSCA = True
+use_2DSCA = True
 use_DSCAAWS = True
-use_2DSCAAWS = True
+use_2DSCAAWS = False
 use_DSCASW = False
 use_DSCAFT = False
 use_DSCAFS = False
 use_ADSCASTK = False
 use_ADSCAATK = False
-use_ARC = False
-use_LRU = False
-use_KLRU = False
+use_ARC = True
+use_LRU = True
+use_KLRU = True
 
 if use_SS:
     CACHE_POLICY.append('SS')
@@ -255,7 +255,7 @@ EXPERIMENT_QUEUE = deque()
 if SYNTHETIC_EXPERIMENT:
     # Number of times each experiment is replicated
     # This is necessary for extracting confidence interval of selected metrics
-    N_REPLICATIONS = 3
+    N_REPLICATIONS = 1
 
     # Number of requests per second (over the whole network)
     REQ_RATE = 1.0
@@ -267,8 +267,8 @@ if SYNTHETIC_EXPERIMENT:
     N_REQUESTS = 10000000
 
     # Mandelbrot-Zipf alpha and q parameters for non-trace-driven simulation
-    ALPHA = [0.5, 0.75, 1, 2]
-    Q = [0, 5, 50]
+    ALPHA = [0.5, 0.75, 1]
+    Q = [0, 5]
 
     # random seeds given to workload creating library
     seeds = range(N_REPLICATIONS)
@@ -277,14 +277,13 @@ if SYNTHETIC_EXPERIMENT:
     # Topology implementations are located in ./icarus/scenarios/topology.py
     # Remove topologies not needed
     TOPOLOGIES = {
-        'PATH': {'n': [3]},
-        'PATH': {'n': [3, 5, 7, 9]},
-        'TREE': {'k': [2, 2, 2, 2, 4, 4], 'h': [2, 3, 4, 5, 2, 3]},
+        'PATH': {'n': [7]},
+        'TREE': {'k': [2], 'h': [4]},
         'GEANT': {},
-        'GEANT_2': {},
+        #'GEANT_2': {},
         'WIDE': {},
         'GARR': {},
-        'GARR_2': {},
+        #'GARR_2': {},
         # 'TISCALI': {},
         # 'TISCALI_2': {}
     }

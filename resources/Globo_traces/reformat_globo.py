@@ -7,7 +7,7 @@ from analyze_globo import mp4_versions, determine_format_and_content_id, clear_f
 priority_content_types = ['fantastico', 'jornal-nacional', 'bom-dia-brasil', 'globo-news', 'jornal-da-globo', 'sportv']
 
 
-def reformat(path, day, month, year, time_offset, contents, n_contents, out_file, weights_file):
+def reformat(path, day, month, year, time_offset, contents, n_contents, out_file):
     day_existed = False
     for filename in os.listdir(path):
         if '%02d%02d%02d-merged.log' % (year, month, day) == filename:
@@ -32,7 +32,7 @@ def reformat(path, day, month, year, time_offset, contents, n_contents, out_file
                             out_file.write('%d,%d,%d\n' % (time, 0, content_id))
 
                             # determine weight of content
-                            if content_id not in contents:
+                            if content_id not in contents or contents[content_id] == 1:
                                 is_priority_content = False
                                 for priority_content_type in priority_content_types:
                                     if priority_content_type in line:
@@ -40,7 +40,8 @@ def reformat(path, day, month, year, time_offset, contents, n_contents, out_file
                                         break
 
                                 weight = 2 if is_priority_content else 1
-                                weights_file.write('%d,%d\n' % (content_id, weight))
+                                contents[content_id] = weight
+
 
 
                     # clear old records from last-requests dictionary to save memory
@@ -94,12 +95,14 @@ def main(argv):
                     dmys.append((day, month, year))
 
     with open('%d%d-%d%d-reformatted.trace' %(start_month, start_year, end_month, end_year), 'wt') as reformatted_file:
-        with open('%d%d-%d%d-reformatted.weights' %(start_month, start_year, end_month, end_year), 'wt') as weights_file:
-            for dmy in dmys:
-                day_existed, contents, n_contents = reformat('./', dmy[0], dmy[1], dmy[2], time_offset, contents,
-                                                             n_contents, reformatted_file, weights_file)
-                if day_existed:
-                    time_offset += 24 * 60 * 60 # seconds of one day
+        for dmy in dmys:
+            day_existed, contents, n_contents = reformat('./', dmy[0], dmy[1], dmy[2], time_offset, contents,
+                                                         n_contents, reformatted_file)
+            if day_existed:
+                time_offset += 24 * 60 * 60 # seconds of one day
+    with open('%d%d-%d%d-reformatted.weights' % (start_month, start_year, end_month, end_year), 'wt') as weights_file:
+        for content_id in contents:
+            weights_file.write('%d,%d\n' % (content_id, contents[content_id]))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
