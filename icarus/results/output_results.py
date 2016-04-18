@@ -81,7 +81,7 @@ def print_cache_hit_rates(format, trace=True):
     for result_dict in dict_list:
         print '%s\t' % result_dict[0],
         for desc in result_dict[1]:
-            print '%s: %f \t' % (desc, result_dict[1][desc]),
+            print '%s: %f \t' % (desc, sum(result_dict[1][desc])/len(result_dict[1][desc])),
         print('')
 
 def determine_parameters(tree):
@@ -216,33 +216,38 @@ def assign_results(tree, rates, topology_params, trace_params, synthetic_experim
                 rates[policy_params['policy']][policy_params['hypothesis_check_period']][policy_params['hypothesis_check_A']][policy_params['hypothesis_check_epsilon']] = {}
 
             if policy_params['policy'] == 'LRU':
-                rates[policy_params['policy']][description] = k[1]
+                result_location = rates[policy_params['policy']]
             elif policy_params['policy'] == 'KLRU':
-                rates[policy_params['policy']][policy_params['segments']][policy_params['cached_segments']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['segments']][policy_params['cached_segments']]
             elif policy_params['policy'] == 'ARC':
-                rates[policy_params['policy']][description] = k[1]
+                result_location = rates[policy_params['policy']]
             elif policy_params['policy'] == 'SS':
-                rates[policy_params['policy']][description] = k[1]
+                result_location = rates[policy_params['policy']]
             elif policy_params['policy'] == 'DSCA':
-                rates[policy_params['policy']][policy_params['window_size']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['window_size']]
             elif policy_params['policy'] == '2DSCA':
-                rates[policy_params['policy']][policy_params['window_size']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['window_size']]
             elif policy_params['policy'] == 'DSCAAWS':
-                rates[policy_params['policy']][policy_params['hypothesis_check_period']][policy_params['hypothesis_check_A']][policy_params['hypothesis_check_epsilon']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['hypothesis_check_period']][policy_params['hypothesis_check_A']][policy_params['hypothesis_check_epsilon']]
             elif policy_params['policy'] == '2DSCAAWS':
-                rates[policy_params['policy']][policy_params['hypothesis_check_period']][policy_params['hypothesis_check_A']][policy_params['hypothesis_check_epsilon']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['hypothesis_check_period']][policy_params['hypothesis_check_A']][policy_params['hypothesis_check_epsilon']]
             elif policy_params['policy'] == 'DSCASW':
-                rates[policy_params['policy']][policy_params['subwindow_size']][policy_params['subwindows']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['subwindow_size']][policy_params['subwindows']]
             elif policy_params['policy'] == 'DSCAFT':
-                rates[policy_params['policy']][policy_params['window_size']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['window_size']]
             elif policy_params['policy'] == 'DSCAFS':
-                rates[policy_params['policy']][policy_params['window_size']][policy_params['lru_portion']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['window_size']][policy_params['lru_portion']]
             elif policy_params['policy'] == 'ADSCASTK':
-                rates[policy_params['policy']][policy_params['window_size']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['window_size']]
             elif policy_params['policy'] == 'ADSCAATK':
-                rates[policy_params['policy']][policy_params['window_size']][description] = k[1]
+                result_location = rates[policy_params['policy']][policy_params['window_size']]
             else:
                 print('error: policy %s unknown' % policy_params['policy'])
+
+            if description in result_location:
+                result_location[description].append(k[1])
+            else:
+                result_location[description] = [k[1]]
 
     return rates
 

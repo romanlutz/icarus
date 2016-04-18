@@ -15,6 +15,7 @@ import collections
 from icarus.registry import register_data_collector
 from icarus.tools import cdf
 from icarus.util import Tree, inheritdoc
+from collections import defaultdict
 
 
 __all__ = [
@@ -361,11 +362,11 @@ class CacheHitRatioCollector(DataCollector):
         self.per_node = per_node
         self.content_hits = content_hits
         self.session_count = 0
-        self.weighted_session_count = 0
         self.cache_hits = 0
         self.server_hits = 0
-        self.weighted_cache_hits = 0
-        self.weighted_server_hits = 0
+        self.weighted_cache_hits = defaultdict(int)
+        self.weighted_server_hits = defaultdict(int)
+
         if off_path_hits:
             self.off_path_hit_count = 0
         if per_node:
@@ -379,7 +380,6 @@ class CacheHitRatioCollector(DataCollector):
     @inheritdoc(DataCollector)
     def start_session(self, timestamp, receiver, content, weight):
         self.session_count += 1
-        self.weighted_session_count += weight
         self.current_weight = weight
         if self.off_path_hits:
             source = self.view.content_source(content)
@@ -390,7 +390,7 @@ class CacheHitRatioCollector(DataCollector):
     @inheritdoc(DataCollector)
     def cache_hit(self, node):
         self.cache_hits += 1
-        self.weighted_cache_hits += self.current_weight
+        self.weighted_cache_hits[self.current_weight] += 1
         if self.off_path_hits and node not in self.current_path:
             self.off_path_hit_count += 1
         if self.content_hits:
@@ -401,7 +401,7 @@ class CacheHitRatioCollector(DataCollector):
     @inheritdoc(DataCollector)
     def server_hit(self, node):
         self.server_hits += 1
-        self.weighted_server_hits += self.current_weight
+        self.weighted_server_hits[self.current_weight] += 1
         if self.content_hits:
             self.content_server_hits[self.current_content] += 1
         if self.per_node:
@@ -413,9 +413,19 @@ class CacheHitRatioCollector(DataCollector):
         hit_ratio = float(self.cache_hits)/float(n_session)
         results = Tree(**{'MEAN': hit_ratio})
 
-        n_weighted_session = self.weighted_cache_hits + self.weighted_server_hits
-        weighted_hit_ratio = float(self.weighted_cache_hits)/float(n_weighted_session)
+        n_weight_1_session = self.weighted_cache_hits[1] + self.weighted_server_hits[1]
+        hits_weight_2_or_more_session = sum([weight * self.weighted_cache_hits[weight] for weight in self.weighted_cache_hits if weight > 1])
+        misses_weight_2_or_more_session = sum([weight * self.weighted_server_hits[weight] for weight in self.weighted_server_hits if weight > 1])
+        n_weight_2_or_more_session = hits_weight_2_or_more_session + misses_weight_2_or_more_session
+        n_weighted_session = n_weight_1_session + n_weight_2_or_more_session
+
+        weighted_hit_ratio = float(self.weighted_cache_hits[1] + hits_weight_2_or_more_session)/float(n_weighted_session)
+        weighted_hit_ratio_sum = float(self.weighted_cache_hits[1])/float(n_weight_1_session) + float(hits_weight_2_or_more_session)/float(sum([self.weighted_cache_hits[weight] + self.weighted_server_hits[weight] for weight in self.weighted_server_hits if weight > 1]))
+        average_benefit = float(self.weighted_cache_hits[1] + hits_weight_2_or_more_session)/float(sum([self.weighted_cache_hits[weight] + self.weighted_server_hits[weight] for weight in self.weighted_server_hits]))
+
         results['WEIGHTED_CACHE_HIT_RATIO'] = weighted_hit_ratio
+        results['WEIGHTED_CACHE_HIT_RATIO_SUM'] = weighted_hit_ratio_sum
+        results['AVERAGE_BENEFIT'] = average_benefit
 
         if self.off_path_hits:
             results['MEAN_OFF_PATH'] = self.off_path_hit_count/n_session

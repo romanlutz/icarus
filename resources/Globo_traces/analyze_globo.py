@@ -87,7 +87,6 @@ def determine_format_and_content_id(request):
     before_ism, ism_split, after_ism = request['request_uri'].partition('.ism')
 
     # take given ID and append segment number if one exists
-    # some of the formats may need adjustments based on the exact details
 
     if until_question_mark[-7:] == '.webvtt':
         format = '.webvtt'
@@ -103,26 +102,19 @@ def determine_format_and_content_id(request):
         content_id = int(until_question_mark.rpartition('-manifest')[0].rpartition('/')[2] + until_question_mark.rpartition('.ts')[0].rpartition('-')[2])
     elif until_question_mark[-5:] == '.m3u8':
         format = 'other .m3u8'
-        # content_id = int(until_question_mark.rpartition('-manifest')[0].rpartition('/')[2])
-        # again there are some requests with audio-eng and video-eng, currently not handled
+        content_id = int(until_question_mark.rpartition('-manifest')[0].rpartition('/')[2])
     elif 'QualityLevels' in after_ism and ('Fragments' in after_ism or 'KeyFrames' in after_ism):
         format = '.ism with QualityLevels and Fragments/KeyFrames configuration'
-        # content_id = int(before_ism.rpartition('-manifest')[0].rpartition('/')[2])
-        # depending on the Fragments/KeyFrames specification it may be audio-por or video
-        # QualityLevels may also be of interest, but we can't handle all that right now
+        content_id = int(before_ism.rpartition('-manifest')[0].rpartition('/')[2])
     elif '/manifest' == after_ism.lower() or until_question_mark[-13:] == '.ism/manifest':
         format = '.ism/manifest'
         content_id = int(before_ism.rpartition('-manifest')[0].rpartition('/')[2])
     elif 'manifest' in after_ism and 'Seg' in after_ism and 'Frag' in after_ism:
         format = '.ism with manifest and Seg/Frag index'
-        # content_id = int(before_ism.rpartition('-manifest')[0].rpartition('/')[2])
-        # here the specific start segment is mentioned with audio=x, but we can't handle that at
-        # the moment
+        content_id = int(before_ism.rpartition('-manifest')[0].rpartition('/')[2])
     elif ism_split == '.ism' and '.f4m' in after_ism:
         format = '.ism and .f4m'
-        # content_id = int(before_ism.rpartition('-manifest')[0].rpartition('/')[2])
-        # we're not handling these at the moment since there is an audio-eng and video-eng part
-        # that's unclear at the moment
+        content_id = int(before_ism.rpartition('-manifest')[0].rpartition('/')[2])
     elif until_question_mark[-4:] == '.mpd':
         format = '.mpd'
         content_id = int(before_ism.rpartition('-manifest')[0].rpartition('/')[2])
