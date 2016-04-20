@@ -45,7 +45,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = cpu_count()
+N_PROCESSES = 28 #cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -60,9 +60,9 @@ RESULTS_FORMAT = 'SPICKLE'
 
 # whether the experiments will be based on synthetic data or traces
 # some later steps are relevant only for synthetic or trace-driven experiments
-SYNTHETIC_EXPERIMENT = False
+SYNTHETIC_EXPERIMENT = True
 TRACE_DRIVEN_EXPERIMENTS = False
-DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS = True
+DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS = False
 
 # List of metrics to be measured in the experiments
 # The implementation of data collectors are located in ./icarus/execution/collectors.py
@@ -80,9 +80,9 @@ DATA_COLLECTORS = {
 # 1. define a fraction of the number of contents which is assigned to every node, set NETWORK_CACHE_PER_NODE
 # 2. define a fraction of the number of contents which is distributed over all nodes, set NETWORK_CACHE_ALL_NODES
 # 3. define an absolute number as the total cache for the whole network
-NETWORK_CACHE_PER_NODE = None  #0.01
+NETWORK_CACHE_PER_NODE = 0.01
 NETWORK_CACHE_ALL_NODES = None
-NETWORK_CACHE_ABSOLUTE = 1000
+NETWORK_CACHE_ABSOLUTE = None  #1000
 if NETWORK_CACHE_PER_NODE is not None:
     NETWORK_CACHE = NETWORK_CACHE_PER_NODE
 elif NETWORK_CACHE_ALL_NODES is not None:
@@ -101,10 +101,10 @@ STRATEGIES = [
     # 'HR_MULTICAST',    # Multicast hash-routing
     # 'HR_HYBRID_AM',    # Hybrid Asymm-Multicast hash-routing
     # 'HR_HYBRID_SM',    # Hybrid Symm-Multicast hash-routing
-    #'CL4M',            # Cache less for more
-    #'PROB_CACHE',      # ProbCache
-    #'LCD',             # Leave Copy Down
-    #'RAND_CHOICE',     # Random choice: cache in one random cache on path
+    'CL4M',            # Cache less for more
+    'PROB_CACHE',      # ProbCache
+    'LCD',             # Leave Copy Down
+    'RAND_CHOICE',     # Random choice: cache in one random cache on path
     # 'RAND_BERNOULLI',  # Random Bernoulli: cache randomly in caches on path
 ]
 
@@ -120,8 +120,8 @@ use_SS = False
 use_DSCA = True
 use_2DSCA = True
 use_DSCAAWS = True
-use_2DSCAAWS = True
-use_DSCASW = True
+use_2DSCAAWS = False
+use_DSCASW = False
 use_DSCAFT = False
 use_DSCAFS = False
 use_ADSCASTK = False
