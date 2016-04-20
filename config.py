@@ -45,7 +45,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = cpu_count()
+N_PROCESSES = 28#cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -280,8 +280,8 @@ if SYNTHETIC_EXPERIMENT:
     # Remove topologies not needed
     TOPOLOGIES = {
         'PATH': {'n': [7]},
-        'TREE': {'k': [2], 'h': [4]},
-        'GEANT': {},
+        #'TREE': {'k': [2], 'h': [4]},
+        #'GEANT': {},
         #'GEANT_2': {},
         #'WIDE': {},
         #'GARR': {},
