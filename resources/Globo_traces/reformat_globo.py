@@ -20,7 +20,10 @@ def reformat(path, day, month, year, time_offset, contents, n_contents, out_file
 
                     if request['http_request_name'] == 'GET' and request['code'] < 300:
 
-                        _, content_id = determine_format_and_content_id(request)
+                        try:
+                            _, content_id = determine_format_and_content_id(request)
+                        except:
+                            content_id = None
 
                         # take content IDs for generating the trace only if they have been found (not None)
                         if content_id is not None:
