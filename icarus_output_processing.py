@@ -4,8 +4,8 @@ import time
 
 def main():
     #draw_cache_level_proportions('plots', '.spickle')
-    #print_results_full('.spickle')
-    print_cache_hit_rates('.spickle', trace=False)
+    print_results_full('.spickle')
+    #print_cache_hit_rates('.spickle', trace=False)
 
 
 if __name__ == "__main__":

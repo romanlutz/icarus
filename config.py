@@ -61,6 +61,8 @@ RESULTS_FORMAT = 'SPICKLE'
 # whether the experiments will be based on synthetic data or traces
 # some later steps are relevant only for synthetic or trace-driven experiments
 SYNTHETIC_EXPERIMENT = True
+TRACE_DRIVEN_EXPERIMENTS = False
+DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS = False
 
 # List of metrics to be measured in the experiments
 # The implementation of data collectors are located in ./icarus/execution/collectors.py
@@ -78,9 +80,9 @@ DATA_COLLECTORS = {
 # 1. define a fraction of the number of contents which is assigned to every node, set NETWORK_CACHE_PER_NODE
 # 2. define a fraction of the number of contents which is distributed over all nodes, set NETWORK_CACHE_ALL_NODES
 # 3. define an absolute number as the total cache for the whole network
-NETWORK_CACHE_PER_NODE = None  #0.01
+NETWORK_CACHE_PER_NODE = 0.01
 NETWORK_CACHE_ALL_NODES = None
-NETWORK_CACHE_ABSOLUTE = 1000
+NETWORK_CACHE_ABSOLUTE = None
 if NETWORK_CACHE_PER_NODE is not None:
     NETWORK_CACHE = NETWORK_CACHE_PER_NODE
 elif NETWORK_CACHE_ALL_NODES is not None:
@@ -240,7 +242,7 @@ if use_LRU:
                    hypothesis_check_A=True, hypothesis_check_epsilon=True)
 
 if use_KLRU:
-    for segments in [2, 3]:
+    for segments in [2]:
         for cached_segments in [1]:
             CACHE_POLICY.append('KLRU')
             CACHE_POLICY_PARAMETERS['cached_segments'].append(cached_segments)
@@ -268,7 +270,7 @@ if SYNTHETIC_EXPERIMENT:
 
     # Mandelbrot-Zipf alpha and q parameters for non-trace-driven simulation
     ALPHA = [0.5, 0.75, 1]
-    Q = [0, 5]
+    Q = [0, 5, 50]
 
     # random seeds given to workload creating library
     seeds = range(N_REPLICATIONS)
@@ -281,8 +283,8 @@ if SYNTHETIC_EXPERIMENT:
         'TREE': {'k': [2], 'h': [4]},
         'GEANT': {},
         #'GEANT_2': {},
-        'WIDE': {},
-        'GARR': {},
+        #'WIDE': {},
+        #'GARR': {},
         #'GARR_2': {},
         # 'TISCALI': {},
         # 'TISCALI_2': {}
@@ -336,8 +338,8 @@ if SYNTHETIC_EXPERIMENT:
                             EXPERIMENT_QUEUE.append(experiment)
 
 
-# trace driven simulation configuration:
-else:
+# deterministic trace driven simulation configuration:
+if DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS:
     # if running a trace-driven simulation, REQ_FILE is the path to the trace file
     traces = []
     with open('resources/trace_overview.csv', 'r') as trace_file:
