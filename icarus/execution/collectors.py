@@ -420,8 +420,15 @@ class CacheHitRatioCollector(DataCollector):
         n_weighted_session = n_weight_1_session + n_weight_2_or_more_session
 
         weighted_hit_ratio = float(self.weighted_cache_hits[1] + hits_weight_2_or_more_session)/float(n_weighted_session)
-        weighted_hit_ratio_sum = float(self.weighted_cache_hits[1])/float(n_weight_1_session) + float(hits_weight_2_or_more_session)/float(sum([self.weighted_cache_hits[weight] + self.weighted_server_hits[weight] for weight in self.weighted_server_hits if weight > 1]))
         average_benefit = float(self.weighted_cache_hits[1] + hits_weight_2_or_more_session)/float(sum([self.weighted_cache_hits[weight] + self.weighted_server_hits[weight] for weight in self.weighted_server_hits]))
+
+        sum_of_requests_weight_2_or_more = sum([self.weighted_cache_hits[weight] + self.weighted_server_hits[weight] for weight in self.weighted_server_hits if weight > 1])
+        if n_weight_1_session == 0:
+            weighted_hit_ratio_sum = float(hits_weight_2_or_more_session)/float(sum_of_requests_weight_2_or_more)
+        elif sum_of_requests_weight_2_or_more == 0:
+            weighted_hit_ratio_sum = float(self.weighted_cache_hits[1])/float(n_weight_1_session)
+        else:
+            weighted_hit_ratio_sum = float(self.weighted_cache_hits[1])/float(n_weight_1_session) + float(hits_weight_2_or_more_session)/float(sum_of_requests_weight_2_or_more)
 
         results['WEIGHTED_CACHE_HIT_RATIO'] = weighted_hit_ratio
         results['WEIGHTED_CACHE_HIT_RATIO_SUM'] = weighted_hit_ratio_sum
