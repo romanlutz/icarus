@@ -278,18 +278,24 @@ class TraceDrivenWorkload(object):
     def __iter__(self):
         req_counter = 0
         t_event = 0.0
-        with open(self.reqs_file, 'r', buffering=self.buffering) as f:
-            for content in f:
-                t_event += (random.expovariate(self.rate))
+
+        with open(self.reqs_file, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+
+            for row in csv_reader:
+                t_event = float(row[0])
                 if self.beta == 0:
                     receiver = random.choice(self.receivers)
                 else:
-                    receiver = self.receivers[self.receiver_dist.rv()-1]
+                    receiver = self.receivers[self.receiver_dist.rv() - 1]
+                content = int(row[2])
+                weight = self.contents[content]
+
                 log = (req_counter >= self.n_warmup)
-                event = {'receiver': receiver, 'content': content, 'log': log, 'weight': self.contents[content]}
+                event = {'receiver': receiver, 'content': content, 'log': log, 'weight': weight}
                 yield (t_event, event)
                 req_counter += 1
-                if(req_counter >= self.n_warmup + self.n_measured):
+                if (req_counter >= self.n_warmup + self.n_measured):
                     raise StopIteration()
             raise ValueError("Trace did not contain enough requests")
 
