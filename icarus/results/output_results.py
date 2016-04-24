@@ -1,32 +1,37 @@
 import csv
 import os
-
+from collections import defaultdict
 from icarus.io.readwrite import read_results
+from icarus.results.visualize import draw_cache_hit_ratios
 
-def print_results_full(format):
-    for tree in read_results('results%s' % format, format):
+def print_results_full(filename, format):
+    for tree in read_results('%s%s' % (filename, format), format):
         for k in tree[0]:
             print k
         for k in tree[1]:
             print k
         print ''
 
-def print_cache_hit_rates(format, trace=True):
-    rates = {}
+def print_cache_hit_rates(filename, format, goal_tuple, plot=False):
+    f = lambda: defaultdict(f)
+    rates = defaultdict(f)
+    descriptions = []
 
-    for tree in read_results('results%s' % format, format):
+    for tree in read_results('%s%s' % (filename, format), format):
         topology_params, trace_params, synthetic_experiment_params, policy_params, strategy, cache_size = determine_parameters(tree)
 
-        rates = assign_results(tree, rates, topology_params, trace_params, synthetic_experiment_params, policy_params, strategy)
+        rates, descriptions = assign_results(goal_tuple, tree, rates, descriptions, topology_params, trace_params, synthetic_experiment_params, policy_params, strategy)
 
     policies = ['ARC', 'LRU', 'KLRU', 'SS', 'DSCA', '2DSCA', 'DSCAAWS', '2DSCAAWS', 'DSCASW', 'DSCAFT', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
+    strategies = ['LCE', 'LCD', 'CL4M', 'PROB_CACHE', 'RAND_CHOICE']
 
     dict_list = []
 
     for policy in policies:
         if policy in rates.keys():
             if policy in ['ARC', 'LRU', 'SS']:
-                dict_list.append((policy, rates[policy]))
+                for strategy in strategies:
+                    dict_list.append(put_results_if_available('%s + %s' % (policy, strategy), rates[policy], strategy))
             elif policy == 'KLRU':
                 segment_values = rates[policy].keys()
                 segment_values.sort()
@@ -34,13 +39,15 @@ def print_cache_hit_rates(format, trace=True):
                     cached_segment_values = rates[policy][segment_value].keys()
                     cached_segment_values.sort()
                     for cached_segment_value in cached_segment_values:
-                        dict_list.append(('KLRU (%d,%d)' % (segment_value, cached_segment_value),
-                                          rates[policy][segment_value][cached_segment_value]))
+                        for strategy in strategies:
+                            dict_list.append(put_results_if_available('KLRU (%d,%d) + %s' % (segment_value, cached_segment_value, strategy),
+                                          rates[policy][segment_value][cached_segment_value], strategy))
             elif policy in ['DSCA', '2DSCA', 'DSCAFT']:
                 window_sizes = rates[policy].keys()
                 window_sizes.sort()
                 for window_size in window_sizes:
-                    dict_list.append(('%s %d' % (policy, window_size), rates[policy][window_size]))
+                    for strategy in strategies:
+                        dict_list.append(put_results_if_available('%s %d + %s' % (policy, window_size, strategy), rates[policy][window_size], strategy))
             elif policy in ['DSCAAWS', '2DSCAAWS']:
                 periods = rates[policy].keys()
                 periods.sort()
@@ -51,8 +58,9 @@ def print_cache_hit_rates(format, trace=True):
                         hypo_epsilons = rates[policy][period][A].keys()
                         hypo_epsilons.sort()
                         for epsilon in hypo_epsilons:
-                            dict_list.append(('%s %d %f %f' % (policy, period, A, epsilon),
-                                             rates[policy][period][A][epsilon]))
+                            for strategy in strategies:
+                                dict_list.append(put_results_if_available('%s %d %f %f + %s' % (policy, period, A, epsilon, strategy),
+                                             rates[policy][period][A][epsilon], strategy))
             elif policy == 'DSCASW':
                 subwindow_sizes = rates[policy].keys()
                 subwindow_sizes.sort()
@@ -60,8 +68,9 @@ def print_cache_hit_rates(format, trace=True):
                     subwindows_values = rates[policy][subwindow_size].keys()
                     subwindows_values.sort()
                     for subwindows in subwindows_values:
-                        dict_list.append(('DSCASW (%d %d)' % (subwindow_size, subwindows),
-                                          rates[policy][subwindow_size][subwindows]))
+                        for strategy in strategies:
+                            dict_list.append(put_results_if_available('DSCASW (%d %d) + %s' % (subwindow_size, subwindows, strategy),
+                                          rates[policy][subwindow_size][subwindows], strategy))
             elif policy == 'DSCAFS':
                 window_sizes = rates[policy].keys()
                 window_sizes.sort()
@@ -69,20 +78,46 @@ def print_cache_hit_rates(format, trace=True):
                     lru_portions = rates[policy][window_size].keys()
                     lru_portions.sort()
                     for lru_portion in lru_portions:
-                        dict_list.append(('DSCAFS (%d %f)' % (window_size, lru_portion),
-                                          rates[policy][window_size][lru_portion]))
+                        for strategy in strategies:
+                            dict_list.append(put_results_if_available('DSCAFS (%d %f) + %s' % (window_size, lru_portion, strategy),
+                                          rates[policy][window_size][lru_portion], strategy))
             elif policy in ['ADSCASTK', 'ADSCAATK']:
                 window_sizes = rates[policy].keys()
                 window_sizes.sort()
                 for window_size in window_sizes:
-                    dict_list.append(('%s %d' % (policy, window_size), rates[policy][window_size]))
+                    for strategy in strategies:
+                        dict_list.append(put_results_if_available('%s %d + %s' % (policy, window_size, strategy), rates[policy][window_size], strategy))
 
+    descriptions.sort()
+    print '\t',
+    for description in descriptions:
+        print '%s\t' % description,
+    print('')
+
+    dict_list_per_desc = defaultdict(list)
 
     for result_dict in dict_list:
-        print '%s\t' % result_dict[0],
-        for desc in result_dict[1]:
-            print '%s: %f \t' % (desc, sum(result_dict[1][desc])/len(result_dict[1][desc])),
-        print('')
+        if result_dict[1] != 'fail':
+            print '%s\t' % result_dict[0],
+
+            for desc in descriptions:
+                if desc in result_dict[1]:
+                    average_hit_rate = sum(result_dict[1][desc])/len(result_dict[1][desc])
+                    print '%f \t' % average_hit_rate,
+                    dict_list_per_desc[desc].append((result_dict[0], average_hit_rate))
+                else:
+                    print 'fail\t'
+                    dict_list_per_desc[desc].append('fail')
+            print('')
+
+    if plot:
+        for desc in dict_list_per_desc:
+            draw_cache_hit_ratios(dict_list_per_desc[desc], desc)
+
+def put_results_if_available(desc, dict, strategy):
+    if strategy not in dict:
+        dict[strategy] = 'fail'
+    return (desc, dict[strategy])
 
 def determine_parameters(tree):
     topology_params = {}
@@ -174,7 +209,7 @@ def determine_parameters(tree):
 
     return topology_params, trace_params, synthetic_experiment_params, policy_params, strategy, cache_size
 
-def assign_results(tree, rates, topology_params, trace_params, synthetic_experiment_params, policy_params, strategy):
+def assign_results(goal_tuple, tree, rates, descriptions, topology_params, trace_params, synthetic_experiment_params, policy_params, strategy):
 
     if trace_params.keys() != []:
         # deterministic trace-driven experiments
@@ -187,34 +222,9 @@ def assign_results(tree, rates, topology_params, trace_params, synthetic_experim
             description += ' %s=%s' % (param_name, topology_params[param_name])
         for param_name in synthetic_experiment_params:
             description += ' %s=%s' % (param_name, synthetic_experiment_params[param_name])
-        description += ' %s' % strategy
-
 
     for k in tree[1]:
-        if k[0] == ('CACHE_HIT_RATIO', 'PER_NODE_CACHE_HIT_RATIO', 1):
-            if policy_params['policy'] not in rates.keys():
-                rates[policy_params['policy']] = {}
-            for param_name in ['window_size', 'segments', 'subwindow_size', 'hypothesis_check_period']:
-                if param_name in policy_params and policy_params[param_name] is not None \
-                        and param_name not in rates[policy_params['policy']].keys():
-                    rates[policy_params['policy']][policy_params[param_name]] = {}
-            if 'cached_segments' in policy_params and policy_params['cached_segments'] is not None \
-                    and 'cached_segments' not in rates[policy_params['policy']][policy_params['segments']].keys():
-                rates[policy_params['policy']][policy_params['segments']][policy_params['cached_segments']] = {}
-            if 'subwindows' in policy_params and policy_params['subwindows'] is not None \
-                    and 'subwindows' not in rates[policy_params['policy']][policy_params['subwindow_size']].keys():
-                rates[policy_params['policy']][policy_params['subwindow_size']][policy_params['subwindows']] = {}
-            if 'lru_portion' in policy_params and policy_params['lru_portion'] is not None \
-                    and 'lru_portion' not in rates[policy_params['policy']]['window_size'].keys():
-                rates[policy_params['policy']][policy_params['window_size']][policy_params['lru_portion']] = {}
-            if 'hypothesis_check_A' in policy_params and policy_params['hypothesis_check_A'] is not None \
-                    and 'hypothesis_check_A' not in rates[policy_params['policy']][policy_params['hypothesis_check_period']].keys():
-                rates[policy_params['policy']][policy_params['hypothesis_check_period']][policy_params['hypothesis_check_A']] = {}
-            if 'hypothesis_check_epsilon' in policy_params and policy_params['hypothesis_check_epsilon'] is not None \
-                    and 'hypothesis_check_epsilon' not in \
-                            rates[policy_params['policy']][policy_params['hypothesis_check_period']][policy_params['hypothesis_check_A']].keys():
-                rates[policy_params['policy']][policy_params['hypothesis_check_period']][policy_params['hypothesis_check_A']][policy_params['hypothesis_check_epsilon']] = {}
-
+        if k[0] == goal_tuple:
             if policy_params['policy'] == 'LRU':
                 result_location = rates[policy_params['policy']]
             elif policy_params['policy'] == 'KLRU':
@@ -242,14 +252,17 @@ def assign_results(tree, rates, topology_params, trace_params, synthetic_experim
             elif policy_params['policy'] == 'ADSCAATK':
                 result_location = rates[policy_params['policy']][policy_params['window_size']]
             else:
-                print('error: policy %s unknown' % policy_params['policy'])
+                print('error: policy %s or strategy %s unknown' % (policy_params['policy'], strategy))
 
             if description in result_location:
-                result_location[description].append(k[1])
+                result_location[strategy][description].append(k[1])
             else:
-                result_location[description] = [k[1]]
+                result_location[strategy][description] = [k[1]]
 
-    return rates
+            if description not in descriptions:
+                descriptions.append(description)
+
+    return rates, descriptions
 
 
 def create_path_if_necessary(path, dir):

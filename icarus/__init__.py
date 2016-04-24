@@ -33,6 +33,7 @@ __modules_to_register = [
      'icarus.scenarios.cacheplacement',
      'icarus.scenarios.workload',
      'icarus.tools.traces',
+     'icarus.results.visualize',
                          ]
 
 for m in __modules_to_register:

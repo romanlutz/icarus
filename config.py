@@ -280,8 +280,8 @@ if SYNTHETIC_EXPERIMENT:
     # Remove topologies not needed
     TOPOLOGIES = {
         #'PATH': {'n': [7]},
-        'TREE': {'k': [2], 'h': [4]},
-        #'GEANT': {},
+        #'TREE': {'k': [2], 'h': [4]},
+        'GEANT': {},
         #'GEANT_2': {},
         #'WIDE': {},
         #'GARR': {},

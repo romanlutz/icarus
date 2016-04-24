@@ -9,15 +9,16 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.colors import Normalize
 
 from icarus.io.readwrite import read_results
 from icarus.models import policy_parameter_usage
-from output_results import determine_parameters
 
 __all__ = [
        'draw_stack_deployment',
        'draw_network_load',
-       'draw_cache_level_proportions'
+       'draw_cache_level_proportions',
+       'draw_cache_hit_ratios'
           ]
 
 
@@ -117,8 +118,10 @@ def draw_network_load(topology, result, filename, plotdir):
                      with_labels=False)
     plt.savefig(plt.savefig(os.path.join(plotdir, filename), bbox_inches='tight'))
 
-def draw_cache_level_proportions(plotdir, format):
-    result = read_results('results%s' % format, format)
+def draw_cache_level_proportions(plotdir, filename, format):
+    from output_results import determine_parameters
+
+    result = read_results('%s%s' % (filename, format), format)
     for tree in result:
         trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion, \
            hypothesis_check_period, hypothesis_check_A, hypothesis_check_epsilon = determine_parameters(tree)
@@ -176,3 +179,47 @@ def draw_cache_level_proportions(plotdir, format):
                 pdf.savefig(fig)
                 pdf.close()
                 plt.close()
+
+
+def draw_cache_hit_ratios(results, data_desc):
+    filename = '%s.pdf' % data_desc
+    plotdir = 'plots/cache_hit_rates/'
+
+    path = os.path.join(plotdir, filename)
+
+    # ensure the path exists and create it if necessary
+    directories = path.split('/')[1:-1]
+    current_path = plotdir
+    for directory in directories:
+        current_path += '/' + directory
+        if not os.path.isdir(current_path):
+            os.makedirs(current_path)
+
+    pdf = PdfPages(path)
+    fig = plt.figure()
+
+    policy_ticks = []
+    strategy_ticks = [0] * 5
+    values = []
+    group_index = -1
+
+    for i, (desc, result) in enumerate(results, start=0):
+        if i % 5 == 0:
+            group_index += 1
+            values.append([])
+            policy_ticks.append(desc.partition(' +')[0])
+        strategy_ticks[i % 5] = desc.partition('+ ')[2]
+        values[group_index].append(result)
+
+    plt.pcolor(np.array(values), cmap=plt.cm.seismic)
+
+    plt.xticks(np.linspace(0.5, len(strategy_ticks) - 0.5, len(strategy_ticks)), strategy_ticks, rotation=90)
+    plt.yticks(np.linspace(0.5, len(policy_ticks) - 0.5, len(policy_ticks)), policy_ticks)
+    plt.xlabel('strategy')
+    plt.ylabel('policy')
+    plt.gcf().tight_layout()
+    plt.colorbar()
+
+    pdf.savefig(fig)
+    pdf.close()
+    plt.close()
