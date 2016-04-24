@@ -45,7 +45,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = cpu_count()
+N_PROCESSES = 28 #cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -60,8 +60,8 @@ RESULTS_FORMAT = 'SPICKLE'
 
 # whether the experiments will be based on synthetic data or traces
 # some later steps are relevant only for synthetic or trace-driven experiments
-SYNTHETIC_EXPERIMENT = True
-TRACE_DRIVEN_EXPERIMENTS = False
+SYNTHETIC_EXPERIMENT = False
+TRACE_DRIVEN_EXPERIMENTS = True
 DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS = False
 
 # List of metrics to be measured in the experiments
@@ -259,9 +259,6 @@ if SYNTHETIC_EXPERIMENT:
     # This is necessary for extracting confidence interval of selected metrics
     N_REPLICATIONS = 1
 
-    # Number of requests per second (over the whole network)
-    REQ_RATE = 1.0
-
     # number of contents
     N_CONTENTS = 100000
 
@@ -311,7 +308,6 @@ if SYNTHETIC_EXPERIMENT:
                                                       'n_warmup': N_CONTENTS,
                                                       'n_measured': N_REQUESTS - N_CONTENTS,
                                                       'weights': 'UNIFORM',
-                                                      'rate': REQ_RATE,
                                                       'seed': seeds[rep]
                                                       }
                             experiment['cache_placement']['name'] = 'UNIFORM'
@@ -337,6 +333,77 @@ if SYNTHETIC_EXPERIMENT:
 
                             EXPERIMENT_QUEUE.append(experiment)
 
+
+if TRACE_DRIVEN_EXPERIMENTS:
+    # if running a trace-driven simulation, REQ_FILE is the path to the trace file
+    traces = []
+    with open('resources/trace_overview.csv', 'r') as trace_file:
+        csv_reader = csv.reader(trace_file)
+        i = 1
+        for line in csv_reader:
+            if i == 7:
+                traces.append((line[0], int(line[1]), line[2]))
+            i += 1
+
+    # List of topologies tested
+    # Topology implementations are located in ./icarus/scenarios/topology.py
+    # Remove topologies not needed
+    TOPOLOGIES = {
+        #'PATH': {'n': [7]},
+        #'TREE': {'k': [2], 'h': [4]},
+        'GEANT': {},
+        #'GEANT_2': {},
+        #'WIDE': {},
+        #'GARR': {},
+        #'GARR_2': {},
+        # 'TISCALI': {},
+        # 'TISCALI_2': {}
+    }
+
+    # the warmup phase in which cache hits and misses are not counted
+    WARMUP = 10000
+
+    # Create experiments multiplexing all desired parameters
+    for trace_name, N_REQUESTS, weights in traces:
+        for strategy in STRATEGIES:
+            for topology in TOPOLOGIES:
+                param_names = TOPOLOGIES[topology].keys()
+                no_params = param_names == []
+                if not no_params:
+                    topology_param_combinations = list(
+                        itertools.product(*[TOPOLOGIES[topology][param_name] for param_name in param_names]))
+                else:
+                    topology_param_combinations = [None]
+
+                for topology_configuration_index, topology_configuration in enumerate(topology_param_combinations):
+                    for cache_policy_index, cache_policy in enumerate(CACHE_POLICY):
+                        experiment = Tree()
+                        experiment['workload'] = {'name': 'TRACE_DRIVEN',
+                                                  'n_warmup': WARMUP,
+                                                  'n_measured': N_REQUESTS - WARMUP,
+                                                  'reqs_file': 'resources/' + trace_name,
+                                                  'weights': weights
+                                                  }
+                        experiment['cache_placement']['name'] = 'UNIFORM'
+                        experiment['content_placement']['name'] = 'UNIFORM'
+                        experiment['strategy']['name'] = strategy
+
+                        experiment['topology']['name'] = topology
+                        if not no_params:
+                            for index, param_name in enumerate(param_names):
+                                experiment['topology'][param_name] = topology_configuration[index]
+
+                        experiment['cache_policy']['name'] = cache_policy
+                        for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
+                            experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
+                        experiment['cache_placement']['network_cache_per_node'] = NETWORK_CACHE_PER_NODE
+                        experiment['cache_placement']['network_cache_all_nodes'] = NETWORK_CACHE_ALL_NODES
+                        experiment['cache_placement']['network_cache_absolute'] = NETWORK_CACHE_ABSOLUTE
+                        experiment[
+                            'desc'] = "trace: %s, strategy: %s, cache policy: %s" \
+                                      % (trace_name, strategy, cache_policy)
+
+                        EXPERIMENT_QUEUE.append(experiment)
 
 # deterministic trace driven simulation configuration:
 if DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS:

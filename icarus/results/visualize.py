@@ -182,7 +182,7 @@ def draw_cache_level_proportions(plotdir, filename, format):
 
 
 def draw_cache_hit_ratios(results, data_desc):
-    filename = '%s.pdf' % data_desc
+    filename = '%s.png' % data_desc
     plotdir = 'plots/cache_hit_rates/'
 
     path = os.path.join(plotdir, filename)
@@ -195,19 +195,17 @@ def draw_cache_hit_ratios(results, data_desc):
         if not os.path.isdir(current_path):
             os.makedirs(current_path)
 
-    pdf = PdfPages(path)
-    fig = plt.figure()
-
     policy_ticks = []
     strategy_ticks = [0] * 5
     values = []
     group_index = -1
+    results = results[::-1]
 
     for i, (desc, result) in enumerate(results, start=0):
         if i % 5 == 0:
             group_index += 1
             values.append([])
-            policy_ticks.append(desc.partition(' +')[0])
+            policy_ticks.append(' '.join(desc.partition(' +')[0].split(' ')[:2]))
         strategy_ticks[i % 5] = desc.partition('+ ')[2]
         values[group_index].append(result)
 
@@ -217,9 +215,8 @@ def draw_cache_hit_ratios(results, data_desc):
     plt.yticks(np.linspace(0.5, len(policy_ticks) - 0.5, len(policy_ticks)), policy_ticks)
     plt.xlabel('strategy')
     plt.ylabel('policy')
+    plt.gca().set_aspect('equal')
     plt.gcf().tight_layout()
     plt.colorbar()
-
-    pdf.savefig(fig)
-    pdf.close()
+    plt.savefig(path, bbox_inches='tight')
     plt.close()

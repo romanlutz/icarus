@@ -239,6 +239,9 @@ class TraceDrivenWorkload(object):
         The network-wide mean rate of requests per second
     beta : float, optional
         Spatial skewness of requests rates
+    weights : str
+        The path to the weights file. If none is specified (either set weights to None or 'UNIFORM')
+        all weights are set to 1.
         
     Returns
     -------
@@ -248,24 +251,22 @@ class TraceDrivenWorkload(object):
         dictionary of event attributes.
     """
     
-    def __init__(self, topology, reqs_file, contents_file, n_contents,
-                 n_warmup, n_measured, rate=1.0, beta=0, **kwargs):
+    def __init__(self, topology, reqs_file, weights,
+                 n_warmup, n_measured, rate=1.0, beta=0,  **kwargs):
         """Constructor"""
         if beta < 0:
             raise ValueError('beta must be positive')
         # Set high buffering to avoid one-line reads
         self.buffering = 64*1024*1024
-        self.n_contents = n_contents
         self.n_warmup = n_warmup
         self.n_measured = n_measured
         self.reqs_file = reqs_file
         self.rate = rate
         self.receivers = [v for v in topology.nodes_iter() 
                           if topology.node[v]['stack'][0] == 'receiver']
-        self.contents = []
-        with open(contents_file, 'r', buffering=self.buffering) as f:
-            for content in f:
-                self.contents.append(content)
+
+        self.n_contents, self.contents = assign_weights(weights)
+
         self.beta = beta
         if beta != 0:
             degree = nx.degree(topology)
@@ -285,7 +286,7 @@ class TraceDrivenWorkload(object):
                 else:
                     receiver = self.receivers[self.receiver_dist.rv()-1]
                 log = (req_counter >= self.n_warmup)
-                event = {'receiver': receiver, 'content': content, 'log': log, 'weight': 1}
+                event = {'receiver': receiver, 'content': content, 'log': log, 'weight': self.contents[content]}
                 yield (t_event, event)
                 req_counter += 1
                 if(req_counter >= self.n_warmup + self.n_measured):
@@ -381,8 +382,9 @@ class DeterministicTraceDrivenWorkload(object):
         The number of logged requests after the warmup
     reqs_file : str
         The path to the requests file
-    weights_file : str
-        The path to the weights file. If none is specified all weights are set to 1.
+    weights : str
+        The path to the weights file. If none is specified (either set weights to None or 'UNIFORM')
+        all weights are set to 1.
 
     Returns
     -------
@@ -397,28 +399,8 @@ class DeterministicTraceDrivenWorkload(object):
         self.n_warmup = n_warmup
         self.n_measured = n_measured
         self.reqs_file = reqs_file
-        self.n_contents = 0
-        self.contents = {}
-        uniform_weights = weights is None or weights == 'UNIFORM'
 
-        if not uniform_weights:
-            # read weights and save them in contents dictionary under the corresponding ID
-            with open(weights, 'r') as csv_file:
-                csv_reader = csv.reader(csv_file)
-                for row in csv_reader:
-                    self.n_contents += 1
-                    content = int(row[0])
-                    weight = int(row[1])
-                    self.contents[content] = weight
-        else:
-            # assign uniform weights
-            with open(self.reqs_file, 'r') as csv_file:
-                csv_reader = csv.reader(csv_file)
-                for row in csv_reader:
-                    content = int(row[2])
-                    if content not in self.contents:
-                        self.n_contents += 1
-                        self.contents[content] = 1
+        self.n_contents, self.contents = assign_weights(weights)
 
     def __iter__(self):
         req_counter = 0
@@ -438,3 +420,30 @@ class DeterministicTraceDrivenWorkload(object):
                 if(req_counter >= self.n_warmup + self.n_measured):
                     raise StopIteration()
             raise ValueError("Trace did not contain enough requests")
+
+
+def assign_weights(weights):
+    uniform_weights = weights is None or weights == 'UNIFORM'
+    n_contents = 0
+    contents = {}
+
+    if not uniform_weights:
+        # read weights and save them in contents dictionary under the corresponding ID
+        with open(weights, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                n_contents += 1
+                content = int(row[0])
+                weight = int(row[1])
+                contents[content] = weight
+    else:
+        # assign uniform weights
+        with open(self.reqs_file, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                content = int(row[2])
+                if content not in self.contents:
+                    n_contents += 1
+                    contents[content] = 1
+
+    return n_contents, contents
