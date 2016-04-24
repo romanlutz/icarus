@@ -265,7 +265,7 @@ class TraceDrivenWorkload(object):
         self.receivers = [v for v in topology.nodes_iter() 
                           if topology.node[v]['stack'][0] == 'receiver']
 
-        self.n_contents, self.contents = assign_weights(weights)
+        self.n_contents, self.contents = assign_weights(weights, reqs_file)
 
         self.beta = beta
         if beta != 0:
@@ -400,7 +400,7 @@ class DeterministicTraceDrivenWorkload(object):
         self.n_measured = n_measured
         self.reqs_file = reqs_file
 
-        self.n_contents, self.contents = assign_weights(weights)
+        self.n_contents, self.contents = assign_weights(weights, reqs_file)
 
     def __iter__(self):
         req_counter = 0
@@ -422,7 +422,7 @@ class DeterministicTraceDrivenWorkload(object):
             raise ValueError("Trace did not contain enough requests")
 
 
-def assign_weights(weights):
+def assign_weights(weights, reqs_file):
     uniform_weights = weights is None or weights == 'UNIFORM'
     n_contents = 0
     contents = {}
@@ -438,11 +438,11 @@ def assign_weights(weights):
                 contents[content] = weight
     else:
         # assign uniform weights
-        with open(self.reqs_file, 'r') as csv_file:
+        with open(reqs_file, 'r') as csv_file:
             csv_reader = csv.reader(csv_file)
             for row in csv_reader:
                 content = int(row[2])
-                if content not in self.contents:
+                if content not in contents:
                     n_contents += 1
                     contents[content] = 1
 
