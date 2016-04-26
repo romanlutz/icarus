@@ -37,7 +37,7 @@ def main():
     print('weighted contents with <10 requests: %d' % less_than_ten_requests_weighted_contents)
     print('weighted contents with <20 requests: %d' % less_than_twenty_requests_weighted_contents)
     print('weighted contents with <50 requests: %d' % less_than_fifty_requests_weighted_contents)
-    print('weighted contents with >=50 requests: %d' % (weighted_requests - less_than_fifty_requests_weighted_contents))
+    print('weighted contents with >=50 requests: %d' % (weighted_contents - less_than_fifty_requests_weighted_contents))
 
 if __name__ == "__main__":
     main()
