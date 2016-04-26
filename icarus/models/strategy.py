@@ -26,6 +26,7 @@ __all__ = [
        'RandomBernoulli',
        'RandomChoice',
        'NearestReplicaRouting',
+       'ProbCache'
            ]
 
 #TODO: Implement BaseOnPath to reduce redundant code
@@ -816,7 +817,7 @@ class RandomChoice(Strategy):
             self.controller.get_content(v)
             serving_node = v
         # Return content
-        path =  list(reversed(self.view.shortest_path(receiver, serving_node)))
+        path = list(reversed(self.view.shortest_path(receiver, serving_node)))
         caches = [v for v in path[1:-1] if self.view.has_cache(v)]
         designated_cache = random.choice(caches) if len(caches) > 0 else None
         for u, v in path_links(path):
