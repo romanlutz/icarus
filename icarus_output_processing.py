@@ -4,7 +4,7 @@ from icarus.results.output_results import print_cache_hit_rates, print_results_f
 def main():
     #draw_cache_level_proportions('plots', 'results', '.spickle')
     #print_results_full('results-globo_geant', '.spickle')
-    print_cache_hit_rates('results-globo_geant', '.spickle',
+    print_cache_hit_rates('results-geant', '.spickle',
                           goal_tuple=('CACHE_HIT_RATIO', 'MEAN'),
                           #goal_tuple=('CACHE_HIT_RATIO', 'WEIGHTED_CACHE_HIT_RATIO_SUM'),
                           #goal_tuple=('CACHE_HIT_RATIO', 'AVERAGE_BENEFIT'),
