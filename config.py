@@ -45,7 +45,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = cpu_count()
+N_PROCESSES = 28 # cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -341,7 +341,7 @@ if TRACE_DRIVEN_EXPERIMENTS:
         csv_reader = csv.reader(trace_file)
         i = 1
         for line in csv_reader:
-            if i == 8:
+            if i == 9:
                 traces.append((line[0], int(line[1]), line[2]))
             i += 1
 
