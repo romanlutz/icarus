@@ -12,13 +12,13 @@ def main():
         i = 0
         for line in csv_reader:
             i += 1
-            if i == 2:
+            if i == 7:
                 traces.append(line[0])
                 trace_lengths.append(line[1])
 
-    #trace_analytics(traces, trace_lengths, 'plots', do_temporal_distance=True, do_zipf_estimation=True,
-    #                do_rank_and_occurrence_evolution=False, rank_and_occurrence_evolution_top_n=10,
-    #                rank_and_occurrence_evolution_interval_size=100000, min_interval_size=8000)
+    trace_analytics(traces, trace_lengths, 'plots', do_temporal_distance=True, do_zipf_estimation=False,
+                    do_rank_and_occurrence_evolution=False, rank_and_occurrence_evolution_top_n=10,
+                    rank_and_occurrence_evolution_interval_size=100000, min_interval_size=8000)
     #beladys_algorithm([1000], traces)
 
 
@@ -33,7 +33,7 @@ def main():
         #'TISCALI': {},
         #'TISCALI_2': {}
     }
-    draw_stack_deployment_for_all_topologies(topologies=topologies)
+    # draw_stack_deployment_for_all_topologies(topologies=topologies)
 
 
 def draw_stack_deployment_for_all_topologies(topologies):

@@ -183,9 +183,11 @@ def draw_cache_level_proportions(plotdir, filename, format):
 
 def draw_cache_hit_ratios(results, data_desc):
     filename = '%s.png' % data_desc
+    filename = filename.rpartition('/')[2]
     plotdir = 'plots/cache_hit_rates/'
 
     path = os.path.join(plotdir, filename)
+    print path
 
     # ensure the path exists and create it if necessary
     directories = path.split('/')[1:-1]
