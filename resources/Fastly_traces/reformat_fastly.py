@@ -2,12 +2,14 @@ __author__ = 'romanlutz'
 
 import csv
 
-def reformat(filename, size_given=False, threshold=10000):
 
-    if filename == 'requests.txt':
+def reformat(filename, size_given=False, threshold=10000):
+    if filename == 'requests-14M-2015-12-1.txt':
         n_requests = 14885146
     elif filename == 'requests-1M-2016-3-15.txt':
         n_requests = 1007545
+    elif filename == 'requests-4M-2016-4-5.txt':
+        n_requests = 4401059
     else:
         raise ValueError('file name incorrect')
 
@@ -54,3 +56,4 @@ def reformat(filename, size_given=False, threshold=10000):
 reformat('requests.txt')
 reformat('requests-1M-2016-3-15.txt', False)
 '''
+reformat('requests-4M-2016-4-5.txt', False)

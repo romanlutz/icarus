@@ -92,7 +92,7 @@ class TestAdaptiveReplacementCache(unittest.TestCase):
         cache_hits = 0
         contents = 0
 
-        with open('../../../resources/Fastly_traces/requests_reformatted.trace', 'r') as csv_file:
+        with open('../../../resources/Fastly_traces/requests_14M-2015-12-1_reformatted.trace', 'r') as csv_file:
             csv_reader = csv.reader(csv_file)
             for row in csv_reader:
                 contents += 1

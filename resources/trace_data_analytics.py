@@ -292,7 +292,8 @@ def temporal_distance(trace_path, plotdir):
 
     distances = [distances[i] if i in distances else [] for i in range(2, 21)]
 
-    plt.boxplot(distances, labels=labels, showfliers=False)
+    plt.boxplot(distances, sym='')
+    plt.xticks(np.arange(len(labels)) + 1, labels)
 
     plt.title("Temporal distance")
     plt.ylabel("average temporal distance")
