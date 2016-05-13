@@ -29,3 +29,5 @@ doc/source/apidoc
 !*.resources/synthetic/reformat_synthetic.py
 *.resources/ARC_traces/*
 !*.resources/ARC_traces/reformat_arc.py
+/resources/Fastly_traces/*.t*
+/resources/Globo_traces/*.trace
