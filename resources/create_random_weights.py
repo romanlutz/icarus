@@ -23,7 +23,7 @@ def main(argv):
         csv_reader = csv.reader(csv_file)
 
         for row in csv_reader:
-            content = int(row[0])
+            content = int(row[2])
             contents[content] = 1
 
     number_of_contents = len(contents)
