@@ -131,6 +131,9 @@ def determine_parameters(tree):
         if k[0] == ('workload', 'reqs_file'):
             trace_params['trace'] = k[1]
 
+        elif k[0] == ('workload', 'weights'):
+            trace_params['weights'] = k[1].rpartition('/')[2]
+
         elif k[0] == ('workload', 'q'):
             synthetic_experiment_params['q'] = k[1]
 
@@ -213,7 +216,7 @@ def assign_results(goal_tuple, tree, rates, descriptions, topology_params, trace
 
     if trace_params.keys() != []:
         # deterministic trace-driven experiments
-        description = trace_params['trace']
+        description = '%s + %s' % (trace_params['trace'], trace_params['weights'])
     else:
         # synthetic (stationary) experiments
         description = topology_params['name']
