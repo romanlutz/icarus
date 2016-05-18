@@ -9,17 +9,17 @@ def main():
     combinations = {'unweighted hit rate': 'MEAN', 'normalized reward': 'WEIGHTED_CACHE_HIT_RATIO',
                     'weighted average hit rate': 'WEIGHTED_CACHE_HIT_RATIO_SUM',
                     'weight-frequency hit rate': 'AVERAGE_BENEFIT'}
-
+    '''
     for metric_description in combinations:
         print metric_description
         print_cache_hit_rates(file_prefix, '.spickle', goal_tuple=('CACHE_HIT_RATIO', combinations[metric_description]), plot=False)
-
+    '''
     # create plots based on multiple result files
     percentages = [0, 0.1, 0.2, 0.4]
     weights = [1, 5, 10]
     cache_sizes = [1000, 2000, 4000, 8000]
 
-    generate_result_evolution_plots('umass', percentages, weights, cache_sizes, combinations)
+    generate_result_evolution_plots('fastly', percentages, weights, cache_sizes, combinations)
 
 
 if __name__ == "__main__":

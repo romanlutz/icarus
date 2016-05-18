@@ -222,3 +222,53 @@ def draw_cache_hit_ratios(results, data_desc):
     plt.colorbar()
     plt.savefig(path, bbox_inches='tight')
     plt.close()
+
+
+def create_result_evolution_plot(plot_rates, data_desc, param_name, policy_order):
+    filename = '%s.png' % data_desc
+    plotdir = 'plots/cache_hit_rate_evolution/'
+
+    path = os.path.join(plotdir, filename)
+    print path
+
+    # ensure the path exists and create it if necessary
+    directories = path.split('/')[1:-1]
+    current_path = plotdir
+    for directory in directories:
+        current_path += '/' + directory
+        if not os.path.isdir(current_path):
+            os.makedirs(current_path)
+
+    # plot values per parameter
+    plots = []
+    policy_names = []
+
+    occurring_policies = plot_rates.keys()
+    occurring_policies = sorted(occurring_policies, key=lambda policy: 0 if ' ' not in policy or '(' in policy else int(policy.split(' ')[1]))
+    occurring_policies = sorted(occurring_policies, key=lambda policy: policy_order.index(policy.partition(' ')[0]))
+
+    policy_colors = {'ARC': 0, 'LRU': 1, 'KLRU': 1, 'DSCA': 2, '2DSCA': 3, 'DSCAAWS': 4, '2DSCAAWS': 5}
+    policy_linestyles = {'1': 'solid', '4': 'dashed', '16': 'dashdot', '64': 'dotted', '(2,1)': 'dashed'}
+    policy_markers = {'ARC': '>', 'LRU': '<', 'KLRU': '^', 'DSCA': 'v', '2DSCA': 'o', 'DSCAAWS': ',', '2DSCAAWS': '8'}
+
+    cmap = plt.get_cmap('nipy_spectral')
+    norm = Normalize(0, len(policy_colors) - 1)
+
+    for policy in occurring_policies:
+        policy_names.append(policy)
+        parameters = plot_rates[policy].keys()
+        parameters.sort()
+
+        values = []
+
+        for parameter in parameters:
+            values.append(plot_rates[policy][parameter])
+
+        plots.append(plt.plot(parameters, values, color=cmap(norm(policy_colors[policy.partition(' ')[0]])), linestyle='solid' if ' ' not in policy else policy_linestyles[policy.split(' ')[1]], marker=policy_markers[policy.partition(' ')[0]]))
+
+    plt.legend(tuple(map(lambda x: x[0], plots)), tuple(map(lambda n: ' '.join(n.split(' ')[:2]), policy_names)), bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.xlabel(param_name)
+    plt.ylabel('cache hit rate')
+    plt.gcf().tight_layout()
+    plt.savefig(path, bbox_inches='tight')
+    plt.close()

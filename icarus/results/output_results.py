@@ -2,7 +2,7 @@ import csv
 import os
 from collections import defaultdict
 from icarus.io.readwrite import read_results
-from icarus.results.visualize import draw_cache_hit_ratios
+from icarus.results.visualize import draw_cache_hit_ratios, create_result_evolution_plot
 
 def print_results_full(filename, format):
     for tree in read_results('%s%s' % (filename, format), format):
@@ -298,57 +298,70 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
     f = lambda: defaultdict(f)
     rates = defaultdict(f)
 
+    def create_or_extend_list(location, new_list):
+        if type(location) == list:
+            location.extend(new_list)
+        else:
+            location = new_list
+
+        return location
+
     for weighted_or_not in ['weighted', 'unweighted']:
         for cache_size in cache_sizes:
             file_name = 'results-%s-%s-c%d' % (weighted_or_not, trace_abbreviation, cache_size)
             format = '.spickle'
 
-            for metric_description in combinations:
-                goal_tuple = ('CACHE_HIT_RATIO', combinations[metric_description])
+            try:
+                for metric_description in combinations:
+                    goal_tuple = ('CACHE_HIT_RATIO', combinations[metric_description])
 
-                descriptions, dict_list = provide_result_dictionary(file_name, format, goal_tuple)
+                    descriptions, dict_list = provide_result_dictionary(file_name, format, goal_tuple)
 
-                for result_dict in dict_list:
-                    if result_dict[1] != 'fail':
-                        policy = result_dict[0].rpartition(' +')[0]
+                    for result_dict in dict_list:
+                        if result_dict[1] != 'fail':
+                            policy = result_dict[0].rpartition(' +')[0]
 
-                        for desc in descriptions:
-                            # detect weight
-                            weight = None
-                            for w in weights[1:]:
-                                if 'w%d' % w in desc:
-                                    weight = w
-                            if 'UNIFORM' in desc:
-                                weight = 1
-                            if weight is None:
-                                print 'error: weight could not be detected'
+                            for desc in descriptions:
+                                # detect weight
+                                weight = None
+                                for w in weights[1:]:
+                                    if 'w%d' % w in desc:
+                                        weight = w
+                                if 'UNIFORM' in desc:
+                                    weight = 1
+                                if weight is None:
+                                    print 'error: weight could not be detected'
 
-                            # detect percentage
-                            percentage = None
-                            if weight == 1:
-                                percentage = 'all'
-                            else:
-                                for p in percentages[1:]:
-                                    if 'p%f' % p in desc:
-                                        percentage = p
-                            if percentage is None:
-                                print 'error: percentage could not be detected'
-
-                            # add results to dictionary
-                            if desc in result_dict[1]:
-                                # this is a list with one entry
-                                # the repetitions are handled through different weight files
-                                cache_hit_rate = result_dict[1][desc][0]
-
-                                if percentage == 'all' and weight == 1:
-                                    # add it to all percentages for weight 1
-                                    # add it to all weights with percentage 0
-                                    for percentage in percentages:
-                                        rates[policy][cache_size][weight][percentage][metric_description] = cache_hit_rate
-                                    for weight in weights:
-                                        rates[policy][cache_size][weight][0][metric_description] = cache_hit_rate
+                                # detect percentage
+                                percentage = None
+                                if weight == 1:
+                                    percentage = 'all'
                                 else:
-                                    rates[policy][cache_size][weight][percentage][metric_description] = cache_hit_rate
+                                    for p in percentages[1:]:
+                                        if 'p%f' % p in desc:
+                                            percentage = p
+                                if percentage is None:
+                                    print 'error: percentage could not be detected'
+
+                                # add results to dictionary
+                                if desc in result_dict[1]:
+                                    # this is a list with one entry
+                                    # the repetitions are handled through different weight files
+                                    cache_hit_rate_list = result_dict[1][desc]
+
+                                    if percentage == 'all' and weight == 1:
+                                        # add it to all percentages for weight 1
+                                        # add it to all weights with percentage 0
+                                        for percentage in percentages:
+                                            rates[policy][cache_size][weight][percentage][metric_description] = create_or_extend_list(rates[policy][cache_size][weight][percentage][metric_description], cache_hit_rate_list)
+                                        for weight in weights:
+                                            rates[policy][cache_size][weight][percentage][metric_description] = create_or_extend_list(rates[policy][cache_size][weight][0][metric_description], cache_hit_rate_list)
+                                    else:
+                                        rates[policy][cache_size][weight][percentage][metric_description] = create_or_extend_list(rates[policy][cache_size][weight][percentage][metric_description], cache_hit_rate_list)
+            except:
+                print 'error: file %s not available' % file_name
+
+    policies = ['ARC', 'LRU', 'KLRU', 'SS', 'DSCA', '2DSCA', 'DSCAAWS', '2DSCAAWS', 'DSCASW', 'DSCAFT', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
 
     # plot by percentages
     for cache_size in cache_sizes:
@@ -356,9 +369,19 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
             for metric_description in combinations:
                 # the data for the plot is the values of each policy over the different percentages
                 plot_rates = defaultdict(dict)
+
                 for policy in rates:
                     for percentage in percentages:
-                        plot_rates[policy][percentage] = rates[policy][cache_size][weight][percentage][metric_description]
+                        if cache_size in rates[policy] and weight in rates[policy][cache_size] and \
+                            percentage in rates[policy][cache_size][weight] and \
+                            metric_description in rates[policy][cache_size][weight][percentage]:
+
+                            def average(lst):
+                                return sum(lst) / len(lst)
+
+                            plot_rates[policy][percentage] = average(rates[policy][cache_size][weight][percentage][metric_description])
+
+                create_result_evolution_plot(plot_rates, '%s-c%d-w%d-%s' % (trace_abbreviation, cache_size, weight, metric_description.replace(' ', '-')), 'percentage of weighted contents', policy_order = policies)
 
     # plot by weights
 
