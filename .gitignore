@@ -10,6 +10,8 @@ __pycache__
 
 # Ignore results
 *.pickle
+*.spickle
+
 
 # Ignore doc build files
 doc/build

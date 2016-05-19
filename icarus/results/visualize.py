@@ -224,7 +224,7 @@ def draw_cache_hit_ratios(results, data_desc):
     plt.close()
 
 
-def create_result_evolution_plot(plot_rates, data_desc, param_name, policy_order):
+def create_result_evolution_plots(plot_rates, data_desc, param_names, policy_order):
     filename = '%s.png' % data_desc
     plotdir = 'plots/cache_hit_rate_evolution/'
 
@@ -243,32 +243,62 @@ def create_result_evolution_plot(plot_rates, data_desc, param_name, policy_order
     plots = []
     policy_names = []
 
-    occurring_policies = plot_rates.keys()
-    occurring_policies = sorted(occurring_policies, key=lambda policy: 0 if ' ' not in policy or '(' in policy else int(policy.split(' ')[1]))
-    occurring_policies = sorted(occurring_policies, key=lambda policy: policy_order.index(policy.partition(' ')[0]))
-
     policy_colors = {'ARC': 0, 'LRU': 1, 'KLRU': 1, 'DSCA': 2, '2DSCA': 3, 'DSCAAWS': 4, '2DSCAAWS': 5}
     policy_linestyles = {'1': 'solid', '4': 'dashed', '16': 'dashdot', '64': 'dotted', '(2,1)': 'dashed'}
-    policy_markers = {'ARC': '>', 'LRU': '<', 'KLRU': '^', 'DSCA': 'v', '2DSCA': 'o', 'DSCAAWS': ',', '2DSCAAWS': '8'}
+    policy_markers = {'ARC': '>', 'LRU': '<', 'KLRU': '^', 'DSCA': 'v', '2DSCA': 'o', 'DSCAAWS': '+', '2DSCAAWS': '8'}
 
     cmap = plt.get_cmap('nipy_spectral')
     norm = Normalize(0, len(policy_colors) - 1)
 
-    for policy in occurring_policies:
-        policy_names.append(policy)
-        parameters = plot_rates[policy].keys()
-        parameters.sort()
+    fig = plt.figure(figsize=(13, 13), dpi=800)
 
-        values = []
+    subplot_index = 0
+    parameter1_values = plot_rates.keys()
+    parameter1_values.sort()
+    for param1 in parameter1_values:
+        parameter2_values = plot_rates[param1].keys()
+        parameter2_values.sort()
+        for param2 in parameter2_values:
+            plots = []
+            subplot_index += 1
+            ax = fig.add_subplot(len(parameter1_values),len(parameter2_values),subplot_index)
 
-        for parameter in parameters:
-            values.append(plot_rates[policy][parameter])
+            occurring_policies = plot_rates[param1][param2].keys()
+            occurring_policies = sorted(occurring_policies,
+                                        key=lambda policy: 0 if ' ' not in policy or '(' in policy else int(
+                                            policy.split(' ')[1]))
+            occurring_policies = sorted(occurring_policies,
+                                        key=lambda policy: policy_order.index(policy.partition(' ')[0]))
 
-        plots.append(plt.plot(parameters, values, color=cmap(norm(policy_colors[policy.partition(' ')[0]])), linestyle='solid' if ' ' not in policy else policy_linestyles[policy.split(' ')[1]], marker=policy_markers[policy.partition(' ')[0]]))
+            min_value = 1
+            max_value = 0
+            parameter3_values = []
+            for policy in occurring_policies:
+                policy_names.append(policy)
+                parameter3_values = plot_rates[param1][param2][policy].keys()
+                parameter3_values.sort()
 
-    plt.legend(tuple(map(lambda x: x[0], plots)), tuple(map(lambda n: ' '.join(n.split(' ')[:2]), policy_names)), bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.xlabel(param_name)
-    plt.ylabel('cache hit rate')
+                values = []
+
+                for param3 in parameter3_values:
+                    values.append(plot_rates[param1][param2][policy][param3])
+
+                if max(values) > max_value:
+                    max_value = max(values)
+                if min(values) < min_value:
+                    min_value = min(values)
+
+                plots.append(ax.plot(parameter3_values, values, color=cmap(norm(policy_colors[policy.partition(' ')[0]])), linestyle='solid' if ' ' not in policy else policy_linestyles[policy.split(' ')[1]], marker=policy_markers[policy.partition(' ')[0]]))
+
+            ax.set_xlabel(param_names[2])
+            ax.set_ylabel('cache hit rate')
+            #ax.set_xscale('log')
+            ax.set_xlim([min(parameter3_values) - 0.05 * (max(parameter3_values) - min(parameter3_values)), max(parameter3_values) + 0.05 * (max(parameter3_values) - min(parameter3_values))])
+            ax.set_ylim([max([0, min_value - 0.05 * (max_value - min_value)]), max_value + 0.05 * (max_value - min_value)])
+            ax.set_title('%s=%s, %s=%s' % (param_names[0], str(param1), param_names[1], str(param2)))
+    plt.figlegend(tuple(map(lambda x: x[0], plots)), tuple(map(lambda n: ' '.join(n.split(' ')[:2]), policy_names)),
+                  bbox_to_anchor=(1.18, .5), loc='right', borderaxespad=0.)
+
     plt.gcf().tight_layout()
     plt.savefig(path, bbox_inches='tight')
     plt.close()

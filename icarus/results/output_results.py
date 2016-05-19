@@ -2,7 +2,7 @@ import csv
 import os
 from collections import defaultdict
 from icarus.io.readwrite import read_results
-from icarus.results.visualize import draw_cache_hit_ratios, create_result_evolution_plot
+from icarus.results.visualize import draw_cache_hit_ratios, create_result_evolution_plots
 
 def print_results_full(filename, format):
     for tree in read_results('%s%s' % (filename, format), format):
@@ -363,12 +363,15 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
 
     policies = ['ARC', 'LRU', 'KLRU', 'SS', 'DSCA', '2DSCA', 'DSCAAWS', '2DSCAAWS', 'DSCASW', 'DSCAFT', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
 
-    # plot by percentages
-    for cache_size in cache_sizes:
-        for weight in weights:
-            for metric_description in combinations:
+    for metric_description in combinations:
+        def average(lst):
+            return sum(lst) / len(lst)
+
+        # plot by percentages
+        plot_rates = defaultdict(f)
+        for cache_size in cache_sizes:
+            for weight in weights:
                 # the data for the plot is the values of each policy over the different percentages
-                plot_rates = defaultdict(dict)
 
                 for policy in rates:
                     for percentage in percentages:
@@ -376,15 +379,48 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
                             percentage in rates[policy][cache_size][weight] and \
                             metric_description in rates[policy][cache_size][weight][percentage]:
 
-                            def average(lst):
-                                return sum(lst) / len(lst)
+                            plot_rates[cache_size][weight][policy][percentage] = average(rates[policy][cache_size][weight][percentage][metric_description])
 
-                            plot_rates[policy][percentage] = average(rates[policy][cache_size][weight][percentage][metric_description])
+        create_result_evolution_plots(plot_rates, '%s-%s-%s' % (
+            trace_abbreviation, metric_description.replace(' ', '-'), 'by-percentage'),
+                                      ['cache size', 'weight', 'percentage of weighted contents'],
+                                      policy_order=policies)
+        # plot by weights
+        plot_rates = defaultdict(f)
+        for cache_size in cache_sizes:
+            for percentage in percentages:
+                # the data for the plot is the values of each policy over the different weights
 
-                create_result_evolution_plot(plot_rates, '%s-c%d-w%d-%s' % (trace_abbreviation, cache_size, weight, metric_description.replace(' ', '-')), 'percentage of weighted contents', policy_order = policies)
+                for policy in rates:
+                    for weight in weights:
+                        if cache_size in rates[policy] and weight in rates[policy][cache_size] and \
+                                        percentage in rates[policy][cache_size][weight] and \
+                                        metric_description in rates[policy][cache_size][weight][percentage]:
 
-    # plot by weights
+                            plot_rates[cache_size][percentage][policy][weight] = average(
+                                rates[policy][cache_size][weight][percentage][metric_description])
 
-    # plot by cache sizes
+        create_result_evolution_plots(plot_rates, '%s-%s-%s' % (
+            trace_abbreviation, metric_description.replace(' ', '-'), 'by-weight'),
+                                      ['cache size', 'percentage', 'weight'],
+                                      policy_order=policies)
 
+        # plot by cache sizes
+        plot_rates = defaultdict(f)
+        for weight in weights:
+            for percentage in percentages:
+                # the data for the plot is the values of each policy over the different cache sizes
+
+                for policy in rates:
+                    for cache_size in cache_sizes:
+                        if cache_size in rates[policy] and weight in rates[policy][cache_size] and \
+                                        percentage in rates[policy][cache_size][weight] and \
+                                        metric_description in rates[policy][cache_size][weight][percentage]:
+                            plot_rates[percentage][weight][policy][cache_size] = average(
+                                rates[policy][cache_size][weight][percentage][metric_description])
+
+        create_result_evolution_plots(plot_rates, '%s-%s-%s' % (
+            trace_abbreviation, metric_description.replace(' ', '-'), 'by-cache-size'),
+                                      ['percentage', 'weight', 'cache size'],
+                                      policy_order=policies)
 
