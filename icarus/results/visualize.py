@@ -224,7 +224,7 @@ def draw_cache_hit_ratios(results, data_desc):
     plt.close()
 
 
-def create_result_evolution_plots(plot_rates, data_desc, param_names, policy_order):
+def create_result_evolution_plots(plot_rates, data_desc, metric_name, param_names, policy_order):
     filename = '%s.png' % data_desc
     plotdir = 'plots/cache_hit_rate_evolution/'
 
@@ -291,7 +291,7 @@ def create_result_evolution_plots(plot_rates, data_desc, param_names, policy_ord
                 plots.append(ax.plot(parameter3_values, values, color=cmap(norm(policy_colors[policy.partition(' ')[0]])), linestyle='solid' if ' ' not in policy else policy_linestyles[policy.split(' ')[1]], marker=policy_markers[policy.partition(' ')[0]]))
 
             ax.set_xlabel(param_names[2])
-            ax.set_ylabel('cache hit rate')
+            ax.set_ylabel(metric_name)
             #ax.set_xscale('log')
             ax.set_xlim([min(parameter3_values) - 0.05 * (max(parameter3_values) - min(parameter3_values)), max(parameter3_values) + 0.05 * (max(parameter3_values) - min(parameter3_values))])
             ax.set_ylim([max([0, min_value - 0.05 * (max_value - min_value)]), max_value + 0.05 * (max_value - min_value)])
