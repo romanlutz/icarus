@@ -12,7 +12,7 @@ def main():
         i = 0
         for line in csv_reader:
             i += 1
-            if i == 7:
+            if i == 63:
                 traces.append(line[0])
                 trace_lengths.append(line[1])
 
