@@ -7,7 +7,7 @@ import collections
 
 import numpy as np
 import matplotlib
-matplotlib.use('tkagg')
+#matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
 
 from icarus.util import Tree, step_cdf
