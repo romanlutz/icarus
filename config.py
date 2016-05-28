@@ -413,7 +413,7 @@ if DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS:
         csv_reader = csv.reader(trace_file)
         i = 1
         for line in csv_reader:
-            if i <= 31 and i >= 2:
+            if i <= 62 and i >= 33:
                 traces.append((line[0], int(line[1]), line[2]))
             i += 1
 

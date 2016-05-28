@@ -19,7 +19,7 @@ def main():
     weights = [1, 5, 10]
     cache_sizes = [1000, 2000, 4000, 8000]
 
-    generate_result_evolution_plots('fastly', percentages, weights, cache_sizes, combinations)
+    generate_result_evolution_plots('ibm', percentages, weights, cache_sizes, combinations)
 
 
 if __name__ == "__main__":
