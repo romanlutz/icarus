@@ -82,7 +82,7 @@ DATA_COLLECTORS = {
 # 3. define an absolute number as the total cache for the whole network
 NETWORK_CACHE_PER_NODE = None  # 0.01
 NETWORK_CACHE_ALL_NODES = None
-NETWORK_CACHE_ABSOLUTE = 1000
+NETWORK_CACHE_ABSOLUTE = 8000
 if NETWORK_CACHE_PER_NODE is not None:
     NETWORK_CACHE = NETWORK_CACHE_PER_NODE
 elif NETWORK_CACHE_ALL_NODES is not None:
@@ -413,7 +413,7 @@ if DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS:
         csv_reader = csv.reader(trace_file)
         i = 1
         for line in csv_reader:
-            if i == 94:#i <= 31 and i >= 2:
+            if i == 95:#i <= 31 and i >= 2:
                 traces.append((line[0], int(line[1]), line[2]))
             i += 1
 
