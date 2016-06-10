@@ -91,8 +91,8 @@ Fastly_traces/requests-4M-2016-4-5_reformatted.trace,1007545,resources/Fastly_tr
 Fastly_traces/requests-4M-2016-4-5_reformatted.trace,1007545,resources/Fastly_traces/requests-4M-2016-4-5_reformatted-w10-p0.400000-r2.weights
 Fastly_traces/requests-4M-2016-4-5_reformatted.trace,1007545,resources/Fastly_traces/requests-4M-2016-4-5_reformatted-w10-p0.400000-r3.weights
 Fastly_traces/requests-4M-2016-4-5_reformatted.trace,1007545,resources/Fastly_traces/requests-4M-2016-4-5_reformatted-w10-p0.400000-r4.weights
-Globo_traces/12-2015-01-2016.trace,198073695,UNIFORM
-Globo_traces/12-2015-01-2016.trace,198073695,resources/Globo_traces/12-2015-01-2016.weights
+Globo_traces/globo_paper_6M.trace,6602457,UNIFORM
+Globo_traces/globo_paper_6M.trace,6602457,resources/Globo_traces/12-2015-01-2016.weights
 Globo_traces/globo_paper_6M.trace,6602457,resources/Globo_traces/12-2015-01-2016-w5-p0.100000-r0.weights
 Globo_traces/globo_paper_6M.trace,6602457,resources/Globo_traces/12-2015-01-2016-w5-p0.100000-r1.weights
 Globo_traces/globo_paper_6M.trace,6602457,resources/Globo_traces/12-2015-01-2016-w5-p0.100000-r2.weights
