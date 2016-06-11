@@ -82,7 +82,7 @@ DATA_COLLECTORS = {
 # 3. define an absolute number as the total cache for the whole network
 NETWORK_CACHE_PER_NODE = None  # 0.01
 NETWORK_CACHE_ALL_NODES = None
-NETWORK_CACHE_ABSOLUTE = 1000
+NETWORK_CACHE_ABSOLUTE = 2000
 if NETWORK_CACHE_PER_NODE is not None:
     NETWORK_CACHE = NETWORK_CACHE_PER_NODE
 elif NETWORK_CACHE_ALL_NODES is not None:
