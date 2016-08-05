@@ -367,8 +367,8 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
         def average(lst):
             return sum(lst) / len(lst)
 
-        def normalize(metric_name, weight, value):
-            if metric_name == 'weighted average hit rate':
+        def normalize(metric_name, percentage, weight, value):
+            if metric_name == 'weighted average hit rate' and percentage > 0 and weight > 1:
                 return value / (weight + 1)
             else:
                 return value
@@ -385,7 +385,7 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
                             percentage in rates[policy][cache_size][weight] and \
                             metric_description in rates[policy][cache_size][weight][percentage]:
 
-                            plot_rates[cache_size][weight][policy][percentage] = normalize(metric_description, weight, average(rates[policy][cache_size][weight][percentage][metric_description]))
+                            plot_rates[cache_size][weight][policy][percentage] = normalize(metric_description, percentage, weight, average(rates[policy][cache_size][weight][percentage][metric_description]))
 
         create_result_evolution_plots(plot_rates, '%s-%s-%s' % (
             trace_abbreviation, metric_description.replace(' ', '-'), 'by-percentage'), metric_description,
@@ -403,7 +403,7 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
                                         percentage in rates[policy][cache_size][weight] and \
                                         metric_description in rates[policy][cache_size][weight][percentage]:
 
-                            plot_rates[cache_size][percentage][policy][weight] = normalize(metric_description, weight, average(rates[policy][cache_size][weight][percentage][metric_description]))
+                            plot_rates[cache_size][percentage][policy][weight] = normalize(metric_description, percentage, weight, average(rates[policy][cache_size][weight][percentage][metric_description]))
 
         create_result_evolution_plots(plot_rates, '%s-%s-%s' % (
             trace_abbreviation, metric_description.replace(' ', '-'), 'by-weight'), metric_description,
@@ -421,7 +421,7 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
                         if cache_size in rates[policy] and weight in rates[policy][cache_size] and \
                                         percentage in rates[policy][cache_size][weight] and \
                                         metric_description in rates[policy][cache_size][weight][percentage]:
-                            plot_rates[percentage][weight][policy][cache_size] = normalize(metric_description, weight, average(rates[policy][cache_size][weight][percentage][metric_description]))
+                            plot_rates[percentage][weight][policy][cache_size] = normalize(metric_description, percentage, weight, average(rates[policy][cache_size][weight][percentage][metric_description]))
 
         create_result_evolution_plots(plot_rates, '%s-%s-%s' % (
             trace_abbreviation, metric_description.replace(' ', '-'), 'by-cache-size'), metric_description,
