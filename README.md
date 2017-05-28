@@ -1,4 +1,5 @@
 Currently only for one-cache scenarios! Changes are coming...
+This is a fork of the original icarus project!
 
 # Icarus ICN caching simulator
 Icarus is a Python-based discrete-event simulator for evaluating caching
@@ -80,7 +81,7 @@ You can download a stable release in a zip or tar.gz format using the links belo
 
 You can also get the development branch from the Github repository using Git. Just open a shell, `cd` to the directory where you want to download the simulator and type:
 
-    $ git clone https://github.com/icarus-sim/icarus.git
+    $ git clone https://github.com/romanlutz/icarus.git
 
 ## Usage
 
