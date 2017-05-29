@@ -29,6 +29,7 @@ __all__ = [
         'rand_insert_cache',
         'keyval_cache',
         'ttl_cache',
+        'WeightedLruCache',
            ]
 
 
@@ -1891,3 +1892,27 @@ def ttl_cache(cache, f_time):
 
 def ttl_keyval_cache():
     pass
+
+
+@register_cache_policy('WeightedLruCache')
+class WeightedLruCache(InCacheLfuCache):
+
+    @inheritdoc(InCacheLfuCache)
+    def get(self, k, weight):
+        if self.has(k):
+            freq, t = self._cache[k]
+            self._cache[k] = freq + weight, t
+            return True
+        else:
+            return False
+
+    @inheritdoc(InCacheLfuCache)
+    def put(self, k, weight):
+        if not self.has(k):
+            self.t += 1
+            self._cache[k] = (weight, self.t)
+            if len(self._cache) > self._maxlen:
+                evicted = min(self._cache, key=lambda x: self._cache[x])
+                self._cache.pop(evicted)
+                return evicted
+        return None

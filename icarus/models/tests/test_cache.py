@@ -604,6 +604,40 @@ class TestInCacheLfuCache(unittest.TestCase):
         self.assertEquals(c.dump(), [])
 
 
+class TestWeightedLruCache(unittest.TestCase):
+
+    def test_wlru(self):
+        c = cache.WeightedLruCache(4)
+        self.assertEquals(len(c), 0)
+        c.put(1, 1)
+        self.assertEquals(len(c), 1)
+        c.put(2, 2)
+        self.assertEquals(len(c), 2)
+        c.put(3, 3)
+        self.assertEquals(len(c), 3)
+        c.put(4, 2)
+        self.assertEquals(len(c), 4)
+        self.assertEquals(len(c.dump()), 4)
+        for v in (1, 2, 3, 4):
+            self.assertTrue(c.has(v))
+
+        # (id, weight, weight * frequency)
+        # (1,1,1), (2,2,2), (3,3,3), (4,2,2)
+        c.get(1, 1)  # (1,1,2), (2,2,2), (3,3,3), (4,2,2)
+        c.get(1, 1)  # (1,1,3), (2,2,2), (3,3,3), (4,2,2)
+        c.get(1, 1)  # (1,1,4), (2,2,2), (3,3,3), (4,2,2)
+        c.get(2, 2)  # (1,1,4), (2,2,4), (3,3,3), (4,2,2)
+        c.get(2, 2)  # (1,1,4), (2,2,6), (3,3,3), (4,2,2)
+        c.get(3, 3)  # (1,1,4), (2,2,6), (3,3,6), (4,2,2)
+        c.put(5, 4)  # (1,1,4), (2,2,6), (3,3,6), (5,4,4)
+        self.assertEquals(c.dump(), [3, 2, 5, 1])
+        self.assertEquals(len(c), 4)
+        self.assertTrue(c.has(5))
+        c.clear()
+        self.assertEquals(len(c), 0)
+        self.assertEquals(c.dump(), [])
+
+
 class TestPerfectLfuCache(unittest.TestCase):
 
     def test_lfu(self):
@@ -979,6 +1013,9 @@ class TestTtlCache(unittest.TestCase):
         self.assertFalse(c.has(1))
         c.put(3)
         self.assertFalse(ttl_c.has(3))
+
+
+class TestLargeScaleCache(unittest.TestCase):
 
     def test_lru_ibm(self):
         import csv
