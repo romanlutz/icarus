@@ -116,19 +116,20 @@ CACHE_POLICY_PARAMETERS = {'window_size': [], 'subwindows': [], 'subwindow_size'
 
 MONITORED_DEFAULT = 2.0
 
-use_SS = False
+use_SS = True
 use_DSCA = True
 use_2DSCA = True
 use_DSCAAWS = True
 use_2DSCAAWS = True
-use_DSCASW = False
-use_DSCAFT = False
-use_DSCAFS = False
-use_ADSCASTK = False
-use_ADSCAATK = False
+use_DSCASW = True
+use_DSCAFT = True
+use_DSCAFS = True
+use_ADSCASTK = True
+use_ADSCAATK = True
 use_ARC = True
 use_LRU = True
 use_KLRU = True
+use_WLRU = True
 
 if use_SS:
     CACHE_POLICY.append('SS')
@@ -237,6 +238,12 @@ if use_ARC:
 
 if use_LRU:
     CACHE_POLICY.append('LRU')
+    append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
+                   segments=True, cached_segments=True, lru_portion=True, hypothesis_check_period=True,
+                   hypothesis_check_A=True, hypothesis_check_epsilon=True)
+
+if use_WLRU:
+    CACHE_POLICY.append('WeightedLruCache')
     append_default(CACHE_POLICY_PARAMETERS, monitored=True, window_size=True, subwindows=True, subwindow_size=True,
                    segments=True, cached_segments=True, lru_portion=True, hypothesis_check_period=True,
                    hypothesis_check_A=True, hypothesis_check_epsilon=True)
