@@ -1,0 +1,2 @@
+azureml-sdk==0.1.74
+fnss==0.8.2
