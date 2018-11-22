@@ -1,7 +1,7 @@
 import getopt
 import sys
 
-from analyze_globo import analyze, create_default_data_dict
+from .analyze_globo import analyze, create_default_data_dict
 
 
 def main(argv):

@@ -1,6 +1,6 @@
 """Implementations of all caching and routing strategies
 """
-from __future__ import division
+
 import random
 import abc
 
@@ -32,10 +32,8 @@ __all__ = [
 #TODO: Implement BaseOnPath to reduce redundant code
 #TODO: In Hashrouting, implement request routing phase under in single function
 
-class Strategy(object):
+class Strategy(object, metaclass=abc.ABCMeta):
     """Base strategy imported by all other strategy classes"""
-    
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, view, controller, **kwargs):
         """Constructor

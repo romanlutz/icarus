@@ -227,5 +227,5 @@ class AdaptiveReplacementCache(Cache):
         return self._p
 
     def print_internal_dump(self):
-        print("%s %s %s %s" % (str(self._recency_cache_bottom), str(self._recency_cache_top),
-                               str(self._frequency_cache_bottom), str(self._frequency_cache_top)))
+        print(("%s %s %s %s" % (str(self._recency_cache_bottom), str(self._recency_cache_top),
+                               str(self._frequency_cache_bottom), str(self._frequency_cache_top))))

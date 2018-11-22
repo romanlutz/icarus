@@ -52,8 +52,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Icarus'
-copyright = u'2014, %s' % author
+project = 'Icarus'
+copyright = '2014, %s' % author
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -195,7 +195,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'icarus.tex', u'Icarus Documentation',
+  ('index', 'icarus.tex', 'Icarus Documentation',
    author, 'manual'),
 ]
 
@@ -225,7 +225,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'icarus', u'icarus Documentation',
+    ('index', 'icarus', 'icarus Documentation',
      [author], 1)
 ]
 
@@ -239,7 +239,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'icarus', u'icarus Documentation',
+  ('index', 'icarus', 'icarus Documentation',
    author, 'icarus', 'Caching simulator for Information Centric Networking.',
    'Miscellaneous'),
 ]

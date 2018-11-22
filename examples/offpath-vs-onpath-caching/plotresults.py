@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Plot results read from a result set
 """
-from __future__ import division
+
 import os
 import argparse
 import collections
@@ -101,7 +101,7 @@ def plot_cache_hits_vs_alpha(resultset, topology, cache_size, alpha_range, strat
     desc = {}
     desc['title'] = 'Cache hit ratio: T=%s C=%s' % (topology, cache_size)
     desc['ylabel'] = 'Cache hit ratio'
-    desc['xlabel'] = u'Content distribution \u03b1'
+    desc['xlabel'] = 'Content distribution \u03b1'
     desc['xparam'] = ('workload', 'alpha')
     desc['xvals'] = alpha_range
     desc['filter'] = {'topology': {'name': topology},
@@ -123,7 +123,7 @@ def plot_cache_hits_vs_cache_size(resultset, topology, alpha, cache_size_range, 
     if 'NO_CACHE' in strategies:
         strategies.remove('NO_CACHE')
     desc['title'] = 'Cache hit ratio: T=%s A=%s' % (topology, alpha)
-    desc['xlabel'] = u'Cache to population ratio'
+    desc['xlabel'] = 'Cache to population ratio'
     desc['ylabel'] = 'Cache hit ratio'
     desc['xscale'] = 'log'
     desc['xparam'] = ('cache_placement','network_cache')
@@ -145,7 +145,7 @@ def plot_cache_hits_vs_cache_size(resultset, topology, alpha, cache_size_range, 
 def plot_link_load_vs_alpha(resultset, topology, cache_size, alpha_range, strategies, plotdir):
     desc = {}
     desc['title'] = 'Internal link load: T=%s C=%s' % (topology, cache_size)
-    desc['xlabel'] = u'Content distribution \u03b1'
+    desc['xlabel'] = 'Content distribution \u03b1'
     desc['ylabel'] = 'Internal link load'
     desc['xparam'] = ('workload', 'alpha')
     desc['xvals'] = alpha_range
@@ -188,7 +188,7 @@ def plot_link_load_vs_cache_size(resultset, topology, alpha, cache_size_range, s
 def plot_latency_vs_alpha(resultset, topology, cache_size, alpha_range, strategies, plotdir):
     desc = {}
     desc['title'] = 'Latency: T=%s C=%s' % (topology, cache_size)
-    desc['xlabel'] = u'Content distribution \u03b1'
+    desc['xlabel'] = 'Content distribution \u03b1'
     desc['ylabel'] = 'Latency (ms)'
     desc['xparam'] = ('workload', 'alpha')
     desc['xvals'] = alpha_range

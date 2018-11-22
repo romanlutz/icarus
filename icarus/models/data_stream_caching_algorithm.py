@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 from icarus.models import Cache, LruCache, SpaceSavingCache, NullCache, WeightedStreamSummary, LinkedSet
 from icarus.registry import register_cache_policy
 from icarus.util import inheritdoc

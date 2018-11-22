@@ -10,7 +10,7 @@ del sys
 from io import BytesIO
 try:
     # Python 2
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     # Python 3
     import pickle
@@ -149,20 +149,20 @@ class TestTree(unittest.TestCase):
         tree['b']['c']['e'] = 4
         tree['b']['v']['d'] = 3
         l = list(tree)
-        self.assertEquals(len(l), 2)
+        self.assertEqual(len(l), 2)
         self.assertIn((('b', 'c', 'e'), 4), l)
         self.assertIn((('b', 'v', 'd'), 3), l)
         # add additional element
         tree['a'] = 1
         l = list(tree)
-        self.assertEquals(len(l), 3)
+        self.assertEqual(len(l), 3)
         self.assertIn((('b', 'c', 'e'), 4), l)
         self.assertIn((('b', 'v', 'd'), 3), l)
         self.assertIn((('a',), 1), l)
         # overwrite previous elements
         tree['b']['c'] = 5
         l = list(tree)
-        self.assertEquals(len(l), 3)
+        self.assertEqual(len(l), 3)
         self.assertIn((('b', 'c'), 5), l)
         self.assertIn((('b', 'v', 'd'), 3), l)
         self.assertIn((('a',), 1), l)
@@ -184,8 +184,8 @@ class TestTree(unittest.TestCase):
         pickle.dump(tree, f)
         f.seek(0)
         tree_2 = pickle.load(f)
-        self.assertEquals(type(tree), type(tree_2))
-        self.assertEquals(tree, tree_2)
+        self.assertEqual(type(tree), type(tree_2))
+        self.assertEqual(tree, tree_2)
         self.assertEqual(tree_2['a'], 1)
         self.assertEqual(tree_2['b'], 2)
         self.assertIsInstance(tree, Tree)
@@ -197,8 +197,8 @@ class TestTree(unittest.TestCase):
         pickle.dump(tree, f)
         f.seek(0)
         tree_2 = pickle.load(f)
-        self.assertEquals(type(tree), type(tree_2))
-        self.assertEquals(tree, tree_2)
+        self.assertEqual(type(tree), type(tree_2))
+        self.assertEqual(tree, tree_2)
         self.assertIsInstance(tree, Tree)
         self.assertIsInstance(tree_2, Tree)
 
@@ -210,10 +210,10 @@ class TestTree(unittest.TestCase):
         pickle.dump(tree, f)
         f.seek(0)
         tree_2 = pickle.load(f)
-        self.assertEquals(type(tree), type(tree_2))
-        self.assertEquals(tree, tree_2)
-        self.assertEquals(tree[1][2][3], '123')
-        self.assertEquals(tree_2[1][2][3], '123')
+        self.assertEqual(type(tree), type(tree_2))
+        self.assertEqual(tree, tree_2)
+        self.assertEqual(tree[1][2][3], '123')
+        self.assertEqual(tree_2[1][2][3], '123')
         self.assertIsInstance(tree, Tree)
         self.assertIsInstance(tree_2, Tree)
     

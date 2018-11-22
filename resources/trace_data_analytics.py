@@ -21,12 +21,12 @@ For example: 10.3, 0, 15 means that after 10.3 time units object 15 was requeste
 def trace_analytics(traces, trace_lengths, plotdir, min_interval_size=2000, do_zipf_estimation=True,
                     do_temporal_distance=True, do_rank_and_occurrence_evolution=True,
                     rank_and_occurrence_evolution_top_n=10, rank_and_occurrence_evolution_interval_size=10):
-    print 'starting preliminary analysis'
+    print('starting preliminary analysis')
     properties = ['requests', 'objects', 'single_occurrences', 'average_distance']
     data = {}
 
     for trace_index, trace_path in enumerate(traces):
-        print trace_path
+        print(trace_path)
 
         if do_zipf_estimation:
             plot_zipf_data(zipf_estimation(trace_path, min_interval_size), plotdir, trace_path, min_interval_size)
@@ -45,12 +45,12 @@ def trace_analytics(traces, trace_lengths, plotdir, min_interval_size=2000, do_z
 
     for property in properties:
         for trace in traces:
-            print data[trace][property], '\t',
-        print ''
+            print(data[trace][property], '\t', end=' ')
+        print('')
 
 
 def zipf_estimation(trace_path, min_interval_size=2000):
-    print 'estimating zipfian alpha parameter for all intervals of the trace'
+    print('estimating zipfian alpha parameter for all intervals of the trace')
     data = []
     with open('resources/' + trace_path, 'r') as trace:
         csv_reader = csv.reader(trace)
@@ -65,7 +65,7 @@ def zipf_estimation(trace_path, min_interval_size=2000):
             occurrence_aggregate[object] += 1
 
             if requests % min_interval_size == 0:
-                zipf_alpha, zipf_fit_prob = zipf_fit(occurrence_aggregate.values(), need_sorting=True)
+                zipf_alpha, zipf_fit_prob = zipf_fit(list(occurrence_aggregate.values()), need_sorting=True)
                 if zipf_fit_prob > 0.95:
                     data.append(zipf_alpha)
                 else:
@@ -76,7 +76,7 @@ def zipf_estimation(trace_path, min_interval_size=2000):
 
 
 def plot_zipf_data(data, plotdir, trace, min_interval_size=2000):
-    print 'plotting zipfian alpha parameters'
+    print('plotting zipfian alpha parameters')
     path = os.path.join(plotdir, trace[:-6] + '_zipf_intervals.pdf')
     create_path_if_necessary(path, plotdir)
 
@@ -100,7 +100,7 @@ def plot_zipf_data(data, plotdir, trace, min_interval_size=2000):
 
 def rank_and_occurrence_evolution(trace_path, trace_length, rank_and_occurrence_evolution_top_n=10,
                                   rank_and_occurrence_evolution_interval_size=100000):
-    print 'computing rank and occurrence evolution'
+    print('computing rank and occurrence evolution')
     data = {}
 
     with open('resources/' + trace_path, 'r') as trace:
@@ -110,7 +110,7 @@ def rank_and_occurrence_evolution(trace_path, trace_length, rank_and_occurrence_
 
         # divide trace into bins
         rank_and_occurrence_evolution_interval_size = max([rank_and_occurrence_evolution_interval_size, trace_length/50])
-        intervals = range(0, trace_length, rank_and_occurrence_evolution_interval_size)
+        intervals = list(range(0, trace_length, rank_and_occurrence_evolution_interval_size))
         intervals.append(trace_length)
         interval_index = 0
         n_intervals = len(intervals) - 1
@@ -162,7 +162,7 @@ def rank_and_occurrence_evolution(trace_path, trace_length, rank_and_occurrence_
 
 
 def plot_rank_and_occurrence_evolution(trace, plotdir, data):
-    print 'plotting rank and occurrence evolution'
+    print('plotting rank and occurrence evolution')
 
     path = os.path.join(plotdir, trace[:-6] + '_rank_evolution.pdf')
     create_path_if_necessary(path, plotdir)
@@ -171,13 +171,13 @@ def plot_rank_and_occurrence_evolution(trace, plotdir, data):
     fig = plt.figure()
 
     ranks = data['rank_evolution']
-    ids = ranks.keys()
+    ids = list(ranks.keys())
 
     cmap = plt.get_cmap('jet')
     norm = Normalize(0, len(ids) - 1)
 
     for index, id in enumerate(ids):
-        p = plt.plot(range(1, data['n_intervals'] + 1), ranks[id], '-', linewidth=2, color=cmap(norm(index)))
+        p = plt.plot(list(range(1, data['n_intervals'] + 1)), ranks[id], '-', linewidth=2, color=cmap(norm(index)))
 
     plt.xlabel('intervals (length = %d)' % data['interval_size'])
     plt.ylabel('rank')
@@ -200,7 +200,7 @@ def plot_rank_and_occurrence_evolution(trace, plotdir, data):
 
     occurrence_evolution = data['occurrence_evolution']
     for index, id in enumerate(ids):
-        p = plt.plot(range(1, data['n_intervals'] + 1), occurrence_evolution[id], '-', linewidth=2, color=cmap(norm(index)))
+        p = plt.plot(list(range(1, data['n_intervals'] + 1)), occurrence_evolution[id], '-', linewidth=2, color=cmap(norm(index)))
 
     plt.xlabel('intervals (length = %d)' % data['interval_size'])
     plt.ylabel('occurrences')
@@ -213,7 +213,7 @@ def plot_rank_and_occurrence_evolution(trace, plotdir, data):
 
 
 def temporal_distance(trace_path, plotdir):
-    print 'computing average temporal distance'
+    print('computing average temporal distance')
 
     with open('resources/' + trace_path, 'r') as trace:
         csv_reader = csv.reader(trace)
@@ -240,7 +240,7 @@ def temporal_distance(trace_path, plotdir):
     # (sum over difference between element's first and last occurrence) / (number of element's occurrences - 1)
     total_distance = \
         sum([last_occurrence[id] - first_occurrence[id] + 1 - total_occurrences[id] for id in total_occurrences])
-    total_pairs_count = sum([x-1 for x in total_occurrences.values()])
+    total_pairs_count = sum([x-1 for x in list(total_occurrences.values())])
 
     # free up memory
     del first_occurrence, last_occurrence
@@ -253,7 +253,7 @@ def temporal_distance(trace_path, plotdir):
     fig = plt.figure()
 
     # the last bin is "20 or greater"
-    plt.hist([x if x < 20 else 20 for x in total_occurrences.values()], bins=range(1, 21), normed=True)
+    plt.hist([x if x < 20 else 20 for x in list(total_occurrences.values())], bins=list(range(1, 21)), normed=True)
     plt.title("Occurrence distribution")
     plt.xlabel("number of occurrences")
     plt.ylabel("percentage of elements")
@@ -287,7 +287,7 @@ def temporal_distance(trace_path, plotdir):
     pdf = PdfPages(path)
     fig = plt.figure()
 
-    labels = map(str, range(2, 20))
+    labels = list(map(str, list(range(2, 20))))
     labels.append('20+')
 
     distances = [distances[i] if i in distances else [] for i in range(2, 21)]

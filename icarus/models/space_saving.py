@@ -58,7 +58,7 @@ class SpaceSavingCache(Cache):
         """
         # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed
         list = []
-        buckets = self._cache.bucket_map.keys()
+        buckets = list(self._cache.bucket_map.keys())
         buckets.sort(reverse=True)
         for key in buckets:
             bucket_list = deepcopy(self._cache.bucket_map[key])
@@ -67,12 +67,12 @@ class SpaceSavingCache(Cache):
         return list
 
     def print_buckets(self):
-        buckets = self._cache.bucket_map.keys()
+        buckets = list(self._cache.bucket_map.keys())
         buckets.sort(reverse=True)
         for key in buckets:
             list = deepcopy(self._cache.bucket_map[key])
             list.reverse()
-            print("%d: %s" %(key, str([(node.id, node.max_error) for node in list])))
+            print(("%d: %s" %(key, str([(node.id, node.max_error) for node in list]))))
 
     def position(self, k):
         """Return the current overall position of an item in the cache. Position *0*
@@ -303,7 +303,7 @@ class WeightedStreamSummary:
                 if len(self.bucket_map[self.last_cached_bucket]) == self.last_cached_index + 1:
                     # move last_cached pointers to next bucket
                     self.last_cached_bucket += 1
-                    while self.last_cached_bucket not in self.bucket_map.keys():
+                    while self.last_cached_bucket not in list(self.bucket_map.keys()):
                         self.last_cached_bucket += 1
                     self.last_cached_index = 0
                 else:
@@ -348,7 +348,7 @@ class WeightedStreamSummary:
                 if self.last_cached_index > 0:
                     self.last_cached_index -= 1
                 else:
-                    buckets = self.bucket_map.keys()
+                    buckets = list(self.bucket_map.keys())
                     buckets.sort()
                     bucket_index = buckets.index(bucket)
                     if bucket_index > 0:
@@ -360,7 +360,7 @@ class WeightedStreamSummary:
 
             elif self.last_cached_bucket == bucket:
                 if self.last_cached_index == 0:
-                    buckets = self.bucket_map.keys()
+                    buckets = list(self.bucket_map.keys())
                     buckets.sort()
                     bucket_index = buckets.index(bucket)
                     if bucket_index > 0:
@@ -393,7 +393,7 @@ class WeightedStreamSummary:
           be returned as well
 
         """
-        buckets = self.bucket_map.keys()
+        buckets = list(self.bucket_map.keys())
         buckets.sort()
         # set indices to top element
         curr_bucket_index = len(buckets) - 1
@@ -444,7 +444,7 @@ class WeightedStreamSummary:
     def convert_to_dictionary(self):
         # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed
         dict = {}
-        buckets = self.bucket_map.keys()
+        buckets = list(self.bucket_map.keys())
         for key in buckets:
             bucket_list = deepcopy(self.bucket_map[key])
             for node in bucket_list:

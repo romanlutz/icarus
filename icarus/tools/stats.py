@@ -1,6 +1,6 @@
 """Provides statistical utilities functions used by the simulator
 """
-from __future__ import division
+
 
 import math
 import random

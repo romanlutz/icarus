@@ -20,7 +20,7 @@ def reformat(filename):
                 time += 1
 
                 if time % 100000 == 0:
-                    print filename, time
+                    print(filename, time)
 
 '''
 for i in range(1, 15):

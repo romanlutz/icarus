@@ -7,10 +7,10 @@ from icarus.results.visualize import draw_cache_hit_ratios, create_result_evolut
 def print_results_full(filename, format):
     for tree in read_results('%s%s' % (filename, format), format):
         for k in tree[0]:
-            print k
+            print(k)
         for k in tree[1]:
-            print k
-        print ''
+            print(k)
+        print('')
 
 def provide_result_dictionary(filename, format, goal_tuple):
     f = lambda: defaultdict(f)
@@ -31,15 +31,15 @@ def provide_result_dictionary(filename, format, goal_tuple):
     dict_list = []
 
     for policy in policies:
-        if policy in rates.keys():
+        if policy in list(rates.keys()):
             if policy in ['ARC', 'LRU', 'SS']:
                 for strategy in strategies:
                     dict_list.append(put_results_if_available('%s + %s' % (policy, strategy), rates[policy], strategy))
             elif policy == 'KLRU':
-                segment_values = rates[policy].keys()
+                segment_values = list(rates[policy].keys())
                 segment_values.sort()
                 for segment_value in segment_values:
-                    cached_segment_values = rates[policy][segment_value].keys()
+                    cached_segment_values = list(rates[policy][segment_value].keys())
                     cached_segment_values.sort()
                     for cached_segment_value in cached_segment_values:
                         for strategy in strategies:
@@ -47,20 +47,20 @@ def provide_result_dictionary(filename, format, goal_tuple):
                                 'KLRU (%d,%d) + %s' % (segment_value, cached_segment_value, strategy),
                                 rates[policy][segment_value][cached_segment_value], strategy))
             elif policy in ['DSCA', '2DSCA', 'DSCAFT']:
-                window_sizes = rates[policy].keys()
+                window_sizes = list(rates[policy].keys())
                 window_sizes.sort()
                 for window_size in window_sizes:
                     for strategy in strategies:
                         dict_list.append(put_results_if_available('%s %d + %s' % (policy, window_size, strategy),
                                                                   rates[policy][window_size], strategy))
             elif policy in ['DSCAAWS', '2DSCAAWS']:
-                periods = rates[policy].keys()
+                periods = list(rates[policy].keys())
                 periods.sort()
                 for period in periods:
-                    hypo_As = rates[policy][period].keys()
+                    hypo_As = list(rates[policy][period].keys())
                     hypo_As.sort()
                     for A in hypo_As:
-                        hypo_epsilons = rates[policy][period][A].keys()
+                        hypo_epsilons = list(rates[policy][period][A].keys())
                         hypo_epsilons.sort()
                         for epsilon in hypo_epsilons:
                             for strategy in strategies:
@@ -68,10 +68,10 @@ def provide_result_dictionary(filename, format, goal_tuple):
                                     '%s %d %f %f + %s' % (policy, period, A, epsilon, strategy),
                                     rates[policy][period][A][epsilon], strategy))
             elif policy == 'DSCASW':
-                subwindow_sizes = rates[policy].keys()
+                subwindow_sizes = list(rates[policy].keys())
                 subwindow_sizes.sort()
                 for subwindow_size in subwindow_sizes:
-                    subwindows_values = rates[policy][subwindow_size].keys()
+                    subwindows_values = list(rates[policy][subwindow_size].keys())
                     subwindows_values.sort()
                     for subwindows in subwindows_values:
                         for strategy in strategies:
@@ -79,10 +79,10 @@ def provide_result_dictionary(filename, format, goal_tuple):
                                 put_results_if_available('DSCASW (%d %d) + %s' % (subwindow_size, subwindows, strategy),
                                                          rates[policy][subwindow_size][subwindows], strategy))
             elif policy == 'DSCAFS':
-                window_sizes = rates[policy].keys()
+                window_sizes = list(rates[policy].keys())
                 window_sizes.sort()
                 for window_size in window_sizes:
-                    lru_portions = rates[policy][window_size].keys()
+                    lru_portions = list(rates[policy][window_size].keys())
                     lru_portions.sort()
                     for lru_portion in lru_portions:
                         for strategy in strategies:
@@ -90,7 +90,7 @@ def provide_result_dictionary(filename, format, goal_tuple):
                                 put_results_if_available('DSCAFS (%d %f) + %s' % (window_size, lru_portion, strategy),
                                                          rates[policy][window_size][lru_portion], strategy))
             elif policy in ['ADSCASTK', 'ADSCAATK']:
-                window_sizes = rates[policy].keys()
+                window_sizes = list(rates[policy].keys())
                 window_sizes.sort()
                 for window_size in window_sizes:
                     for strategy in strategies:
@@ -105,24 +105,24 @@ def provide_result_dictionary(filename, format, goal_tuple):
 def print_cache_hit_rates(filename, format, goal_tuple, plot=False):
     descriptions, dict_list = provide_result_dictionary(filename, format, goal_tuple)
 
-    print '\t',
+    print('\t', end=' ')
     for description in descriptions:
-        print '%s\t' % description,
+        print('%s\t' % description, end=' ')
     print('')
 
     dict_list_per_desc = defaultdict(list)
 
     for result_dict in dict_list:
         if result_dict[1] != 'fail':
-            print '%s\t' % result_dict[0],
+            print('%s\t' % result_dict[0], end=' ')
 
             for desc in descriptions:
                 if desc in result_dict[1]:
                     average_hit_rate = sum(result_dict[1][desc])/len(result_dict[1][desc])
-                    print '%f \t' % average_hit_rate,
+                    print('%f \t' % average_hit_rate, end=' ')
                     dict_list_per_desc[desc].append((result_dict[0], average_hit_rate))
                 else:
-                    print 'fail\t'
+                    print('fail\t')
                     dict_list_per_desc[desc].append('fail')
             print('')
 
@@ -230,7 +230,7 @@ def determine_parameters(tree):
 
 def assign_results(goal_tuple, tree, rates, descriptions, topology_params, trace_params, synthetic_experiment_params, policy_params, strategy):
 
-    if trace_params.keys() != []:
+    if list(trace_params.keys()) != []:
         # deterministic trace-driven experiments
         description = '%s + %s' % (trace_params['trace'], trace_params['weights'])
     else:
@@ -271,7 +271,7 @@ def assign_results(goal_tuple, tree, rates, descriptions, topology_params, trace
             elif policy_params['policy'] == 'ADSCAATK':
                 result_location = rates[policy_params['policy']][policy_params['window_size']]
             else:
-                print('error: policy %s or strategy %s unknown' % (policy_params['policy'], strategy))
+                print(('error: policy %s or strategy %s unknown' % (policy_params['policy'], strategy)))
 
             if description in result_location:
                 result_location[strategy][description].append(k[1])
@@ -330,7 +330,7 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
                                 if 'UNIFORM' in desc:
                                     weight = 1
                                 if weight is None:
-                                    print 'error: weight could not be detected'
+                                    print('error: weight could not be detected')
 
                                 # detect percentage
                                 percentage = None
@@ -341,7 +341,7 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
                                         if 'p%f' % p in desc:
                                             percentage = p
                                 if percentage is None:
-                                    print 'error: percentage could not be detected'
+                                    print('error: percentage could not be detected')
 
                                 # add results to dictionary
                                 if desc in result_dict[1]:
@@ -359,7 +359,7 @@ def generate_result_evolution_plots(trace_abbreviation, percentages, weights, ca
                                     else:
                                         rates[policy][cache_size][weight][percentage][metric_description] = create_or_extend_list(rates[policy][cache_size][weight][percentage][metric_description], cache_hit_rate_list)
             except:
-                print 'error: file %s not available' % file_name
+                print('error: file %s not available' % file_name)
 
     policies = ['ARC', 'LRU', 'KLRU', 'SS', 'DSCA', '2DSCA', 'DSCAAWS', '2DSCAAWS', 'DSCASW', 'DSCAFT', 'DSCAFS', 'ADSCASTK', 'ADSCAATK']
 

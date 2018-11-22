@@ -53,12 +53,12 @@ def exec_experiment(topology, workload, netconf, strategy, cache_policy, collect
     controller = NetworkController(model)
     
     collectors_inst = [DATA_COLLECTOR[name](view, **params)
-                       for name, params in collectors.items()]
+                       for name, params in list(collectors.items())]
     collector = CollectorProxy(view, collectors_inst)
     controller.attach_collector(collector)
     
     strategy_name = strategy['name']
-    strategy_args = {k: v for k, v in strategy.items() if k != 'name'}
+    strategy_args = {k: v for k, v in list(strategy.items()) if k != 'name'}
     strategy_inst = STRATEGY[strategy_name](view, controller, **strategy_args)
 
     processed_events = 0

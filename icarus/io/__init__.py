@@ -1,2 +1,2 @@
-from readwrite import *
-from spickle import *
+from .readwrite import *
+from .spickle import *

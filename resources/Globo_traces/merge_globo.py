@@ -47,9 +47,9 @@ def merge(path, day, month, year):
     if trace_files == []:
         return
 
-    print 'merging the following files:'
+    print('merging the following files:')
     for file in trace_files:
-        print file
+        print(file)
 
     # select first file as initial merge file, unzip it and rename it
     unzip_file(path + trace_files[0])
@@ -62,21 +62,21 @@ def merge(path, day, month, year):
 
     try:
         for filename in trace_files[1:]:
-            print 'unzipping %s' % filename
+            print('unzipping %s' % filename)
             # unzip file while keeping original
             unzip_file(path + filename)
 
             try:
                 input_filename = filename[:-3]
-                print 'reading %s' % input_filename
+                print('reading %s' % input_filename)
 
                 in_file = fileinput.input(input_filename)
                 merged_file = fileinput.input(merged_filename)
 
                 with open(temporary_merged_filename, 'wt') as temporary_merged_file:
 
-                    input_request = parse_line(in_file.next())
-                    merged_request = parse_line(merged_file.next())
+                    input_request = parse_line(next(in_file))
+                    merged_request = parse_line(next(merged_file))
                     read_input_file_last = True
 
                     try:
@@ -84,34 +84,34 @@ def merge(path, day, month, year):
                             if input_request['time'] < merged_request['time']:
                                 temporary_merged_file.write(encode_dict(input_request))
                                 read_input_file_last = True
-                                input_request = parse_line(in_file.next())
+                                input_request = parse_line(next(in_file))
                             else:
                                 temporary_merged_file.write(encode_dict(merged_request))
                                 read_input_file_last = False
-                                merged_request = parse_line(merged_file.next())
+                                merged_request = parse_line(next(merged_file))
                     # end of one file, take rest of other file
                     except StopIteration:
                         try:
                             if read_input_file_last:
                                 while True:
                                     temporary_merged_file.write(encode_dict(merged_request))
-                                    merged_request = parse_line(merged_file.next())
+                                    merged_request = parse_line(next(merged_file))
                             else:
                                 while True:
                                     temporary_merged_file.write(encode_dict(input_request))
-                                    input_request = parse_line(in_file.next())
+                                    input_request = parse_line(next(in_file))
                         # end of second file, finish writing to temporary merged file
                         except StopIteration:
                             pass
 
             finally:
-                print 'deleting %s' % input_filename
+                print('deleting %s' % input_filename)
                 # delete unzipped file - original still exists
                 os.remove(path + input_filename)
     finally:
-        print 'deleting %s' % merged_filename
+        print('deleting %s' % merged_filename)
         os.remove(path + merged_filename)
-        print 'renaming merged file'
+        print('renaming merged file')
         os.rename(path + temporary_merged_filename, merged_filename)
 
 

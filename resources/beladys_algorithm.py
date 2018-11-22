@@ -6,7 +6,7 @@ def beladys_algorithm(max_cache_sizes, traces):
     results = {}
     for s in max_cache_sizes:
         results[s] = []
-    warmups = map(lambda x: 4*x, max_cache_sizes)
+    warmups = [4*x for x in max_cache_sizes]
 
     for trace_path in traces:
         with open('resources/' + trace_path, 'r') as trace:
@@ -87,8 +87,8 @@ def beladys_algorithm(max_cache_sizes, traces):
 
                 # ignore requests from warmup period
                 results[max_cache_size].append(str(float(cache_hits) / float(request_index - warmup)))
-                print 'finished', trace_path, results[max_cache_size][-1]
+                print('finished', trace_path, results[max_cache_size][-1])
 
 
     for s in max_cache_sizes:
-        print '\t'.join(results[s])
+        print('\t'.join(results[s]))

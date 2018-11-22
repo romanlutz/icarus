@@ -40,7 +40,7 @@ def draw_stack_deployment_for_all_topologies(topologies):
     for topology_name in topologies:
         try:
             if topologies[topology_name]:
-                for config_index in range(len(topologies[topology_name].values()[0])):
+                for config_index in range(len(list(topologies[topology_name].values())[0])):
                     config_params = {}
                     config_param_string = ''
                     for param_name in topologies[topology_name]:

@@ -9,7 +9,7 @@ latency, path stretch and link load.
 To create a new data collector, it is sufficient to create a new class
 inheriting from the `DataCollector` class and override all required methods.
 """
-from __future__ import division
+
 import collections
 
 from icarus.registry import register_data_collector
@@ -269,10 +269,10 @@ class LinkLoadCollector(DataCollector):
         link_loads = dict((link, (self.req_count[link] + self.sr*self.cont_count[link])/duration) 
                           for link in self.req_count)
         link_loads_int = dict((link, load)
-                              for link, load in link_loads.items()
+                              for link, load in list(link_loads.items())
                               if self.view.link_type(*link) == 'internal')
         link_loads_ext = dict((link, load)
-                              for link, load in link_loads.items()
+                              for link, load in list(link_loads.items())
                               if self.view.link_type(*link) == 'external')
         mean_load_int = sum(link_loads_int.values())/len(link_loads_int)
         mean_load_ext = sum(link_loads_ext.values())/len(link_loads_ext)
@@ -438,7 +438,7 @@ class CacheHitRatioCollector(DataCollector):
             results['MEAN_OFF_PATH'] = self.off_path_hit_count/n_session
             results['MEAN_ON_PATH'] = results['MEAN'] - results['MEAN_OFF_PATH']
         if self.content_hits:
-            content_set = set(self.content_cache_hits.keys() + self.content_server_hits.keys())
+            content_set = set(list(self.content_cache_hits.keys()) + list(self.content_server_hits.keys()))
             content_hits=dict((self.content_cache_hits[i] / (self.content_cache_hits[i] + self.content_server_hits[i]))
                             for i in content_set)
             results['PER_CONTENT'] = content_hits

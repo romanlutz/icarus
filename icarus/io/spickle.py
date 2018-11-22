@@ -9,10 +9,10 @@ Limitations:
   - Only works with ASCII-based pickles (protocol=0), since s_load reads
   in one line at a time
 """
-from __future__ import print_function
+
 
 try:
-    from cPickle import dumps, loads
+    from pickle import dumps, loads
 except ImportError:
     from pickle import dumps, loads
 

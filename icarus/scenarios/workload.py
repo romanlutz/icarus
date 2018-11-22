@@ -98,7 +98,7 @@ class StationaryWorkload(object):
         self.dist = TruncatedMandelbrotZipfDist(alpha=alpha, q=q, n=n_contents)
 
         self.n_contents = n_contents
-        self.contents = range(1, n_contents + 1)
+        self.contents = list(range(1, n_contents + 1))
         self.alpha = alpha
         self.rate = rate
         self.n_warmup = n_warmup
@@ -107,7 +107,7 @@ class StationaryWorkload(object):
         self.beta = beta
         if beta != 0:
             degree = nx.degree(self.topology)
-            self.receivers = sorted(self.receivers, key=lambda x: degree[iter(topology.edge[x]).next()], reverse=True)
+            self.receivers = sorted(self.receivers, key=lambda x: degree[next(iter(topology.edge[x]))], reverse=True)
             self.receiver_dist = TruncatedMandelbrotZipfDist(beta, len(self.receivers))
         
     def __iter__(self):
@@ -174,13 +174,13 @@ class GlobetraffWorkload(object):
             for content, popularity, size, app_type in reader:
                 self.n_contents = max(self.n_contents, content)
         self.n_contents += 1
-        self.contents = range(self.n_contents)
+        self.contents = list(range(self.n_contents))
         self.request_file = reqs_file
         self.beta = beta
         if beta != 0:
             degree = nx.degree(self.topology)
             self.receivers = sorted(self.receivers, key=lambda x: 
-                                    degree[iter(topology.edge[x]).next()], 
+                                    degree[next(iter(topology.edge[x]))], 
                                     reverse=True)
             self.receiver_dist = TruncatedMandelbrotZipfDist(beta, len(self.receivers))
         
@@ -271,7 +271,7 @@ class TraceDrivenWorkload(object):
         if beta != 0:
             degree = nx.degree(topology)
             self.receivers = sorted(self.receivers, key=lambda x:
-                                    degree[iter(topology.edge[x]).next()],
+                                    degree[next(iter(topology.edge[x]))],
                                     reverse=True)
             self.receiver_dist = TruncatedMandelbrotZipfDist(beta, len(self.receivers))
         

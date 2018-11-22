@@ -1,4 +1,4 @@
-from __future__ import division
+
 import sys
 if sys.version_info[:2] >= (2, 7):
     import unittest

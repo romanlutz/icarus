@@ -1,4 +1,4 @@
-from __future__ import division
+
 import sys
 if sys.version_info[:2] >= (2, 7):
     import unittest
@@ -225,28 +225,28 @@ class TestCache(unittest.TestCase):
 
     def test_do(self):
         c = cache.FifoCache(2)
-        self.assertEquals(len(c), 0)
+        self.assertEqual(len(c), 0)
         c.do('PUT', 1)
-        self.assertEquals(len(c), 1)
+        self.assertEqual(len(c), 1)
         c.do('UPDATE', 1)
-        self.assertEquals(len(c), 1)
+        self.assertEqual(len(c), 1)
         self.assertTrue(c.do('GET', 1))
         c.do('PUT', 2)
         self.assertTrue(c.do('GET', 2))
-        self.assertEquals(len(c), 2)
-        self.assertEquals(c.dump(), [2, 1])
+        self.assertEqual(len(c), 2)
+        self.assertEqual(c.dump(), [2, 1])
         c.do('PUT', 3)
-        self.assertEquals(len(c), 2)
-        self.assertEquals(c.dump(), [3, 2])
+        self.assertEqual(len(c), 2)
+        self.assertEqual(c.dump(), [3, 2])
         self.assertTrue(c.do('GET', 2))
         self.assertTrue(c.do('GET', 3))
         self.assertFalse(c.do('GET', 1))
         c.do('DELETE', 3)
         self.assertFalse(c.do('GET', 3))
-        self.assertEquals(c.dump(), [2])
+        self.assertEqual(c.dump(), [2])
         c.do('DELETE', 2)
         self.assertFalse(c.do('GET', 2))
-        self.assertEquals(c.dump(), [])
+        self.assertEqual(c.dump(), [])
     
 
 class TestLruCache(unittest.TestCase):
@@ -254,25 +254,25 @@ class TestLruCache(unittest.TestCase):
     def test_lru(self):
         c = cache.LruCache(4)
         c.put(0)
-        self.assertEquals(len(c), 1)
+        self.assertEqual(len(c), 1)
         c.put(2)
-        self.assertEquals(len(c), 2)
+        self.assertEqual(len(c), 2)
         c.put(3)
-        self.assertEquals(len(c), 3)
+        self.assertEqual(len(c), 3)
         c.put(4)
-        self.assertEquals(len(c), 4)
-        self.assertEquals(c.dump(), [4, 3, 2, 0])
-        self.assertEquals(c.put(5), 0)
-        self.assertEquals(c.put(5), None)
-        self.assertEquals(len(c), 4)
-        self.assertEquals(c.dump(), [5, 4, 3, 2])
+        self.assertEqual(len(c), 4)
+        self.assertEqual(c.dump(), [4, 3, 2, 0])
+        self.assertEqual(c.put(5), 0)
+        self.assertEqual(c.put(5), None)
+        self.assertEqual(len(c), 4)
+        self.assertEqual(c.dump(), [5, 4, 3, 2])
         c.get(2)
-        self.assertEquals(c.dump(), [2, 5, 4, 3])
+        self.assertEqual(c.dump(), [2, 5, 4, 3])
         c.get(4)
-        self.assertEquals(c.dump(), [4, 2, 5, 3])
+        self.assertEqual(c.dump(), [4, 2, 5, 3])
         c.clear()
-        self.assertEquals(len(c), 0)
-        self.assertEquals(c.dump(), [])
+        self.assertEqual(len(c), 0)
+        self.assertEqual(c.dump(), [])
         
     def test_remove(self):
         c = cache.LruCache(4)
@@ -430,28 +430,28 @@ class TestFifoCache(unittest.TestCase):
 
     def test_fifo(self):
         c = cache.FifoCache(4)
-        self.assertEquals(len(c), 0)
+        self.assertEqual(len(c), 0)
         c.put(1)
-        self.assertEquals(len(c), 1)
+        self.assertEqual(len(c), 1)
         c.put(2)
-        self.assertEquals(len(c), 2)
+        self.assertEqual(len(c), 2)
         c.put(3)
-        self.assertEquals(len(c), 3)
+        self.assertEqual(len(c), 3)
         c.put(4)
-        self.assertEquals(len(c), 4)
-        self.assertEquals(c.dump(), [4, 3, 2, 1])
+        self.assertEqual(len(c), 4)
+        self.assertEqual(c.dump(), [4, 3, 2, 1])
         c.put(5)
-        self.assertEquals(len(c), 4)
-        self.assertEquals(c.dump(), [5, 4, 3, 2])
+        self.assertEqual(len(c), 4)
+        self.assertEqual(c.dump(), [5, 4, 3, 2])
         c.get(2)
-        self.assertEquals(c.dump(), [5, 4, 3, 2])
+        self.assertEqual(c.dump(), [5, 4, 3, 2])
         c.get(4)
-        self.assertEquals(c.dump(), [5, 4, 3, 2])
+        self.assertEqual(c.dump(), [5, 4, 3, 2])
         c.put(6)
-        self.assertEquals(c.dump(), [6, 5, 4, 3])
+        self.assertEqual(c.dump(), [6, 5, 4, 3])
         c.clear()
-        self.assertEquals(len(c), 0)
-        self.assertEquals(c.dump(), [])
+        self.assertEqual(len(c), 0)
+        self.assertEqual(c.dump(), [])
     
     def test_remove(self):
         c = cache.FifoCache(4)
@@ -475,26 +475,26 @@ class TestClimbCache(unittest.TestCase):
     def test_climb(self):
         c = cache.ClimbCache(4)
         c.put(1)
-        self.assertEquals(len(c), 1)
+        self.assertEqual(len(c), 1)
         c.put(2)
-        self.assertEquals(len(c), 2)
+        self.assertEqual(len(c), 2)
         c.put(3)
-        self.assertEquals(len(c), 3)
+        self.assertEqual(len(c), 3)
         c.put(5)
-        self.assertEquals(len(c), 4)
-        self.assertEquals(c.dump(), [1, 2, 3, 5])
-        self.assertEquals(c.put(4), 5)
-        self.assertEquals(c.dump(), [1, 2, 3, 4])
-        self.assertEquals(c.put(4), None)
-        self.assertEquals(c.dump(), [1, 2, 4, 3])
-        self.assertEquals(c.put(4), None)
-        self.assertEquals(c.dump(), [1, 4, 2, 3])
-        self.assertEquals(c.put(4), None)
-        self.assertEquals(c.dump(), [4, 1, 2, 3])
-        self.assertEquals(c.put(4), None)
-        self.assertEquals(c.dump(), [4, 1, 2, 3])
-        self.assertEquals(c.put(5), 3)
-        self.assertEquals(c.dump(), [4, 1, 2, 5])
+        self.assertEqual(len(c), 4)
+        self.assertEqual(c.dump(), [1, 2, 3, 5])
+        self.assertEqual(c.put(4), 5)
+        self.assertEqual(c.dump(), [1, 2, 3, 4])
+        self.assertEqual(c.put(4), None)
+        self.assertEqual(c.dump(), [1, 2, 4, 3])
+        self.assertEqual(c.put(4), None)
+        self.assertEqual(c.dump(), [1, 4, 2, 3])
+        self.assertEqual(c.put(4), None)
+        self.assertEqual(c.dump(), [4, 1, 2, 3])
+        self.assertEqual(c.put(4), None)
+        self.assertEqual(c.dump(), [4, 1, 2, 3])
+        self.assertEqual(c.put(5), 3)
+        self.assertEqual(c.dump(), [4, 1, 2, 5])
         
     def test_remove(self):
         c = cache.ClimbCache(4)
@@ -532,27 +532,27 @@ class TestRandCache(unittest.TestCase):
     
     def test_rand(self):
         c = cache.RandEvictionCache(4)
-        self.assertEquals(len(c), 0)
+        self.assertEqual(len(c), 0)
         c.put(1)
-        self.assertEquals(len(c), 1)
+        self.assertEqual(len(c), 1)
         c.put(2)
-        self.assertEquals(len(c), 2)
+        self.assertEqual(len(c), 2)
         c.put(3)
-        self.assertEquals(len(c), 3)
+        self.assertEqual(len(c), 3)
         c.put(4)
-        self.assertEquals(len(c), 4)
-        self.assertEquals(len(c.dump()), 4)
+        self.assertEqual(len(c), 4)
+        self.assertEqual(len(c.dump()), 4)
         for v in (1, 2, 3, 4):
             self.assertTrue(c.has(v))
         c.get(3)
         for v in (1, 2, 3, 4):
             self.assertTrue(c.has(v))
         c.put(5)
-        self.assertEquals(len(c), 4)
+        self.assertEqual(len(c), 4)
         self.assertTrue(c.has(5))
         c.clear()
-        self.assertEquals(len(c), 0)
-        self.assertEquals(c.dump(), [])
+        self.assertEqual(len(c), 0)
+        self.assertEqual(c.dump(), [])
 
     def test_remove(self):
         c = cache.RandEvictionCache(4)
@@ -577,16 +577,16 @@ class TestInCacheLfuCache(unittest.TestCase):
 
     def test_lfu(self):
         c = cache.InCacheLfuCache(4)
-        self.assertEquals(len(c), 0)
+        self.assertEqual(len(c), 0)
         c.put(1)
-        self.assertEquals(len(c), 1)
+        self.assertEqual(len(c), 1)
         c.put(2)
-        self.assertEquals(len(c), 2)
+        self.assertEqual(len(c), 2)
         c.put(3)
-        self.assertEquals(len(c), 3)
+        self.assertEqual(len(c), 3)
         c.put(4)
-        self.assertEquals(len(c), 4)
-        self.assertEquals(len(c.dump()), 4)
+        self.assertEqual(len(c), 4)
+        self.assertEqual(len(c.dump()), 4)
         for v in (1, 2, 3, 4):
             self.assertTrue(c.has(v))
         c.get(1)
@@ -596,28 +596,28 @@ class TestInCacheLfuCache(unittest.TestCase):
         c.get(2)
         c.get(3)
         c.put(5)
-        self.assertEquals(c.dump(), [1, 2, 3, 5])
-        self.assertEquals(len(c), 4)
+        self.assertEqual(c.dump(), [1, 2, 3, 5])
+        self.assertEqual(len(c), 4)
         self.assertTrue(c.has(5))
         c.clear()
-        self.assertEquals(len(c), 0)
-        self.assertEquals(c.dump(), [])
+        self.assertEqual(len(c), 0)
+        self.assertEqual(c.dump(), [])
 
 
 class TestWeightedLruCache(unittest.TestCase):
 
     def test_wlru(self):
         c = cache.WeightedLruCache(4)
-        self.assertEquals(len(c), 0)
+        self.assertEqual(len(c), 0)
         c.put(1, 1)
-        self.assertEquals(len(c), 1)
+        self.assertEqual(len(c), 1)
         c.put(2, 2)
-        self.assertEquals(len(c), 2)
+        self.assertEqual(len(c), 2)
         c.put(3, 3)
-        self.assertEquals(len(c), 3)
+        self.assertEqual(len(c), 3)
         c.put(4, 2)
-        self.assertEquals(len(c), 4)
-        self.assertEquals(len(c.dump()), 4)
+        self.assertEqual(len(c), 4)
+        self.assertEqual(len(c.dump()), 4)
         for v in (1, 2, 3, 4):
             self.assertTrue(c.has(v))
 
@@ -630,26 +630,26 @@ class TestWeightedLruCache(unittest.TestCase):
         c.get(2, 2)  # (1,1,4), (2,2,6), (3,3,3), (4,2,2)
         c.get(3, 3)  # (1,1,4), (2,2,6), (3,3,6), (4,2,2)
         c.put(5, 4)  # (1,1,4), (2,2,6), (3,3,6), (5,4,4)
-        self.assertEquals(c.dump(), [3, 2, 5, 1])
-        self.assertEquals(len(c), 4)
+        self.assertEqual(c.dump(), [3, 2, 5, 1])
+        self.assertEqual(len(c), 4)
         self.assertTrue(c.has(5))
         c.clear()
-        self.assertEquals(len(c), 0)
-        self.assertEquals(c.dump(), [])
+        self.assertEqual(len(c), 0)
+        self.assertEqual(c.dump(), [])
 
 
 class TestPerfectLfuCache(unittest.TestCase):
 
     def test_lfu(self):
         c = cache.PerfectLfuCache(3)
-        self.assertEquals(len(c), 0)
+        self.assertEqual(len(c), 0)
         c.put(1)
-        self.assertEquals(len(c), 1)
+        self.assertEqual(len(c), 1)
         c.put(2)
-        self.assertEquals(len(c), 2)
+        self.assertEqual(len(c), 2)
         c.put(3)
-        self.assertEquals(len(c), 3)
-        self.assertEquals(len(c.dump()), 3)
+        self.assertEqual(len(c), 3)
+        self.assertEqual(len(c.dump()), 3)
         for v in (1, 2, 3):
             self.assertTrue(c.has(v))
         c.get(1)
@@ -666,7 +666,7 @@ class TestPerfectLfuCache(unittest.TestCase):
         c.get(3)
         c.get(5) 
         c.put(5)    # This does not removes 3
-        self.assertEquals(c.dump(), [1, 2, 3])
+        self.assertEqual(c.dump(), [1, 2, 3])
         c.get(5)
         c.get(5)
         c.get(5)
@@ -675,7 +675,7 @@ class TestPerfectLfuCache(unittest.TestCase):
         # Now 5 has been requested frequently enough to be included in cache
         # and replace 3
         c.put(5)
-        self.assertEquals(c.dump(), [5, 1, 2])
+        self.assertEqual(c.dump(), [5, 1, 2])
         # Now 5 has been requested 2 times, but 3 was requested 3 times. If I
         # reinsert 3, 3 is kept and 5 discarded
         c.get(3)
@@ -685,10 +685,10 @@ class TestPerfectLfuCache(unittest.TestCase):
         c.get(3)
         # Now 3 has been requested enough times to be inserted and evict 2
         c.put(3)
-        self.assertEquals(c.dump(), [3, 5, 1])
+        self.assertEqual(c.dump(), [3, 5, 1])
         c.clear()
-        self.assertEquals(len(c), 0)
-        self.assertEquals(c.dump(), [])
+        self.assertEqual(len(c), 0)
+        self.assertEqual(c.dump(), [])
         
 
 class TestInsertAfterKHits(unittest.TestCase):
@@ -1034,7 +1034,7 @@ class TestLargeScaleCache(unittest.TestCase):
                 else:
                     c.put(content)
 
-        self.assertEquals([contents, cache_hits], [60000, 37764])
+        self.assertEqual([contents, cache_hits], [60000, 37764])
 
     def test_lru_fastly(self):
         import csv
@@ -1054,9 +1054,9 @@ class TestLargeScaleCache(unittest.TestCase):
                     c.put(content)
 
                 if contents % 100000 == 0:
-                    print contents, 14885146, float(contents)/float(14885146)
+                    print(contents, 14885146, float(contents)/float(14885146))
 
-        self.assertEquals([contents, cache_hits], [14885146, 1640707])
+        self.assertEqual([contents, cache_hits], [14885146, 1640707])
 
 
 

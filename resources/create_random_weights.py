@@ -8,9 +8,9 @@ def main(argv):
 
     for opt, arg in opts:
         if opt == '-w':
-            weights = map(int, arg.split(','))
+            weights = list(map(int, arg.split(',')))
         elif opt == '-p':
-            percentages = map(float, arg.split(','))
+            percentages = list(map(float, arg.split(',')))
         elif opt == '-t':
             trace_file = arg
         elif opt == '-n':
@@ -27,7 +27,7 @@ def main(argv):
             contents[content] = 1
 
     number_of_contents = len(contents)
-    keys = contents.keys()
+    keys = list(contents.keys())
 
     for repetition in range(repetitions):
         random.shuffle(keys)

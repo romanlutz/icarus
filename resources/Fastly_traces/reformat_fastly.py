@@ -47,10 +47,10 @@ def reformat(filename, size_given=False, threshold=10000):
                     writer.writerow((time, 0, contents[content]))
 
                 if i % 10000 == 0:
-                    print float(i)/float(n_requests), len(contents)
+                    print(float(i)/float(n_requests), len(contents))
 
-            print 'file sizes below threshold:', file_sizes_below_threshold
-            print 'file sizes above threshold:', file_sizes_above_threshold
+            print('file sizes below threshold:', file_sizes_below_threshold)
+            print('file sizes above threshold:', file_sizes_above_threshold)
 
 '''
 reformat('requests.txt')

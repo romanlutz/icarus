@@ -3,12 +3,12 @@
 import collections
 import copy
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 from icarus.util import Tree
 from icarus.registry import register_results_reader, register_results_writer
-import spickle
+from . import spickle
 
 __all__ = [
     'ResultSet',

@@ -35,24 +35,24 @@ class TestResultSet(unittest.TestCase):
         pass
     
     def test_len(self):
-        self.assertEquals(3, len(self.rs))
+        self.assertEqual(3, len(self.rs))
     
     def test_getitem(self):
         cond, metric = self.rs[0]
-        self.assertEquals(self.cond_a, cond)
-        self.assertEquals(self.metric, metric)
+        self.assertEqual(self.cond_a, cond)
+        self.assertEqual(self.metric, metric)
         
     def test_filter_match(self):
         filtered_rs = self.rs.filter({'gamma': 3})
-        self.assertEquals(3, len(filtered_rs))
+        self.assertEqual(3, len(filtered_rs))
         #TODO: Complete
         
     def test_filter_no_matching_metrics(self):
         filtered_rs = self.rs.filter({'gamma': 3})
-        self.assertEquals(3, len(filtered_rs))
+        self.assertEqual(3, len(filtered_rs))
         #TODO: Complete
         
     def test_filter_no_match(self):
         filtered_rs = self.rs.filter({'gamma': 3})
-        self.assertEquals(3, len(filtered_rs))
+        self.assertEqual(3, len(filtered_rs))
         

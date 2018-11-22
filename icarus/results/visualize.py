@@ -1,5 +1,5 @@
 """Functions for visualizing results on graphs of topologies"""
-from __future__ import division
+
 
 import os
 from textwrap import wrap
@@ -45,7 +45,7 @@ def stack_map(topology):
         source | receiver | router | cache
     """
     stack = {}
-    for v, (name, props) in topology.stacks().items():
+    for v, (name, props) in list(topology.stacks().items()):
         if name == 'router':
             cache = False
             if 'cache_size' in props and props['cache_size'] > 0:
@@ -119,13 +119,13 @@ def draw_network_load(topology, result, filename, plotdir):
     plt.savefig(plt.savefig(os.path.join(plotdir, filename), bbox_inches='tight'))
 
 def draw_cache_level_proportions(plotdir, filename, format):
-    from output_results import determine_parameters
+    from .output_results import determine_parameters
 
     result = read_results('%s%s' % (filename, format), format)
     for tree in result:
         trace, policy, cache_size, window_size, segments, cached_segments, subwindows, subwindow_size, lru_portion, \
            hypothesis_check_period, hypothesis_check_A, hypothesis_check_epsilon = determine_parameters(tree)
-        print trace, policy
+        print(trace, policy)
         param_names = ['window_size', 'subwindows', 'subwindow_size', 'segments', 'cached_segments', 'lru_portion']
         params = [window_size, subwindows, subwindow_size, segments, cached_segments, lru_portion]
         if policy in ['ARC', 'DSCA', 'DSCASW', 'ADSCASTK', 'ADSCAATK']:
@@ -187,7 +187,7 @@ def draw_cache_hit_ratios(results, data_desc):
     plotdir = 'plots/cache_hit_rates/'
 
     path = os.path.join(plotdir, filename)
-    print path
+    print(path)
 
     # ensure the path exists and create it if necessary
     directories = path.split('/')[1:-1]
@@ -229,7 +229,7 @@ def create_result_evolution_plots(plot_rates, data_desc, metric_name, param_name
     plotdir = 'plots/cache_hit_rate_evolution/'
 
     path = os.path.join(plotdir, filename)
-    print path
+    print(path)
 
     # ensure the path exists and create it if necessary
     directories = path.split('/')[1:-1]
@@ -253,17 +253,17 @@ def create_result_evolution_plots(plot_rates, data_desc, metric_name, param_name
     fig = plt.figure(figsize=(13, 13), dpi=800)
 
     subplot_index = 0
-    parameter1_values = plot_rates.keys()
+    parameter1_values = list(plot_rates.keys())
     parameter1_values.sort()
     for param1 in parameter1_values:
-        parameter2_values = plot_rates[param1].keys()
+        parameter2_values = list(plot_rates[param1].keys())
         parameter2_values.sort()
         for param2 in parameter2_values:
             plots = []
             subplot_index += 1
             ax = fig.add_subplot(len(parameter1_values),len(parameter2_values),subplot_index)
 
-            occurring_policies = plot_rates[param1][param2].keys()
+            occurring_policies = list(plot_rates[param1][param2].keys())
             occurring_policies = sorted(occurring_policies,
                                         key=lambda policy: 0 if ' ' not in policy or '(' in policy else int(
                                             policy.split(' ')[1]))
@@ -275,7 +275,7 @@ def create_result_evolution_plots(plot_rates, data_desc, metric_name, param_name
             parameter3_values = []
             for policy in occurring_policies:
                 policy_names.append(policy)
-                parameter3_values = plot_rates[param1][param2][policy].keys()
+                parameter3_values = list(plot_rates[param1][param2][policy].keys())
                 parameter3_values.sort()
 
                 values = []
@@ -296,7 +296,7 @@ def create_result_evolution_plots(plot_rates, data_desc, metric_name, param_name
             ax.set_xlim([min(parameter3_values) - 0.05 * (max(parameter3_values) - min(parameter3_values)), max(parameter3_values) + 0.05 * (max(parameter3_values) - min(parameter3_values))])
             ax.set_ylim([max([0, min_value - 0.05 * (max_value - min_value)]), max_value + 0.05 * (max_value - min_value)])
             ax.set_title('%s=%s, %s=%s' % (param_names[0], str(param1), param_names[1], str(param2)))
-    plt.figlegend(tuple(map(lambda x: x[0], plots)), tuple(map(lambda n: ' '.join(n.split(' ')[:2]), policy_names)),
+    plt.figlegend(tuple([x[0] for x in plots]), tuple([' '.join(n.split(' ')[:2]) for n in policy_names]),
                   bbox_to_anchor=(1.18, .5), loc='right', borderaxespad=0.)
 
     plt.gcf().tight_layout()

@@ -20,38 +20,38 @@ def reformat(filename, columnTime, columnIP, columnName, one_cache_scenario=True
                 first = False
             else:
                 time = row[columnTime].split()
-                [year, month, day] = map(int, time[0].split('-'))
-                [hour, minute, second] = map(int, time[1].split(':'))
+                [year, month, day] = list(map(int, time[0].split('-')))
+                [hour, minute, second] = list(map(int, time[1].split(':')))
                 ip = row[columnIP]
                 content = row[columnName]
 
                 event = {'receiver': ip, 'content': content}
 
                 # map IP addresses to unique IDs
-                if ip in receivers.keys():
+                if ip in list(receivers.keys()):
                     pass
                 else:
                     receivers[ip] = receiver_id
                     receiver_id += 1
 
                 # map content names to unique IDs
-                if content in contents.keys():
+                if content in list(contents.keys()):
                     pass
                 else:
                     contents[content] = content_id
                     content_id += 1
 
-                if year not in requests.keys():
+                if year not in list(requests.keys()):
                     requests[year] = {month: {day: {hour: {minute: {second: [event]}}}}}
-                elif month not in requests[year].keys():
+                elif month not in list(requests[year].keys()):
                     requests[year][month] = {day: {hour: {minute: {second: [event]}}}}
-                elif day not in requests[year][month].keys():
+                elif day not in list(requests[year][month].keys()):
                     requests[year][month][day] = {hour: {minute: {second: [event]}}}
-                elif hour not in requests[year][month][day].keys():
+                elif hour not in list(requests[year][month][day].keys()):
                     requests[year][month][day][hour] = {minute: {second: [event]}}
-                elif minute not in requests[year][month][day][hour].keys():
+                elif minute not in list(requests[year][month][day][hour].keys()):
                     requests[year][month][day][hour][minute] = {second: [event]}
-                elif second not in requests[year][month][day][hour][minute].keys():
+                elif second not in list(requests[year][month][day][hour][minute].keys()):
                     requests[year][month][day][hour][minute][second] = [event]
                 else:
                     requests[year][month][day][hour][minute][second].append(event)
@@ -68,22 +68,22 @@ def reformat(filename, columnTime, columnIP, columnName, one_cache_scenario=True
 
     with open(filename[:-4] + extension + '.trace', 'wb') as file:
         writer = csv.writer(file, quoting = csv.QUOTE_NONE)
-        years = requests.keys()
+        years = list(requests.keys())
         years.sort()
         for year in years:
-            months = requests[year].keys()
+            months = list(requests[year].keys())
             months.sort()
             for month in months:
-                days = requests[year][month].keys()
+                days = list(requests[year][month].keys())
                 days.sort()
                 for day in days:
-                    hours = requests[year][month][day].keys()
+                    hours = list(requests[year][month][day].keys())
                     hours.sort()
                     for hour in hours:
-                        minutes = requests[year][month][day][hour].keys()
+                        minutes = list(requests[year][month][day][hour].keys())
                         minutes.sort()
                         for minute in minutes:
-                            seconds = requests[year][month][day][hour][minute].keys()
+                            seconds = list(requests[year][month][day][hour][minute].keys())
                             seconds.sort()
                             for second in seconds:
                                 for event in requests[year][month][day][hour][minute][second]:

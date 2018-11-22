@@ -1,8 +1,8 @@
 import getopt
 import sys, os
 from collections import defaultdict
-from merge_globo import parse_line
-from analyze_globo import mp4_versions, determine_format_and_content_id, clear_from_last_requests
+from .merge_globo import parse_line
+from .analyze_globo import mp4_versions, determine_format_and_content_id, clear_from_last_requests
 
 priority_content_types = ['fantastico', 'jornal-nacional', 'bom-dia-brasil', 'globo-news', 'jornal-da-globo', 'sportv']
 
@@ -11,7 +11,7 @@ def reformat(path, day, month, year, time_offset, contents, n_contents, out_file
     day_existed = False
     for filename in os.listdir(path):
         if '%02d%02d%02d-merged.log' % (year, month, day) == filename:
-            print('reading %s' % filename)
+            print(('reading %s' % filename))
             day_existed = True
             with open(filename, 'rt') as in_file:
 

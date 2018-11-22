@@ -11,7 +11,7 @@ A valid ICN topology must have the following attributes:
    deployed directly at topology creation, instead they are deployed by a 
    cache placement algorithm.
 """
-from __future__ import division
+
 
 from os import path
 
@@ -156,7 +156,7 @@ def topology_path(n, delay=1, **kwargs):
     """
     topology = fnss.line_topology(n)
     receivers = [0]    
-    routers = range(1, n-1)
+    routers = list(range(1, n-1))
     sources = [n-1]
     topology.graph['icr_candidates'] = set(routers)
     for v in sources:

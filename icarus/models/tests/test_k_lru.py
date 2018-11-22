@@ -1,4 +1,4 @@
-from __future__ import division
+
 import sys
 from icarus.models.k_lru import KLruCache
 if sys.version_info[:2] >= (2, 7):
@@ -32,7 +32,7 @@ class TestKLRU(unittest.TestCase):
                 else:
                     c.put(content)
 
-        self.assertEquals([contents, cache_hits], [60000, 39136])
+        self.assertEqual([contents, cache_hits], [60000, 39136])
 
     def test_klru_fastly(self):
         import csv
@@ -55,6 +55,6 @@ class TestKLRU(unittest.TestCase):
                         cache.put(content)
 
                 if contents % 100000 == 0:
-                    print contents, 14885146, float(contents)/float(14885146)
+                    print(contents, 14885146, float(contents)/float(14885146))
 
-        self.assertEquals(cache_hits, [2677248, 2660332, 2588451])
+        self.assertEqual(cache_hits, [2677248, 2660332, 2588451])

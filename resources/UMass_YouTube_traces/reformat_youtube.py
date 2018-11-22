@@ -19,7 +19,7 @@ def time_difference(timestamp1, timestamp2):
     sec2, _, microsec2 = sec2.partition('.')
     microsec2 = microsec2[:6]
     [year1, year2, day1, day2, hour1, hour2, min1, min2, sec1, sec2, microsec1, microsec2] = \
-        map(int, [year1, year2, day1, day2, hour1, hour2, min1, min2, sec1, sec2, microsec1, microsec2])
+        list(map(int, [year1, year2, day1, day2, hour1, hour2, min1, min2, sec1, sec2, microsec1, microsec2]))
 
     # there are only January and Feburary requests, so this simple rule works
     month1 = 1 if month1 == 'Jan' else 2
@@ -64,8 +64,8 @@ def reformat(filename, no_duplicates=False):
                 elif index3 != -1:
                     content = parts[6][index3+5:index3+16]
                 else:
-                    print 'error: unexpected format'
-                    print parts[6]
+                    print('error: unexpected format')
+                    print(parts[6])
 
                 if no_duplicates:
                     if content in contents:
@@ -106,7 +106,7 @@ def reformat(filename, no_duplicates=False):
     extension = '_no_duplicates_reformatted' if no_duplicates else '_reformatted'
 
     if no_duplicates:
-        print 'duplicate requests:', duplicate_requests
+        print('duplicate requests:', duplicate_requests)
 
     with open(filename[:-4] + extension + '.trace', 'wb') as file:
         writer = csv.writer(file, quoting = csv.QUOTE_NONE)

@@ -3,7 +3,7 @@
 The orchestrator is responsible for scheduling experiments specified in the
 user-provided settings.
 """
-from __future__ import division
+
 import time
 import collections
 import multiprocessing as mp

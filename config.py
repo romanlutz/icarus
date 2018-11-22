@@ -277,7 +277,7 @@ if SYNTHETIC_EXPERIMENT:
     Q = [0, 5, 50]
 
     # random seeds given to workload creating library
-    seeds = range(N_REPLICATIONS)
+    seeds = list(range(N_REPLICATIONS))
 
     # List of topologies tested
     # Topology implementations are located in ./icarus/scenarios/topology.py
@@ -299,7 +299,7 @@ if SYNTHETIC_EXPERIMENT:
         for (alpha, q) in list(itertools.product(ALPHA, Q)):
             for strategy in STRATEGIES:
                 for topology in TOPOLOGIES:
-                    param_names = TOPOLOGIES[topology].keys()
+                    param_names = list(TOPOLOGIES[topology].keys())
                     no_params = param_names == []
                     if not no_params:
                         topology_param_combinations = list(
@@ -329,7 +329,7 @@ if SYNTHETIC_EXPERIMENT:
                                     experiment['topology'][param_name] = topology_configuration[index]
 
                             experiment['cache_policy']['name'] = cache_policy
-                            for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
+                            for param_name, param_value_list in list(CACHE_POLICY_PARAMETERS.items()):
                                 experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
                             experiment['cache_placement']['network_cache_per_node'] = NETWORK_CACHE_PER_NODE
                             experiment['cache_placement']['network_cache_all_nodes'] = NETWORK_CACHE_ALL_NODES
@@ -374,7 +374,7 @@ if TRACE_DRIVEN_EXPERIMENTS:
     for trace_name, N_REQUESTS, weights in traces:
         for strategy in STRATEGIES:
             for topology in TOPOLOGIES:
-                param_names = TOPOLOGIES[topology].keys()
+                param_names = list(TOPOLOGIES[topology].keys())
                 no_params = param_names == []
                 if not no_params:
                     topology_param_combinations = list(
@@ -401,7 +401,7 @@ if TRACE_DRIVEN_EXPERIMENTS:
                                 experiment['topology'][param_name] = topology_configuration[index]
 
                         experiment['cache_policy']['name'] = cache_policy
-                        for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
+                        for param_name, param_value_list in list(CACHE_POLICY_PARAMETERS.items()):
                             experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
                         experiment['cache_placement']['network_cache_per_node'] = NETWORK_CACHE_PER_NODE
                         experiment['cache_placement']['network_cache_all_nodes'] = NETWORK_CACHE_ALL_NODES
@@ -446,7 +446,7 @@ if DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS:
     for trace_name, N_REQUESTS, weights in traces:
         for strategy in STRATEGIES:
             for topology in TOPOLOGIES:
-                param_names = TOPOLOGIES[topology].keys()
+                param_names = list(TOPOLOGIES[topology].keys())
                 no_params = param_names == []
                 if not no_params:
                     topology_param_combinations = list(itertools.product(*[TOPOLOGIES[topology][param_name] for param_name in param_names]))
@@ -472,7 +472,7 @@ if DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS:
                                 experiment['topology'][param_name] = topology_configuration[index]
 
                         experiment['cache_policy']['name'] = cache_policy
-                        for param_name, param_value_list in CACHE_POLICY_PARAMETERS.items():
+                        for param_name, param_value_list in list(CACHE_POLICY_PARAMETERS.items()):
                             experiment['cache_policy'][param_name] = param_value_list[cache_policy_index]
                         experiment['cache_placement']['network_cache_per_node'] = NETWORK_CACHE_PER_NODE
                         experiment['cache_placement']['network_cache_all_nodes'] = NETWORK_CACHE_ALL_NODES

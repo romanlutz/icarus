@@ -2,7 +2,7 @@ import getopt
 import sys, os
 from collections import defaultdict
 from datetime import datetime, timedelta
-from merge_globo import parse_line
+from .merge_globo import parse_line
 
 mp4_versions = {'web360': '0', 'web480': '1', 'web720': '2', 'http200k': '3', 'http400k': '4', 'hls64k': '5', 'hls200k': '6', 'iphone360': '7'}
 
@@ -21,7 +21,7 @@ def time_difference(timestamp1, timestamp2):
     sec2, _, rest = rest.partition('-')
 
     [year1, year2, day1, day2, hour1, hour2, min1, min2, sec1, sec2] = \
-        map(int, [year1, year2, day1, day2, hour1, hour2, min1, min2, sec1, sec2])
+        list(map(int, [year1, year2, day1, day2, hour1, hour2, min1, min2, sec1, sec2]))
 
     # there are only January and Feburary requests, so this simple rule works
     month1 = 1 if month1 == 'Jan' else 2
@@ -61,25 +61,25 @@ def clear_from_last_requests(timestamp, data):
         data['last_requests'][ip][:] = [request for request in data['last_requests'][ip] if time_difference(request['time'], timestamp) <= 10]
 
 def print_data_dict_compact(data):
-    print 'IP/24 ranges:', len(data['ip_24_ranges'])
-    print 'IP/16 ranges:', len(data['ip_16_ranges'])
-    print 'IP/8 ranges:', len(data['ip_8_ranges'])
-    print 'request names:',
+    print('IP/24 ranges:', len(data['ip_24_ranges']))
+    print('IP/16 ranges:', len(data['ip_16_ranges']))
+    print('IP/8 ranges:', len(data['ip_8_ranges']))
+    print('request names:', end=' ')
     for request_name in data['request_names']:
-        print request_name, ':', data['request_names'][request_name], ',',
-    print ''
-    print 'body bytes sizes:',
-    sizes = data['body_bytes_sizes'].keys()
+        print(request_name, ':', data['request_names'][request_name], ',', end=' ')
+    print('')
+    print('body bytes sizes:', end=' ')
+    sizes = list(data['body_bytes_sizes'].keys())
     sizes.sort()
     for size in sizes:
-        print size, ':', data['body_bytes_sizes'][size], ',',
-    print ''
+        print(size, ':', data['body_bytes_sizes'][size], ',', end=' ')
+    print('')
     for type in data['content_type']:
-        print type, ':', data['content_type'][type], ',',
-    print ''
-    print data['content_type_hits']
-    print 'minimum size of a request with hit:', data['min_hit_size']
-    print 'requests with 0 bytes:', data['zero_bytes']
+        print(type, ':', data['content_type'][type], ',', end=' ')
+    print('')
+    print(data['content_type_hits'])
+    print('minimum size of a request with hit:', data['min_hit_size'])
+    print('requests with 0 bytes:', data['zero_bytes'])
 
 def determine_format_and_content_id(request):
     format, content_id = None, None
@@ -128,7 +128,7 @@ def determine_format_and_content_id(request):
         format = 'drmmeta'
         content_id = int(until_question_mark.rpartition('-manifest')[0].rpartition('/')[2])
     else:
-        print "The following request couldn't be classified:", request
+        print("The following request couldn't be classified:", request)
 
     return format, content_id
 
@@ -139,7 +139,7 @@ def analyze(path, day, month, year, data):
 
     for filename in os.listdir(path):
         if '%02d%02d%02d-merged.log' % (year, month, day) == filename:
-            print 'reading %s' % filename
+            print('reading %s' % filename)
             with open(filename, 'rt') as in_file:
 
                 for line in in_file:

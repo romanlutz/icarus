@@ -18,8 +18,8 @@ class TestMeansConfidenceInterval(unittest.TestCase):
 
     def test_all_equal(self):
         mean, err = stats.means_confidence_interval([1,1,1,1,1], 0.95)
-        self.assertEquals(1, mean)
-        self.assertEquals(0, err)
+        self.assertEqual(1, mean)
+        self.assertEqual(0, err)
     
 
 class TestDiscreteDist(unittest.TestCase):
@@ -57,7 +57,7 @@ class TestCdf(unittest.TestCase):
             self.assertAlmostEqual(cdf[i], exp_cdf[i])
 
     def test_cdf_deque_input(self):
-        data = collections.deque(range(2000))
+        data = collections.deque(list(range(2000)))
         x, cdf = stats.cdf(data)
         self.assertEqual(len(x), 2000)
         self.assertAlmostEqual(cdf[-1], 1.0)

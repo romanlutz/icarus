@@ -312,9 +312,9 @@ class NetworkModel(object):
         # requires a deep copy of the topology that can take long time if
         # many content source mappings are included in the topology
         if not topology.is_directed():
-            for (u, v), link_type in self.link_type.items():
+            for (u, v), link_type in list(self.link_type.items()):
                 self.link_type[(v, u)] = link_type
-            for (u, v), delay in self.link_delay.items():
+            for (u, v), delay in list(self.link_delay.items()):
                 self.link_delay[(v, u)] = delay
                 
         # Initialize attributes
@@ -327,7 +327,7 @@ class NetworkModel(object):
                 contents = stack_props['contents']
                 for content in contents:
                     self.content_source[content] = node
-        if any(c < 1 for c in self.cache_size.values()):
+        if any(c < 1 for c in list(self.cache_size.values())):
             logger.warn('Some content caches have size equal to 0. '
                           'I am setting them to 1 and run the experiment anyway')
             for node in self.cache_size:
@@ -335,7 +335,7 @@ class NetworkModel(object):
                     self.cache_size[node] = 1
                     
         policy_name = cache_policy['name']
-        policy_args = {k: v for k, v in cache_policy.items() if k != 'name'}
+        policy_args = {k: v for k, v in list(cache_policy.items()) if k != 'name'}
         # The actual cache objects storing the content
         self.cache = {node: CACHE_POLICY[policy_name](self.cache_size[node], **policy_args)
                           for node in self.cache_size}
