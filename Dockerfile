@@ -6,4 +6,4 @@ RUN echo "source activate py3k" > ~/.bashrc
 ENV PATH /opt/conda/envs/py3k/bin:$PATH
 RUN /opt/conda/bin/activate py3k
 RUN pip install -r requirements.txt
-RUN git clone https://github.com/romanlutz/icarus.git
+ADD . /
