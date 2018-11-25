@@ -21,15 +21,15 @@ doc/source/apidoc
 *.pdf
 
 # Ignore traces
-*.resources/Live_VoD_P2P_IPTV_elkhatib/*
-!*.resources/Live_VoD_P2P_IPTV_elkhatib/reformat_Live_VoD_P2P_IPTV_elkhatib.py
-*.resources/IBM_traces/*
-!*.resources/IBM_traces/reformat_ibm.py
-*.resources/UMass_YouTube_traces/*
-!*.resources/UMass_YouTube_traces/reformat_youtube.py
-*.resources/synthetic/*
-!*.resources/synthetic/reformat_synthetic.py
-*.resources/ARC_traces/*
-!*.resources/ARC_traces/reformat_arc.py
+*resources/Live_VoD_P2P_IPTV_elkhatib/*
+!*resources/Live_VoD_P2P_IPTV_elkhatib/reformat_Live_VoD_P2P_IPTV_elkhatib.py
+*resources/IBM_traces/*
+!*resources/IBM_traces/reformat_ibm.py
+*resources/UMass_YouTube_traces/*
+!*resources/UMass_YouTube_traces/reformat_youtube.py
+*resources/synthetic/*
+!*resources/synthetic/reformat_synthetic.py
+*resources/ARC_traces/*
+!*resources/ARC_traces/reformat_arc.py
 /resources/Fastly_traces/*.t*
 /resources/Globo_traces/*.trace
