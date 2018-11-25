@@ -220,6 +220,8 @@ class CollectorProxy(DataCollector):
     
     @inheritdoc(DataCollector)
     def results(self):
+        print(list(self.collectors.keys()))
+        print(self.collectors['results'][0].results())
         return Tree(**{c.name: c.results() for c in self.collectors['results']})
 
 
@@ -443,12 +445,12 @@ class CacheHitRatioCollector(DataCollector):
                             for i in content_set)
             results['PER_CONTENT'] = content_hits
         if self.per_node:
+            results['PER_NODE_CACHE_HIT_RATIO'] = {}
+            results['PER_NODE_SERVER_HIT_RATIO'] = {}
             for v in self.per_node_cache_hits:
-                self.per_node_cache_hits[v] /= n_session
+                results['PER_NODE_CACHE_HIT_RATIO'][str(v)] = self.per_node_cache_hits[v] / n_session
             for v in self.per_node_server_hits:
-                self.per_node_server_hits[v] /= n_session
-            results['PER_NODE_CACHE_HIT_RATIO'] = self.per_node_cache_hits
-            results['PER_NODE_SERVER_HIT_RATIO'] = self.per_node_server_hits
+                results['PER_NODE_SERVER_HIT_RATIO'][str(v)] = self.per_node_server_hits[v] / n_session
         return results
 
 

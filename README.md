@@ -14,71 +14,22 @@ This document explains how to configure and run the simulator.
 ## Download and installation
 
 ### Prerequisites
-Before using the simulator, you need to install all required dependencies.
+Before using the simulator, you need to install all required dependencies. 
 
-#### Ubuntu 13.10+
-If you use Ubuntu (version 13.10+) you can run the script `ubuntusetup.sh`
-located in the `scripts` folder which will take of installing all the
-dependencies. To run it, executes the following commands
+#### Docker
+To make things easier, I've put together a Dockerfile that should pull in all dependencies in a working state and with compatible versions. To use that, install Docker for your operating system, make sure the Docker daemon is started and run the following from the directory containing the Dockerfile
+```
+docker build . -t icarus:latest
+docker run -it icarus /bin/bash
+```
+With the prompt inside the Docker container, run:
+```
+(py3k) root@c8a467c91f34:/# python icarus.py -r results config.py
+```
 
-    $ cd <YOUR ICARUS FOLDER>
-    $ sh scripts/ubuntusetup.sh
+The old setup instructions have been removed because this repository was migrated to python3, thus invalidating the instructions.
 
-The script, after being launched, will ask you for superuser password.
-
-Finally, it is advisable to add Icarus path to the PYTHONPATH environment variable. This makes it possible to launch Icarus from outside the Icarus root directory or call Icarus APIs from other programs:
-
-    $ cd <YOUR ICARUS FOLDER>
-    $ export PYTHONPATH=`pwd`:$PYTHONPATH
-
-Note however that setting the PYTHONPATH this way does not persist across reboots. To make it persist you should add the export instruction to a script that your machine executes at boot or login time, e.g. `.bashrc` (if you use Bash).
-
-#### Other operating systems
-If you have other operating systems, you can install all dependencies manually. 
-
-Icarus dependencies are:
-
-* **Python interpreter (2.7.x)**: you can either download it
-  from the [Python website](http://www.python.org) or, possibly, from the package
-  manager of your operating system.
-* The following Python packages: 
-   * **numpy** (versin 1.6 onwards)
-   * **scipy** (version 0.12 onwards)
-   * **matplotlib** (version 1.2 onwards)
-   * **networkx** (version 1.6 onwards)
-   * **fnss** (version 0.5.1 onwards)
-
-All these packages can be installed using either [`easy_install`](http://pythonhosted.org/setuptools/easy_install.html) or [`pip`](http://www.pip-installer.org/en/latest/) utilities.
-
-If you use `pip` run:
-
-    $ pip install numpy scipy matplotlib networkx fnss
-
-If you use `easy_install` run:
-
-    $ easy_install numpy scipy matplotlib networkx fnss
-
-You may need to run `pip` or `easy_install` as superuser. The installation of these packages, especially `numpy` and `scipy` may also require to install additional libraries.
-
-#### Virtual machine
-You can also run Icarus within a virtual machine. [This repository](https://github.com/icarus-sim/icarus-vm) contains scripts and documentation to set up a virtual machine with Icarus and all its dependencies.
-
-
-### Download
-You can download a stable release in a zip or tar.gz format using the links below.
-
-**Latest version:**
-
- * Version 0.4.0: \[[zip](https://github.com/icarus-sim/icarus/archive/v0.4.0.zip)\] \[[tar.gz](https://github.com/icarus-sim/icarus/archive/v0.4.0.tar.gz)\]
-
-**Older versions:**
-
- * Version 0.3.0: \[[zip](https://github.com/icarus-sim/icarus/archive/v0.3.0.zip)\] \[[tar.gz](https://github.com/icarus-sim/icarus/archive/v0.3.0.tar.gz)\]
- * Version 0.2.1: [\[zip\]](https://github.com/icarus-sim/icarus/archive/v0.2.1.zip) [\[tar.gz\]](https://github.com/icarus-sim/icarus/archive/v0.2.1.tar.gz)
- * Version 0.2: [\[zip\]](https://github.com/icarus-sim/icarus/archive/v0.2.zip) [\[tar.gz\]](https://github.com/icarus-sim/icarus/archive/v0.2.tar.gz)
- * Version 0.1.1: [\[zip\]](https://github.com/icarus-sim/icarus/archive/v0.1.1.zip) [\[tar.gz\]](https://github.com/icarus-sim/icarus/archive/v0.1.1.tar.gz)
- * Version 0.1.0: [\[zip\]](https://github.com/icarus-sim/icarus/archive/v0.1.zip) [\[tar.gz\]](https://github.com/icarus-sim/icarus/archive/v0.1.tar.gz)
-
+#### Dev
 You can also get the development branch from the Github repository using Git. Just open a shell, `cd` to the directory where you want to download the simulator and type:
 
     $ git clone https://github.com/romanlutz/icarus.git
@@ -120,8 +71,7 @@ By executing the steps illustrated above it is possible to run simulations using
 topologies, cache policies, strategies and result collectors readily available on
 Icarus. Icarus makes it easy to implement new models to use in simulations.
 
-To implement new models, please refer to the description of the simulator 
-provided in this paper:
+To implement new models, please refer to the description of the simulator provided in this paper:
 
 L.Saino, I. Psaras and G. Pavlou, Icarus: a Caching Simulator for Information Centric
 Networking (ICN), in Proc. of SIMUTOOLS'14, Lisbon, Portugal, March 2014.
@@ -129,8 +79,7 @@ Networking (ICN), in Proc. of SIMUTOOLS'14, Lisbon, Portugal, March 2014.
 \[[Slides](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14-slides.pdf)\],
 \[[BibTex](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14.bib)\]
 
-Otherwise, please browse the source code. It is very well documented and easy to
-understand.
+Otherwise, please browse the source code. It is very well documented and easy to understand.
 
 ### Modelling tools
 Icarus provides utilities for modelling the performance of caches and

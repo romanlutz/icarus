@@ -292,7 +292,7 @@ class NetworkModel(object):
         
         # Shortest paths of the network
         self.shortest_path = shortest_path if shortest_path is not None \
-                             else symmetrify_paths(nx.all_pairs_dijkstra_path(topology))
+                             else symmetrify_paths(dict(nx.all_pairs_dijkstra_path(topology)))
         
         # Network topology
         self.topology = topology
@@ -318,7 +318,7 @@ class NetworkModel(object):
                 self.link_delay[(v, u)] = delay
                 
         # Initialize attributes
-        for node in topology.nodes_iter():
+        for node in topology.nodes():
             stack_name, stack_props = fnss.get_stack(topology, node)
             if stack_name == 'router':
                 if 'cache_size' in stack_props:

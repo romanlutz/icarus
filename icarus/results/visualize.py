@@ -71,7 +71,7 @@ def draw_stack_deployment(topology, filename, plotdir):
         The name of the image file to save
     """
     stack = stack_map(topology)
-    node_color = [COLORMAP[stack[v]] for v in topology.nodes_iter()]
+    node_color = [COLORMAP[stack[v]] for v in topology.nodes()]
     plt.figure()
     nx.draw_graphviz(topology, node_color=node_color, with_labels=False)
     plt.savefig(os.path.join(plotdir, filename), bbox_inches='tight', format='pdf')
@@ -98,12 +98,12 @@ def draw_network_load(topology, result, filename, plotdir):
         The name of the image file to save
     """
     stack = stack_map(topology)
-    node_color = [COLORMAP[stack[v]] for v in topology.nodes_iter()]
+    node_color = [COLORMAP[stack[v]] for v in topology.nodes()]
     node_min = 50
     node_max = 600
     hits = result['CACHE_HIT_RATIO']['PER_NODE_CACHE_HIT_RATIO'].copy()
     hits.update(result['CACHE_HIT_RATIO']['PER_NODE_SERVER_HIT_RATIO'])
-    hits = np.array([hits[v] if v in hits else 0 for v in topology.nodes_iter()])
+    hits = np.array([hits[v] if v in hits else 0 for v in topology.nodes()])
     min_hits = np.min(hits)
     max_hits = np.max(hits)
     hits = node_min +  (node_max - node_min)*(hits - min_hits)/(max_hits - min_hits)

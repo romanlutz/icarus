@@ -1,1 +1,1 @@
-from .reformat_synthetic import *
+from reformat_synthetic import *

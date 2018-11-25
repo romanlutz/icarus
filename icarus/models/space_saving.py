@@ -57,14 +57,14 @@ class SpaceSavingCache(Cache):
         :return: list of all monitored elements at their respective position
         """
         # since the position function needs the list to be sorted from head to tail, the buckets need to be reversed
-        list = []
+        dumped_list = []
         buckets = list(self._cache.bucket_map.keys())
         buckets.sort(reverse=True)
         for key in buckets:
             bucket_list = deepcopy(self._cache.bucket_map[key])
             bucket_list.reverse()
-            list.extend([node.id for node in bucket_list])
-        return list
+            dumped_list.extend([node.id for node in bucket_list])
+        return dumped_list
 
     def print_buckets(self):
         buckets = list(self._cache.bucket_map.keys())

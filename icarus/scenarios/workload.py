@@ -92,7 +92,7 @@ class StationaryWorkload(object):
         if beta < 0:
             raise ValueError('beta must be positive')
 
-        self.receivers = [v for v in topology.nodes_iter()
+        self.receivers = [v for v in topology.nodes()
                      if topology.node[v]['stack'][0] == 'receiver']
 
         self.dist = TruncatedMandelbrotZipfDist(alpha=alpha, q=q, n=n_contents)
@@ -107,7 +107,7 @@ class StationaryWorkload(object):
         self.beta = beta
         if beta != 0:
             degree = nx.degree(self.topology)
-            self.receivers = sorted(self.receivers, key=lambda x: degree[next(iter(topology.edge[x]))], reverse=True)
+            self.receivers = sorted(self.receivers, key=lambda x: degree[next(iter(topology.edges[x]))], reverse=True)
             self.receiver_dist = TruncatedMandelbrotZipfDist(beta, len(self.receivers))
         
     def __iter__(self):
@@ -166,7 +166,7 @@ class GlobetraffWorkload(object):
         """Constructor"""
         if beta < 0:
             raise ValueError('beta must be positive')
-        self.receivers = [v for v in topology.nodes_iter() 
+        self.receivers = [v for v in topology.nodes() 
                      if topology.node[v]['stack'][0] == 'receiver']
         self.n_contents = 0
         with open(contents_file, 'r') as f:
@@ -180,7 +180,7 @@ class GlobetraffWorkload(object):
         if beta != 0:
             degree = nx.degree(self.topology)
             self.receivers = sorted(self.receivers, key=lambda x: 
-                                    degree[next(iter(topology.edge[x]))], 
+                                    degree[next(iter(topology.edges[x]))], 
                                     reverse=True)
             self.receiver_dist = TruncatedMandelbrotZipfDist(beta, len(self.receivers))
         
@@ -262,7 +262,7 @@ class TraceDrivenWorkload(object):
         self.n_measured = n_measured
         self.reqs_file = reqs_file
         self.rate = rate
-        self.receivers = [v for v in topology.nodes_iter() 
+        self.receivers = [v for v in topology.nodes() 
                           if topology.node[v]['stack'][0] == 'receiver']
 
         self.n_contents, self.contents = assign_weights(weights, reqs_file)
@@ -271,7 +271,7 @@ class TraceDrivenWorkload(object):
         if beta != 0:
             degree = nx.degree(topology)
             self.receivers = sorted(self.receivers, key=lambda x:
-                                    degree[next(iter(topology.edge[x]))],
+                                    degree[next(iter(topology.edges[x]))],
                                     reverse=True)
             self.receiver_dist = TruncatedMandelbrotZipfDist(beta, len(self.receivers))
         
@@ -400,7 +400,7 @@ class DeterministicTraceDrivenWorkload(object):
         dictionary of event attributes.
     """
     def __init__(self, topology, reqs_file, weights=None, n_warmup=10**5, n_measured=4*10**5, **kwargs):
-        self.receivers = [v for v in topology.nodes_iter()
+        self.receivers = [v for v in topology.nodes()
                      if topology.node[v]['stack'][0] == 'receiver']
         self.n_warmup = n_warmup
         self.n_measured = n_measured

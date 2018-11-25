@@ -41,7 +41,7 @@ LOG_LEVEL = 'INFO'
 
 # If True, executes simulations in parallel using multiple processes
 # to take advantage of multicore CPUs
-PARALLEL_EXECUTION = True
+PARALLEL_EXECUTION = False
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
@@ -420,7 +420,7 @@ if DETERMINISTIC_TRACE_DRIVEN_EXPERIMENTS:
         csv_reader = csv.reader(trace_file)
         i = 1
         for line in csv_reader:
-            if i == 94:#i <= 31 and i >= 2:
+            if i == 140:#i <= 31 and i >= 2:
                 traces.append((line[0], int(line[1]), line[2]))
             i += 1
 
