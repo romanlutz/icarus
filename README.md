@@ -1,13 +1,10 @@
 Currently only for one-cache scenarios! Changes are coming...
-This is a fork of the original icarus project!
+This is an extension of the original icarus project!
 
 # Icarus ICN caching simulator
-Icarus is a Python-based discrete-event simulator for evaluating caching
-performance in Information Centric Networks (ICN).
+Icarus is a Python-based discrete-event simulator for evaluating caching performance in Information Centric Networks (ICN).
 
-Icarus is not bound to any specific ICN architecture. Its design allows users
-to implement and evalute new caching policies or caching and routing strategy
-with few lines of code.
+Icarus is not bound to any specific ICN architecture. Its design allows users to implement and evalute new caching policies or caching and routing strategy with few lines of code.
 
 This document explains how to configure and run the simulator.
 
@@ -27,12 +24,11 @@ With the prompt inside the Docker container, run:
 (py3k) root@c8a467c91f34:/# python icarus.py -r results config.py
 ```
 
+To pull in traces from elsewhere, such as Azure Storage Blobs, create a subscription, resource group and storage account first. Then create a container in the blob storage and put your traces there. The storage key will provide access to the files.
+
+
 The old setup instructions have been removed because this repository was migrated to python3, thus invalidating the instructions.
 
-#### Dev
-You can also get the development branch from the Github repository using Git. Just open a shell, `cd` to the directory where you want to download the simulator and type:
-
-    $ git clone https://github.com/romanlutz/icarus.git
 
 ## Usage
 
@@ -80,11 +76,6 @@ Networking (ICN), in Proc. of SIMUTOOLS'14, Lisbon, Portugal, March 2014.
 \[[BibTex](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14.bib)\]
 
 Otherwise, please browse the source code. It is very well documented and easy to understand.
-
-### Modelling tools
-Icarus provides utilities for modelling the performance of caches and
-work with traffic traces. The code is included in the `icarus.tools` package.
-These tools are described in detail in [this paper](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14.pdf).
 
 ### Run tests
 To run the unit test cases you can use the `test.py` script located in the directory of
@@ -137,33 +128,12 @@ If you use Icarus for your paper, please refer to the following publication:
        address = {ICST, Brussels, Belgium, Belgium},
     }
 
-## Documentation
-If you desire further information about Icarus, you can find it in the following places:
-
- * In [this paper](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14.pdf), which describes the overall architecture of the Icarus simulator,
-   the motivations for its design, the models implemented and shows some snippets of codes on how to use the modelling tools.
- * In the [API reference](http://icarus-sim.github.io/doc/), which documents all packages, modules, classes, methods
-   and functions included in the Icarus simulator.
- * In the [source code](https://www.github.com/icarus-sim/icarus/), which is well organized and throughly documented.
-
-## Reproduce results of previous papers
-
-### Hash-routing schemes, ACM SIGCOMM ICN '13
-The Icarus simulator can be used to reproduce the results and plot the graphs presented in the paper:
-
-L.Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for Information Centric Networking,
-in *Proc. of the 3rd ACM SIGCOMM workshop on Information Centric Networking (ICN'13)*, Hong Kong, China, August 2013.
-[\[PDF\]](http://www.ee.ucl.ac.uk/~lsaino/publications/hashrouting-icn13.pdf),
-[\[BibTex\]](http://www.ee.ucl.ac.uk/~lsaino/publications/hashrouting-icn13.bib)
-
-To do so, refer to the instructions reported in the  [icarus-sim/hashrouting-icn13-results](http://github.com/icarus-sim/hashrouting-icn13-results) repository.
-
 ## License
 Icarus is licensed under the terms of the [GNU GPLv2 license](http://www.gnu.org/licenses/gpl-2.0.html).
 
 ## Contacts
-For further information about the Icarus simulator, please contact
-[Lorenzo Saino](http://www.ee.ucl.ac.uk/~lsaino)
+For further information about this extended version of the Icarus simulator, please contact
+[Roman Lutz](https://romanlutz.github.io)
 
 ## Acknowledgments
-This work has been funded by the EU-Japan initiative, under EU FP7 grant agreement no. 608518 and NICT contract no. 167 ([GreenICN](http://www.greenicn.org/)), and by the EU FP7 grant agreement ICT-248784 ([COMET](http://www.comet-project.org/)).
+This extension heavily relies on [Lorenzo Saino's original work](https://github.com/icarus-sim/icarus/).
