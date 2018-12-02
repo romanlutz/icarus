@@ -29,7 +29,7 @@ def s_dump_elt(elt_to_pickle, file_obj):
     file_obj.write(pickled_elt_str)
     # record separator is a blank line
     # (since pickled_elt_str might contain its own newlines)
-    file_obj.write('\n\n')
+    file_obj.write(b'\n\n')
 
 def s_load(file_obj):
     """ load contents from file_obj, returning a generator that yields one
@@ -38,7 +38,7 @@ def s_load(file_obj):
     for line in file_obj:
         cur_elt.append(line)
 
-        if line == '\n':
+        if line == b'\n':
             pickled_elt_str = ''.join(cur_elt)
             elt = loads(pickled_elt_str)
             cur_elt = []
