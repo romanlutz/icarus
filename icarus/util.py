@@ -1,11 +1,14 @@
 """Utility functions
 """
-import time
-import logging
 import collections
 import copy
-import numpy as np
+import json
+import logging
 import networkx as nx
+import numpy as np
+import os
+import pickle
+import time
 
 __all__ = [
         'Settings',
@@ -321,10 +324,21 @@ class Settings(object):
         """
         return name in self.__conf
 
+    def __getstate__(self):
+        """Required to be able to call pickle.dump(settings)
+        """
+        result = self.__conf.copy()
+        return result
+
+    def __setstate__(self, dict):
+        """Required to be able to call pickle.dump(settings)
+        """
+        object.__setattr__(self, '__conf', dict)
+        
     @property
     def frozen(self):
         "Return whether the object is frozen or not."
-        return self.__frozen
+        return object.__getattribute__(self, '__frozen')
 
     def read_from(self, path, freeze=False):
         """Initialize settings by reading from a file
@@ -338,7 +352,16 @@ class Settings(object):
         """
         if self.__frozen:
             raise ValueError('Settings are frozen and cannot be modified')
-        exec(open(path).read(), self.__conf)
+        if os.path.splitext(path)[1] == '.py':
+            exec(open(path).read(), self.__conf)
+        elif os.path.splitext(path)[1] == '.pickle':
+            object.__setattr__(self, '__frozen', False)
+            with open(path, 'rb') as settings_file:
+                object.__setattr__(self, '__conf', pickle.load(settings_file))
+            # skip further validation since this was originally validated
+            return
+        else:
+            raise Exception('Only python and pickle files accepted as config files')
         for k in list(self.__conf):
             if k != k.upper():
                 del self.__conf[k]
@@ -348,7 +371,7 @@ class Settings(object):
     def freeze(self):
         """Freeze the objects. No settings can be added or modified any more
         """
-        self.__frozen = True
+        object.__setattr__(self, '__frozen', True)
     
     def get(self, name):
         """Return value of settings with given name
@@ -378,9 +401,15 @@ class Settings(object):
         value : any hashable type
             The value of the setting
         """
-        if self.frozen:
+        if self.__frozen:
             raise ValueError('Settings are frozen and cannot be modified')
         self.__conf[name] = value
+
+    def clone(self):
+        clone = Settings()
+        clone.__frozen = self.__frozen
+        clone.__conf = copy.deepcopy(self.__conf)
+        return clone
 
 
 class AnyValue(object):

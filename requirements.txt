@@ -1,2 +1,3 @@
-azureml-sdk==0.1.74
+azureml-sdk==1.0.2
+azure-cli==2.0.53
 fnss==0.8.2

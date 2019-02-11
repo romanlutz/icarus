@@ -6,4 +6,12 @@ RUN echo "source activate py3k" > ~/.bashrc
 ENV PATH /opt/conda/envs/py3k/bin:$PATH
 RUN /opt/conda/bin/activate py3k
 RUN pip install -r requirements.txt
-ADD . /
+ADD ./experiment_execution.py /
+ADD ./icarus /icarus
+ADD ./config.py /
+ADD ./icarus.py /
+ADD ./azure_setup.py /
+ADD ./__init__.py /
+ADD ./constants.py /
+ADD ./azure_helpers /azure_helpers
+ADD ./resources/trace_overview.csv /resources/trace_overview.csv

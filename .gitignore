@@ -35,3 +35,6 @@ doc/source/apidoc
 !*resources/Fastly_traces/reformat_fastly.py
 *resources/Globo_traces/*
 !*resources/Globo_traces/reformat_globo.py
+
+# secrets
+secrets.txt

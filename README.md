@@ -17,7 +17,33 @@ Before using the simulator, you need to install all required dependencies.
 To make things easier, I've put together a Dockerfile that should pull in all dependencies in a working state and with compatible versions. To use that, install Docker for your operating system, make sure the Docker daemon is started and run the following from the directory containing the Dockerfile
 ```
 docker build . -t icarus:latest
-docker run -it icarus /bin/bash
+```
+
+As a prerequisite for executing experiments you need a service principal, so run the following using the Azure CLI to create a keyvault and store your service principal credentials there:
+```
+az keyvault create --resource-group cache-simulation --name cache-simulation
+... // omitting keyvault details
+az ad sp create-for-rbac --name cachesimulation --password <provide a strong password>
+{
+  "appId": "<app ID>",
+  "displayName": "cachesimulation",
+  "name": "http://cachesimulation",
+  "password": "<password>",
+  "tenant": "<tenant>"
+}
+
+az keyvault secret set --vault-name cache-simulation --name sp-name --value <app ID>
+az keyvault secret set --vault-name cache-simulation --name sp-password --value <password>
+az keyvault secret set --vault-name cache-simulation --name sp-tenant --value <tenant>
+```
+
+Then finally you can run your experiment in the Docker container:
+```
+SP_NAME=$(az keyvault secret show --vault-name cache-simulation --name sp-name --query value)
+SP_PASSWORD=$(az keyvault secret show --vault-name cache-simulation --name sp-password --query value)
+SP_TENANT=$(az keyvault secret show --vault-name cache-simulation --name sp-tenant --query value)
+
+docker run -it -e SP_NAME=$(SP_NAME) -e SP_PASSWORD=$(SP_PASSWORD) -e SP_TENANT=$(SP_TENANT) icarus /bin/bash
 ```
 With the prompt inside the Docker container, run:
 ```

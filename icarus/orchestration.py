@@ -115,8 +115,8 @@ class Orchestrator(object):
                 experiment = queue.popleft()
                 for _ in range(self.settings.N_REPLICATIONS):
                     self.experiment_callback(run_scenario(self.settings, 
-                                            experiment, self.seq.assign(),
-                                            self.n_exp))
+                                             experiment, self.seq.assign(),
+                                             self.n_exp))
                     if self._stop:
                         self.stop()
 
